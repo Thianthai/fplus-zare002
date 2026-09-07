@@ -4,6 +4,9 @@
 
 สัญลักษณ์: `⬜` ยังไม่ทำ · `🟨` กำลังทำ / ส่ง code ให้แล้วรอ activate · `✅` เสร็จ
 
+> **ผลจริง (2026-09-07): เดินถึง Phase 4 แล้ว และ draft ถูกเปิดใช้** — object ทั้งหมดของ
+> Phase 1–4 activate + push ขึ้น repo แล้ว (commit `7936197`) เหลือแค่ยืนยันผลทดสอบ 4.1 / 4.8
+>
 > **ลำดับนี้ถูกจัดใหม่เมื่อ 2026-09-07** — เดิมเอา DDIC (draft table + แก้ table ของ ZARI002)
 > ไว้ก่อน CDS เพราะคิดว่า draft เป็นของบังคับ · ตอนนี้เดินแบบ **non-draft ก่อนแล้ววัดผลจริง**
 > DDIC จึงถูกเลื่อนไปเป็น Phase 4 และเป็น **phase ที่อาจไม่ต้องทำเลย**
@@ -16,10 +19,10 @@
 |---|-----|------|--------|
 | 0.1 | สร้าง local repo + `docs/` + `README.md` + `CLAUDE.md` | Claude | ✅ |
 | 0.2 | Push commit แรก (เอกสารล้วน) ขึ้น GitHub | ผู้ใช้ | ⬜ |
-| 0.3 | สร้าง package `ZARE002` บน tenant | ผู้ใช้ | ⬜ |
-| 0.4 | ผูก abapGit repo กับ package `ZARE002` | ผู้ใช้ | ⬜ |
-| 0.5 | abapGit push ให้ SAP serialize `.abapgit.xml` + `package.devc.xml` ขึ้นมาเป็น baseline | ผู้ใช้ | ⬜ |
-| 0.6 | Claude ตรวจ baseline แล้วอัปเดต path ในเอกสารให้ตรง | Claude | ⬜ |
+| 0.3 | สร้าง package `ZARE002` บน tenant | ผู้ใช้ | ✅ |
+| 0.4 | ผูก abapGit repo กับ package `ZARE002` | ผู้ใช้ | ✅ |
+| 0.5 | abapGit push ให้ SAP serialize `.abapgit.xml` + `package.devc.xml` ขึ้นมาเป็น baseline | ผู้ใช้ | ✅ |
+| 0.6 | Claude ตรวจ baseline แล้วอัปเดต path ในเอกสารให้ตรง | Claude | ✅ |
 
 **Exit criteria**: pull/push ระหว่าง GitHub ↔ tenant ผ่านทั้ง 2 ทาง
 
@@ -32,10 +35,10 @@
 
 | # | งาน | ฝั่ง | Status |
 |---|-----|------|--------|
-| 1.1 | `ZI_ZARE002_PYMT` — interface view บน `ztar_i002_pymt` (1:1) | Claude → ผู้ใช้ | 🟦 |
-| 1.2 | `ZI_ZARE002_BP` — interface view บน `I_BusinessPartner` ต่อ `OrganizationBPName1..4` เป็น `CustomerName` | Claude → ผู้ใช้ | 🟦 |
-| 1.3 | `ZI_ZARE002_ITEM` — interface view บน `ztar_i002_item` (1:1) + association `_Payment` `_BusinessPartner` | Claude → ผู้ใช้ | 🟦 |
-| 1.4 | ใส่ `@Semantics.amount.currencyCode` ให้ field จำนวนเงินทุกตัว | Claude → ผู้ใช้ | 🟦 |
+| 1.1 | `ZI_ZARE002_PYMT` — interface view บน `ztar_i002_pymt` (1:1) | Claude → ผู้ใช้ | ✅ |
+| 1.2 | `ZI_ZARE002_BP` — interface view บน `I_BusinessPartner` ต่อ `OrganizationBPName1..4` เป็น `CustomerName` | Claude → ผู้ใช้ | ✅ |
+| 1.3 | `ZI_ZARE002_ITEM` — interface view บน `ztar_i002_item` (1:1) + association `_Payment` `_BusinessPartner` | Claude → ผู้ใช้ | ✅ |
+| 1.4 | ใส่ `@Semantics.amount.currencyCode` ให้ field จำนวนเงินทุกตัว | Claude → ผู้ใช้ | ✅ |
 | 1.5 | Data Preview `ZI_ZARE002_BP` — ยืนยันว่าชื่อที่ต่อออกมาตรงกับที่ต้องการ ไม่มีช่องว่างซ้อน | ผู้ใช้ | ⬜ |
 | 1.6 | Data Preview `ZI_ZARE002_ITEM` — เห็นข้อมูลจริงที่ ZARI002 ยิงเข้ามาครบทุกคอลัมน์ **รวม Customer Name** | ผู้ใช้ | ⬜ |
 
@@ -49,12 +52,12 @@
 
 | # | งาน | ฝั่ง | Status |
 |---|-----|------|--------|
-| 2.1 | `ZR_ZARE002` — root view entity (projection บน `ZI_ZARE002_ITEM`) | Claude → ผู้ใช้ | ⬜ |
-| 2.2 | `ZR_ZARE002` — behavior definition **managed ไม่มี draft · update อย่างเดียว** | Claude → ผู้ใช้ | ⬜ |
-| 2.3 | `field ( readonly )` ทุก field ยกเว้น `RejectReason` | Claude → ผู้ใช้ | ⬜ |
-| 2.4 | `ZBP_R_ZARE002` — behavior pool + `lhc_Item` (ยังว่าง) | Claude → ผู้ใช้ | ⬜ |
-| 2.5 | activate BDEF ผ่าน — ยืนยันว่าไม่มี mapping error | ผู้ใช้ | ⬜ |
-| 2.6 | ทดสอบ EML update `reject_reason` ได้จริง | ผู้ใช้ | ⬜ |
+| 2.1 | `ZR_ZARE002` — root view entity (projection บน `ZI_ZARE002_ITEM`) | Claude → ผู้ใช้ | ✅ |
+| 2.2 | `ZR_ZARE002` — behavior definition **managed ไม่มี draft · update อย่างเดียว** | Claude → ผู้ใช้ | ✅ |
+| 2.3 | `field ( readonly )` ทุก field ยกเว้น `RejectReason` | Claude → ผู้ใช้ | ✅ |
+| 2.4 | `ZBP_R_ZARE002` — behavior pool + `lhc_Item` (ยังว่าง) | Claude → ผู้ใช้ | ✅ |
+| 2.5 | activate BDEF ผ่าน — ยืนยันว่าไม่มี mapping error | ผู้ใช้ | ✅ |
+| 2.6 | ทดสอบ EML update `reject_reason` ได้จริง | ผู้ใช้ | ✅ |
 
 **Exit criteria**: EML update `reject_reason` แล้วค่าลง `ztar_i002_item` จริง
 
@@ -67,15 +70,15 @@
 
 | # | งาน | ฝั่ง | Status |
 |---|-----|------|--------|
-| 3.0 | เพิ่ม `StatusCriticality` (case → int1) ที่ `ZI_ZARE002_PYMT` — แก้ view ที่ activate ไปแล้ว | Claude → ผู้ใช้ | ⬜ |
-| 3.1 | `ZC_ZARE002` — projection view + path expression ดึง field header ครบ + `CustomerName` | Claude → ผู้ใช้ | ⬜ |
-| 3.2 | `ZC_ZARE002` — behavior projection (`use update`) | Claude → ผู้ใช้ | ⬜ |
-| 3.3 | `ZC_ZARE002` — metadata extension: `@UI.lineItem` เรียง header → item → reject_reason | Claude → ผู้ใช้ | ⬜ |
-| 3.4 | Status ใช้ `@UI.criticality` ให้ได้ icon 3 สีตาม mockup | Claude → ผู้ใช้ | ⬜ |
-| 3.5 | `@UI.selectionField` — filter bar (ดู `05_ui_spec.md` §6) | Claude → ผู้ใช้ | ⬜ |
-| 3.6 | `reject_reason` ใช้ `@UI.multiLineText` | Claude → ผู้ใช้ | ⬜ |
-| 3.7 | **ไม่ใส่ `@UI.facet`** — ยืนยันว่าไม่มี Object Page | Claude | ⬜ |
-| 3.8 | `ZUI_ZARE002` service definition + `ZUI_ZARE002_O4` service binding (V4 UI) → publish → preview | ผู้ใช้ | ⬜ |
+| 3.0 | เพิ่ม `StatusCriticality` (case → int1) ที่ `ZI_ZARE002_PYMT` — แก้ view ที่ activate ไปแล้ว | Claude → ผู้ใช้ | ✅ |
+| 3.1 | `ZC_ZARE002` — projection view + path expression ดึง field header ครบ + `CustomerName` | Claude → ผู้ใช้ | ✅ |
+| 3.2 | `ZC_ZARE002` — behavior projection (`use update`) | Claude → ผู้ใช้ | ✅ |
+| 3.3 | `ZC_ZARE002` — metadata extension: `@UI.lineItem` เรียง header → item → reject_reason | Claude → ผู้ใช้ | ✅ |
+| 3.4 | Status ใช้ `@UI.criticality` ให้ได้ icon 3 สีตาม mockup | Claude → ผู้ใช้ | ✅ |
+| 3.5 | `@UI.selectionField` — filter bar (ดู `05_ui_spec.md` §6) | Claude → ผู้ใช้ | ✅ |
+| 3.6 | `reject_reason` ใช้ `@UI.multiLineText` | Claude → ผู้ใช้ | ✅ |
+| 3.7 | **ไม่ใส่ `@UI.facet`** — ยืนยันว่าไม่มี Object Page | Claude | ✅ |
+| 3.8 | `ZUI_ZARE002` service definition + `ZUI_ZARE002_O4` service binding (V4 UI) → publish → preview | ผู้ใช้ | ✅ |
 
 **Exit criteria**: preview ได้หน้าจอตรง mockup — คอลัมน์ครบ ลำดับถูก icon ขึ้น
 
@@ -83,17 +86,17 @@
 
 ## Phase 4 — 🔀 จุดตัดสิน: inline edit ได้ไหม
 
-**phase นี้อาจไม่ต้องทำเลย** ขึ้นกับผลทดสอบข้อ 4.1
+**ผลจริง: เดินสาย draft** — 4.3–4.7 ทำครบและ push แล้ว · เหลือยืนยันผลทดสอบ 4.8
 
 | # | งาน | ฝั่ง | Status |
 |---|-----|------|--------|
 | 4.1 | **ทดสอบใน preview — คลิกช่อง Reject Reason แล้วพิมพ์แก้ได้ไหม** | ผู้ใช้ | ⬜ |
-| 4.2 | ถ้า **ได้** → ปิด OQ-06 · ข้าม 4.3–4.7 ไป Phase 5 เลย | Claude | ⬜ |
-| 4.3 | ถ้า **ไม่ได้** → เพิ่ม `last_changed_at : abp_lastchange_tstmpl` ที่ `ZTAR_I002_ITEM` (repo `ZARI002`) | ผู้ใช้ | ⬜ |
-| 4.4 | ZARI002 activate + push table ที่แก้แล้ว | ผู้ใช้ | ⬜ |
-| 4.5 | สร้าง draft table `ZTAR_E002_ITEM_D` ใน package `ZARE002` | ผู้ใช้ | ⬜ |
-| 4.6 | เติม `with draft` + `draft table` + `total etag LastChangedAt` ใน BDEF | Claude → ผู้ใช้ | ⬜ |
-| 4.7 | เติม `use draft;` ใน behavior projection | Claude → ผู้ใช้ | ⬜ |
+| 4.2 | ถ้า **ได้** → ปิด OQ-06 · ข้าม 4.3–4.7 ไป Phase 5 เลย | Claude | ➖ ไม่ได้ใช้เส้นนี้ |
+| 4.3 | ถ้า **ไม่ได้** → เพิ่ม `last_changed_at : abp_lastchange_tstmpl` ที่ `ZTAR_I002_ITEM` (repo `ZARI002`) | ผู้ใช้ | ✅ |
+| 4.4 | ZARI002 activate + push table ที่แก้แล้ว | ผู้ใช้ | ✅ |
+| 4.5 | สร้าง draft table `ZTAR_E002_ITEM_D` ใน package `ZARE002` | ผู้ใช้ | ✅ |
+| 4.6 | เติม `with draft` + `draft table` + `total etag LastChangedAt` ใน BDEF | Claude → ผู้ใช้ | ✅ |
+| 4.7 | เติม `use draft;` ใน behavior projection | Claude → ผู้ใช้ | ✅ |
 | 4.8 | ทดสอบ 4.1 ซ้ำ | ผู้ใช้ | ⬜ |
 
 **Exit criteria**: คลิกช่อง Reject Reason พิมพ์แก้แล้ว Save ค่าลง `ztar_i002_item` จริง

@@ -13,16 +13,17 @@
 
 | Package | Folder | Description | Status |
 |---------|--------|-------------|--------|
-| `ZARE002` | `src/` | Automatic Incoming Payments (Report) | ⬜ |
+| `ZARE002` | `src/` | Automatic Incoming Payments (Report) | ✅ |
 
-path ที่แน่นอนจะรู้หลัง SAP serialize `.abapgit.xml` ขึ้นมาใน Phase 0.7
-(ZARI002 ได้ `STARTING_FOLDER = /src/` + `FOLDER_LOGIC = FULL` — ตัวนี้น่าจะเหมือนกัน)
+baseline ที่ tenant serialize มาแล้ว (commit `7936197`) — object ทุกตัวลง `src/` ตรง ๆ
+เหมือน ZARI002 · มี `src/6891044ca05f5bb3d7f71a02635465ht.sush.xml` ติดมาด้วย
+เป็น service authorization ที่ระบบสร้างให้เองตอน publish service binding
 
 ## DDIC
 
 | Object | Type | ไฟล์ | Phase | Status |
 |--------|------|------|-------|--------|
-| `ZTAR_E002_ITEM_D` | Draft table ของ `ZR_ZARE002` — **สร้างเฉพาะกรณีที่ Phase 4.1 พบว่า inline edit ต้องใช้ draft** | `src/ztar_e002_item_d.tabl.xml` | 4 | ⬜ อาจไม่ต้องทำ |
+| `ZTAR_E002_ITEM_D` | Draft table ของ `ZR_ZARE002` — สร้างด้วย quick-fix จาก BDEF · include `SYCH_BDL_DRAFT_ADMIN_INC` เป็น `%ADMIN` ครบ | `src/ztar_e002_item_d.tabl.xml` | 4 | ✅ |
 | `ZARE002` | Message class — สร้างตอนเริ่มใส่ logic ปุ่ม | `src/zare002.msag.xml` | นอก scope | ⬜ |
 
 **ไม่สร้าง data element / domain ใหม่** — reuse `ZE_REQUEST_STATUS` (package `ZARI002`)
@@ -32,27 +33,27 @@ path ที่แน่นอนจะรู้หลัง SAP serialize `.abap
 | Object | Owner | ZARE002 ทำอะไร | หมายเหตุ |
 |---|---|---|---|
 | `ZTAR_I002_PYMT` | ZARI002 | read | (เฟสถัดไป) update `status` |
-| `ZTAR_I002_ITEM` | ZARI002 | read + **update `reject_reason`** | ขอเพิ่ม `last_changed_at` **เฉพาะกรณีต้องใช้ draft** (Phase 4.3) |
+| `ZTAR_I002_ITEM` | ZARI002 | read + **update `reject_reason`** | **เพิ่ม `last_changed_at` แล้ว** — push ขึ้น repo `fplus-zari002` แล้ว (commit `0762ada`) |
 | ~~`ZTAR_E002_EDIT`~~ | — | **ยกเลิกแล้ว** | ใช้ `ZTAR_I002_ITEM.REJECT_REASON` แทน — เหตุผลใน `01_architecture.md` §2 |
 
 ## CDS
 
 | Object | Type | ไฟล์ | Phase | Status |
 |--------|------|------|-------|--------|
-| `ZI_ZARE002_PYMT` | Interface view บน `ztar_i002_pymt` (1:1) | `src/zi_zare002_pymt.ddls.asddls` | 1 | 🟦 |
-| `ZI_ZARE002_ITEM` | Interface view บน `ztar_i002_item` (1:1) + assoc `_Payment` `_BusinessPartner` | `src/zi_zare002_item.ddls.asddls` | 1 | 🟦 |
-| `ZI_ZARE002_BP` | Interface view บน `I_BusinessPartner` — ต่อ `OrganizationBPName1..4` เป็น `CustomerName` | `src/zi_zare002_bp.ddls.asddls` | 1 | 🟦 |
-| `ZR_ZARE002` | **Root view entity** — projection บน `ZI_ZARE002_ITEM` | `src/zr_zare002.ddls.asddls` | 2 | ⬜ |
-| `ZC_ZARE002` | Projection view — + path expression ดึง field header | `src/zc_zare002.ddls.asddls` | 3 | ⬜ |
-| `ZC_ZARE002` | Metadata extension — UI annotation ทั้งหมด | `src/zc_zare002.ddlx.asddlxs` | 3 | ⬜ |
+| `ZI_ZARE002_PYMT` | Interface view บน `ztar_i002_pymt` (1:1) | `src/zi_zare002_pymt.ddls.asddls` | 1 | ✅ |
+| `ZI_ZARE002_ITEM` | Interface view บน `ztar_i002_item` (1:1) + assoc `_Payment` `_BusinessPartner` | `src/zi_zare002_item.ddls.asddls` | 1 | ✅ |
+| `ZI_ZARE002_BP` | Interface view บน `I_BusinessPartner` — ต่อ `OrganizationBPName1..4` เป็น `CustomerName` | `src/zi_zare002_bp.ddls.asddls` | 1 | ✅ |
+| `ZR_ZARE002` | **Root view entity** — projection บน `ZI_ZARE002_ITEM` | `src/zr_zare002.ddls.asddls` | 2 | ✅ |
+| `ZC_ZARE002` | Projection view — + path expression ดึง field header | `src/zc_zare002.ddls.asddls` | 3 | ✅ |
+| `ZC_ZARE002` | Metadata extension — UI annotation ทั้งหมด | `src/zc_zare002.ddlx.asddlxs` | 3 | ✅ |
 
 ## Behavior
 
 | Object | Type | ไฟล์ | Phase | Status |
 |--------|------|------|-------|--------|
-| `ZR_ZARE002` | Behavior definition (managed, **non-draft ก่อน**, update only) | `src/zr_zare002.bdef.asbdef` | 2 | ⬜ |
-| `ZBP_R_ZARE002` | Behavior pool — `lhc_Item` | `src/zbp_r_zare002.clas.abap` | 2 | ⬜ |
-| `ZC_ZARE002` | Behavior projection (`use update` · `use action` · `use draft` ถ้าอัปเกรด) | `src/zc_zare002.bdef.asbdef` | 3 | ⬜ |
+| `ZR_ZARE002` | Behavior definition (managed, **non-draft ก่อน**, update only) | `src/zr_zare002.bdef.asbdef` | 2 | ✅ |
+| `ZBP_R_ZARE002` | Behavior pool — `lhc_Item` | `src/zbp_r_zare002.clas.abap` | 2 | ✅ |
+| `ZC_ZARE002` | Behavior projection (`use update` · `use action` · `use draft` ถ้าอัปเกรด) | `src/zc_zare002.bdef.asbdef` | 3 | ✅ |
 
 `ZBP_C_ZARE002` (behavior pool ของ projection) **ยังไม่ต้องสร้าง** — สร้างเมื่อมี logic ที่ต้องอยู่ชั้น projection เท่านั้น
 
@@ -60,8 +61,8 @@ path ที่แน่นอนจะรู้หลัง SAP serialize `.abap
 
 | Object | Type | ไฟล์ | Phase | Status |
 |--------|------|------|-------|--------|
-| `ZUI_ZARE002` | Service definition (UI) | `src/zui_zare002.srvd.srvdsrv` | 3 | ⬜ |
-| `ZUI_ZARE002_O4` | Service binding (UI, OData V4) | `src/zui_zare002_o4.srvb.xml` | 3 | ⬜ |
+| `ZUI_ZARE002` | Service definition (UI) | `src/zui_zare002.srvd.srvdsrv` | 3 | ✅ |
+| `ZUI_ZARE002_O4` | Service binding (UI, OData V4) | `src/zui_zare002_o4.srvb.xml` | 3 | ✅ |
 
 `ZI_ZARE002_PYMT` ได้ element `StatusCriticality` เพิ่มที่ Phase 3.0 (`case` → `abap.int1`)
 
@@ -81,4 +82,4 @@ path ที่แน่นอนจะรู้หลัง SAP serialize `.abap
 |---|---|-------|-------|--------|
 | `Submit` | instance action | 5 | **ว่าง** — รอเฟสถัดไป | ⬜ |
 | `Reject` | instance action | 5 | **ว่าง** — รอเฟสถัดไป | ⬜ |
-| `Edit` `Activate` `Discard` `Resume` `Prepare` | draft action (standard) | 4 | framework — **เฉพาะกรณีอัปเกรดเป็น draft** | ⬜ อาจไม่ต้องทำ |
+| `Edit` `Activate` `Discard` `Resume` `Prepare` | draft action (standard) | 4 | framework · **ต้องไล่ประกาศทีละตัวใน projection เพราะมี `strict`** | ✅ |
