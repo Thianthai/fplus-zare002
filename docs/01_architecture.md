@@ -167,17 +167,22 @@ mockup มีคอลัมน์ **Customer Name** แต่ทั้ง `ztar
 เก็บแค่ `customer_code` → ดึงชื่อผ่าน association ไปที่ **`I_BusinessPartner`**
 
 ```
-_BusinessPartner : [0..1] to I_BusinessPartner
+_BusinessPartner : [0..1] to ZI_ZARE002_BP
   on $projection.CustomerCode = _BusinessPartner.BusinessPartner
 ```
+
+`ZI_ZARE002_BP` เป็น view เล็ก ๆ บน `I_BusinessPartner` ที่ทำหน้าที่เดียว —
+ต่อ `OrganizationBPName1..4` ด้วยช่องว่างเป็น `CustomerName`
+(ไม่ใช้ `BusinessPartnerFullName` ของ SAP · เหตุผลและสูตร concat อยู่ใน `04_field_mapping.md` §4)
 
 **key ตรงกันโดยไม่ต้องแปลงอะไร** — `ZTAR_I002_ITEM.customer_code` ถูก ZARI002 ยิงผ่าน
 `to_internal_key( )` (`ALPHA = IN`) ก่อน insert ทุกครั้ง จึงเป็น internal format `CHAR 10`
 เหมือนกับ `I_BusinessPartner-BusinessPartner` เทียบตรง ๆ ได้เลย
 (หลักฐาน: `zari002/src/zcl_zari002_processor.clas.abap:262`)
 
-field ชื่อที่จะใช้: `BusinessPartnerFullName` เป็นตัวเลือกหลัก
-— รายละเอียดและตัวสำรองอยู่ใน `04_field_mapping.md` §4
+ที่ต้องมี view คั่นกลางแทนที่จะ associate `I_BusinessPartner` ตรง ๆ เพราะ `CustomerName`
+โผล่ได้เฉพาะที่ projection view (root view ผูก persistent table) และ projection view
+รับ path expression ได้ดีกว่า expression ซ้อนหลายชั้น — รายละเอียดใน `04_field_mapping.md` §4
 
 ### ⚠️ เรื่องสิทธิ์ที่ยังต้องทดสอบ
 

@@ -11,7 +11,7 @@
 | 3 | Company Code | `ZTAR_I002_PYMT` | `company_code` | `CompanyCode` | `_Payment` | ✘ |
 | 4 | Posting Date | `ZTAR_I002_PYMT` | `posting_date` | `PostingDate` | `_Payment` | ✘ |
 | 5 | Customer Code | `ZTAR_I002_ITEM` | `customer_code` | `CustomerCode` | item | ✘ |
-| 6 | Customer Name | **ไม่มีใน table** | — | `CustomerName` | `_BusinessPartner` | ✘ |
+| 6 | Customer Name | **ไม่มีใน table** | — | `CustomerName` | `_BusinessPartner` (ต่อ 4 field — §4) | ✘ |
 | 7 | Billing Note No. | `ZTAR_I002_ITEM` | `billing_note_no` | `BillingNoteNo` | item | ✘ |
 | 8 | Accounting Document | `ZTAR_I002_ITEM` | `accounting_document` | `AccountingDocument` | item | ✘ |
 | 9 | Billing Document | `ZTAR_I002_ITEM` | `billing_document` | `BillingDocument` | item | ✘ |
@@ -49,7 +49,7 @@
 | Association | Target | Cardinality | On |
 |---|---|---|---|
 | `_Payment` | `ZI_ZARE002_PYMT` | `[1..1]` | `$projection.PaymentUuid = _Payment.PaymentUuid` |
-| `_BusinessPartner` | `I_BusinessPartner` | `[0..1]` | `$projection.CustomerCode = _BusinessPartner.BusinessPartner` |
+| `_BusinessPartner` | **`ZI_ZARE002_BP`** | `[0..1]` | `$projection.CustomerCode = _BusinessPartner.BusinessPartner` |
 
 `_Payment` เป็น to-one จริง เพราะ `payment_uuid` เป็น key ของ header
 → ดึงขึ้นมาเป็นคอลัมน์ใน projection view ด้วย path expression ได้ปลอดภัย
@@ -64,16 +64,49 @@
 → **เทียบตรง ๆ ได้เลย ไม่ต้องมี conversion ใน CDS**
 (ต่างจากเคส `gl_account` ที่ ZARI002 เคยเจอปัญหา alpha conversion)
 
-### ชื่อลูกค้า — เลือก field ไหนใน `I_BusinessPartner`
+### ชื่อลูกค้า — ต่อเอง 4 field (ตกลง 2026-09-07)
 
-| Field | ใช้กับ | หมายเหตุ |
-|---|---|---|
-| `BusinessPartnerFullName` | **ตัวเลือกหลัก** | ชื่อเต็มที่ระบบต่อให้แล้ว — organization ได้ `OrganizationBPName1..4` ต่อกัน |
-| `BusinessPartnerName` | สำรอง | ถ้า `FullName` ว่างบน tenant นี้ |
-| `OrganizationBPName1` | สำรอง | ถ้าลูกค้าเป็น organization ล้วนและอยากได้บรรทัดแรกอย่างเดียว |
+**ไม่ใช้ `BusinessPartnerFullName` ของ SAP** — ต่อ `OrganizationBPName1..4` เองด้วยช่องว่างคั่น
 
-⚠️ **ต้องดู Data Preview ของ `I_BusinessPartner` บน tenant จริงก่อน** ว่า field ไหนมีค่า —
-mockup ต้องการ `ABC Company Limited` ซึ่งเป็นชื่อ organization
+```
+CustomerName =
+  concat_with_space(
+    concat_with_space(
+      concat_with_space( OrganizationBPName1, OrganizationBPName2, 1 ),
+      OrganizationBPName3, 1 ),
+    OrganizationBPName4, 1 )
+```
+
+**ไม่ต้องดักกรณี field ว่าง** — `concat_with_space` ตัด trailing blank ของ arg แรกก่อนต่อทุกครั้ง
+ชื่อที่ใช้แค่ `Name1` กับ `Name3` จึงได้ `ABC Ltd` ไม่ใช่ `ABC  Ltd`
+
+| เรื่อง | ค่า |
+|---|---|
+| ความยาวผลลัพธ์ | `CHAR 163` (40×4 + ช่องว่าง 3) — คุมความกว้างคอลัมน์ที่ UI annotation ไม่ต้อง cast |
+| field ต้นทาง | `I_BusinessPartner-OrganizationBPName1` … `4` แต่ละตัว `CHAR 40` |
+
+⚠️ **ผลที่ตามมา**: ชื่อที่ ZARE002 แสดง เป็นชื่อที่**เราต่อเอง** ไม่ใช่ชื่อที่ SAP standard app
+แสดง ถ้าวันหน้า SAP เปลี่ยนวิธีประกอบชื่อใน `BusinessPartnerFullName` ของเราจะไม่เปลี่ยนตาม
+— เป็นสิ่งที่ตั้งใจ ไม่ใช่ bug
+
+### ทำไมต้องมี `ZI_ZARE002_BP` คั่นกลาง ไม่ associate `I_BusinessPartner` ตรง ๆ
+
+`CustomerName` **ห้ามอยู่ใน `ZR_ZARE002`** — root view ผูก `persistent table ztar_i002_item`
+field ที่ไม่มีในตารางจะ map ไม่ได้ BDEF activate ไม่ผ่าน (เหตุผลเดียวกับ field header
+ดู `01_architecture.md` §4) → `CustomerName` ต้องโผล่ที่ **projection view** เท่านั้น
+
+แต่ projection view รับ **path expression** ได้ดี ส่วน expression ซับซ้อนอย่าง
+`concat_with_space` ซ้อน 3 ชั้น ไม่การันตีว่าจะผ่าน — จึงย้าย concat ไปไว้ที่ view เล็ก ๆ
+ตัวเดียวแล้วให้ projection view เรียกเป็น path ธรรมดา
+
+```
+ZI_ZARE002_BP:  select from I_BusinessPartner
+                { key BusinessPartner, <concat 4 field> as CustomerName }
+
+ZC_ZARE002:     _BusinessPartner.CustomerName as CustomerName    // path ธรรมดา
+```
+
+ได้ประโยชน์เพิ่ม: logic การประกอบชื่ออยู่ที่เดียว แก้ทีเดียวจบ
 
 ## 5. Status — ค่าและสีตาม mockup
 

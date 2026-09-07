@@ -47,10 +47,11 @@
 | # | งาน | ฝั่ง | Status |
 |---|-----|------|--------|
 | 2.1 | `ZI_ZARE002_PYMT` — interface view บน `ztar_i002_pymt` (1:1) | Claude → ผู้ใช้ | ⬜ |
-| 2.2 | `ZI_ZARE002_ITEM` — interface view บน `ztar_i002_item` (1:1) + association `_Payment` `_BusinessPartner` | Claude → ผู้ใช้ | ⬜ |
-| 2.3 | ใส่ `@Semantics.amount.currencyCode` ให้ field จำนวนเงินทุกตัว | Claude → ผู้ใช้ | ⬜ |
-| 2.4 | ดู Data Preview ของ `I_BusinessPartner` — เลือก field ชื่อที่มีค่าจริง (`BusinessPartnerFullName` เป็นตัวหลัก) | ผู้ใช้ | ⬜ |
-| 2.5 | ทดสอบ Data Preview — เห็นข้อมูลจริงที่ ZARI002 ยิงเข้ามา ครบทุกคอลัมน์ที่ต้องใช้ **รวม Customer Name** | ผู้ใช้ | ⬜ |
+| 2.2 | `ZI_ZARE002_BP` — interface view บน `I_BusinessPartner` ต่อ `OrganizationBPName1..4` เป็น `CustomerName` | Claude → ผู้ใช้ | ⬜ |
+| 2.3 | `ZI_ZARE002_ITEM` — interface view บน `ztar_i002_item` (1:1) + association `_Payment` `_BusinessPartner` | Claude → ผู้ใช้ | ⬜ |
+| 2.4 | ใส่ `@Semantics.amount.currencyCode` ให้ field จำนวนเงินทุกตัว | Claude → ผู้ใช้ | ⬜ |
+| 2.5 | Data Preview `ZI_ZARE002_BP` — ยืนยันว่าชื่อที่ต่อออกมาตรงกับที่ต้องการ และไม่มีช่องว่างซ้อน | ผู้ใช้ | ⬜ |
+| 2.6 | ทดสอบ Data Preview — เห็นข้อมูลจริงที่ ZARI002 ยิงเข้ามา ครบทุกคอลัมน์ที่ต้องใช้ **รวม Customer Name** | ผู้ใช้ | ⬜ |
 
 **Exit criteria**: Data Preview แสดงครบทั้ง 12 คอลัมน์ตาม `04_field_mapping.md`
 

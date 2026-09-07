@@ -39,7 +39,8 @@ path ที่แน่นอนจะรู้หลัง SAP serialize `.abap
 | Object | Type | ไฟล์ | Phase | Status |
 |--------|------|------|-------|--------|
 | `ZI_ZARE002_PYMT` | Interface view บน `ztar_i002_pymt` (1:1) | `src/zi_zare002_pymt.ddls.asddls` | 2 | ⬜ |
-| `ZI_ZARE002_ITEM` | Interface view บน `ztar_i002_item` (1:1) + assoc `_Payment` `_Customer` | `src/zi_zare002_item.ddls.asddls` | 2 | ⬜ |
+| `ZI_ZARE002_ITEM` | Interface view บน `ztar_i002_item` (1:1) + assoc `_Payment` `_BusinessPartner` | `src/zi_zare002_item.ddls.asddls` | 2 | ⬜ |
+| `ZI_ZARE002_BP` | Interface view บน `I_BusinessPartner` — ต่อ `OrganizationBPName1..4` เป็น `CustomerName` | `src/zi_zare002_bp.ddls.asddls` | 2 | ⬜ |
 | `ZR_ZARE002` | **Root view entity** — projection บน `ZI_ZARE002_ITEM` | `src/zr_zare002.ddls.asddls` | 3 | ⬜ |
 | `ZC_ZARE002` | Projection view — + path expression ดึง field header | `src/zc_zare002.ddls.asddls` | 4 | ⬜ |
 | `ZC_ZARE002` | Metadata extension — UI annotation ทั้งหมด | `src/zc_zare002.ddlx.asddlxs` | 4 | ⬜ |
