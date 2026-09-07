@@ -1,0 +1,112 @@
+# ZARE002 — Automatic Incoming Payments (Report)
+
+## Project constraints (ยึดถือตลอด project)
+
+1. **Platform**: SAP S/4HANA Cloud **Public Edition** — Developer Extensibility (tier 3-cloud-only)
+2. **ABAP Language Version**: **ABAP for Cloud Development** เท่านั้น ไม่มี fallback เป็น Standard ABAP
+3. ใช้ได้เฉพาะ object ที่อยู่ใน **Released APIs (C1 contract)** เท่านั้น — ตรวจสอบทุกครั้งก่อนใช้
+   ผ่าน ADT "Released Objects" หรือ view `I_APIStateForCLOUDDevelopment`
+4. **ห้าม** ใช้ classic ABAP: `CALL FUNCTION` BAPI แบบตรง, `SELECT` จาก table SAP โดยตรง,
+   `WRITE`, dynpro, SAPGUI report — ใช้ released CDS view + released ABAP API + EML แทน
+5. Sync ผ่าน **abapGit** เท่านั้น
+6. ทุก object ลง package **`ZARE002`** ตัวเดียว (ไม่มี sub-package)
+7. **UI เป็น Fiori elements List Report ล้วน ไม่มี Object Page** — ห้ามเผลอใส่ `@UI.facet`
+
+## Naming convention
+
+ใช้กฎกลางใน `~/.claude/CLAUDE.md` ทุกข้อ **แต่เปลี่ยน prefix จาก `Y*` เป็น `Z*` ทั้งหมด**
+โดย `<APP>` ของ project นี้ = **`ZARE002`** (RICEFW ID เต็ม รวมตัว `Z` นำหน้า)
+— รูปแบบเดียวกับ ZARI002 ทุกประการ
+
+| ชนิด | Pattern | ชื่อจริงใน project |
+|------|---------|--------------------|
+| Package | `Z<APP>` | `ZARE002` |
+| Interface view | `ZI_<APP>_<ENT>` | `ZI_ZARE002_PYMT` · `ZI_ZARE002_ITEM` |
+| Root view entity | `ZR_<APP>` | `ZR_ZARE002` |
+| Projection view | `ZC_<APP>` | `ZC_ZARE002` |
+| Behavior definition (root) | = ชื่อ root view | `ZR_ZARE002` |
+| Behavior projection | = ชื่อ projection view | `ZC_ZARE002` |
+| Metadata extension | = ชื่อ projection view | `ZC_ZARE002` |
+| Behavior pool (root) | `ZBP_R_<APP>` | `ZBP_R_ZARE002` |
+| Behavior pool (projection) | `ZBP_C_<APP>` | `ZBP_C_ZARE002` (ถ้าต้องใช้) |
+| Local handler class | `lhc_<Entity>` | `lhc_Item` |
+| Service definition (UI) | `ZUI_<APP>` | `ZUI_ZARE002` |
+| Service binding (UI, V4) | `ZUI_<APP>_O4` | `ZUI_ZARE002_O4` |
+| Draft table | — | `ZTAR_E002_ITEM_D` |
+| Message class | `Z<APP>` | `ZARE002` |
+
+### ข้อยกเว้นที่ตกลงไว้ (2026-09-07)
+
+- **Draft table ใช้ชื่อ `ZTAR_E002_ITEM_D` ไม่ใช่ `ZTAR_I002_ITEM_D`** — ถึงกฎกลางจะบอกว่า
+  draft table = `<table>_D` แต่ active table ตัวจริงเป็นของ package `ZARI002`
+  draft table เป็นของ **ZARE002** จึงใช้ namespace ของตัวเองให้ชัด (BDEF ระบุชื่อได้อิสระอยู่แล้ว)
+- **ไม่สร้าง data element / domain ใหม่** — reuse `ZE_REQUEST_STATUS` ของ ZARI002
+
+### Variable / parameter prefix
+
+ตามกฎกลางเดิมทุกข้อ — `gv_/lv_/gs_/ls_/gt_/lt_/go_/lo_/<fs_>/<lfs_>` และ
+`iv_/is_/it_/io_`, `ev_/es_/et_/eo_`, `cv_/cs_/ct_`, `rv_/rs_/rt_/ro_`
+
+### ชื่อภายใน BDEF / CDS
+
+- CDS element alias = **CamelCase** · field ใน DDIC table = snake_case — ห้ามปน
+- Determination: `set*` / `calculate*` · Validation: `validate*` · Association: `_<Entity>`
+- Draft action (`Prepare` `Edit` `Activate` `Discard` `Resume`) ใช้ชื่อ standard ห้ามเปลี่ยน
+
+## Coding rules
+
+- **Comment ใน BDEF (`.asbdef`) ใช้ `//` ไม่ใช่ `"`** — `"` เป็นของ ABAP ใช้ใน `.asbdef` ไม่ได้
+- **RAP derived type (`TYPE STRUCTURE FOR READ RESULT ...`) ใช้ตรง ๆ ใน method signature ไม่ได้**
+  parser จะกิน token ถัดไป (`RETURNING`, `EXPORTING`) เข้ามาเป็นส่วนหนึ่งของ type
+  → ประกาศเป็น `TYPES:` alias ก่อนเสมอ แล้วค่อยอ้าง alias ใน signature
+- **RAP unit test ต้อง `ROLLBACK ENTITIES` ใน `setup`** — `COMMIT ENTITIES` ที่ fail
+  ไม่ทิ้งข้อมูลใน transactional buffer ของค้างจะถูก save ไปพร้อม test ถัดไป
+- **`FAILED` / `REPORTED` ต้องระบุ `LATE` ใน handler ของ save phase**
+  `FOR VALIDATE ON SAVE` / `FOR DETERMINE ON SAVE` ได้ `failed`/`reported` แบบ **LATE**
+- **`total etag` ประกาศได้เฉพาะ BO ที่มี draft** — BO นี้มี draft จึงประกาศได้
+  แต่ต้องมี field `last_changed_at` (`abp_lastchange_tstmpl`) ใน active table ก่อน
+  (`ztar_i002_item` **ยังไม่มี** — ดู `docs/01_architecture.md` §5)
+- ทุก method มี ABAP Doc comment สั้น ๆ อธิบาย purpose
+- Error ทั้งหมดรวมศูนย์ที่ message class `ZARE002` (สร้างตอนเริ่มใส่ logic ปุ่ม)
+
+## ⚠️ Cross-package — table เป็นของ ZARI002
+
+`ZTAR_I002_PYMT` / `ZTAR_I002_ITEM` อยู่ package **`ZARI002`** คนละ repo คนละ transport
+**ZARI002 เป็นเจ้าของ contract ของ table — จะแก้โครงสร้างต้องคุยกันก่อนเสมอ**
+
+| ใคร | ทำอะไรกับ table |
+|---|---|
+| **ZARI002** | insert อย่างเดียว · เขียน `status = 'N'` · ไม่เคยแตะ `reject_reason` |
+| **ZARE002** (งานนี้) | อ่านทุก row · **update `reject_reason` ที่ item** · (เฟสถัดไป) update `status` ที่ header |
+| **ZARI003** | อ่านอย่างเดียว |
+
+การแบ่งงานนี้ยืนยันแล้วใน `zari002/docs/01_architecture.md` §9 และ `04_field_mapping.md`
+ซึ่งระบุตรง ๆ ว่า `reject_reason` **"ZARI002 ไม่เคยเขียน — เป็นของ ZARE002"**
+
+## Git — การแบ่งงาน
+
+| สิ่งที่ทำ | ใคร commit/push |
+|---|---|
+| **ABAP object ทุกชนิด** (CDS, BDEF, behavior pool, DDIC, service def/binding) | **ผู้ใช้** |
+| **เอกสาร** (`docs/`, `README.md`, `CLAUDE.md`) | **Claude** commit · ผู้ใช้ push |
+
+- Claude **ห้ามสร้างไฟล์ ABAP ลง repo** (`src/**/*.abap`, `*.ddls.asddls`, `*.asbdef` ฯลฯ)
+  → ส่งเป็น **code block ใน chat** ให้ผู้ใช้ copy ไปสร้างใน ADT แล้ว push ผ่าน abapGit เอง
+  เหตุผล: source of truth ของ ABAP object คือ tenant และ abapGit reformat code เอง
+  ถ้าเขียนลง repo ทั้งสองฝั่งจะชนกัน
+- `.abapgit.xml` และ `package.devc.xml` เป็นของที่ **SAP serialize เอง** — ห้าม Claude เขียนหรือแก้มือ
+- Claude คอยเช็ค `git log` / `git status` ว่าผู้ใช้ push object อะไรขึ้นมาแล้วบ้าง
+  แล้วอัปเดต status ใน `docs/03_object_list.md` ให้ตรง
+- Remote: https://github.com/Thianthai/fplus-zare002.git
+
+## ADT ขึ้น HTTP 500 — ลองใหม่ก่อนไล่หาสาเหตุ
+
+เจอมาแล้ว 2 ครั้งบน tenant นี้ระหว่างทำ ZARI002 ทั้งคู่หายเองโดยไม่ได้แก้อะไร
+(link abapGit repo · publish HTTP service) — **ลองซ้ำ 1–2 ครั้งก่อนเสมอ**
+ถ้ายังไม่ผ่านค่อยไปดู short dump ที่ ADT → Feed Reader → ABAP Runtime Errors
+
+## วิธีทำงานเมื่อข้อมูลยังไม่ครบ
+
+- เจอจุดที่ไม่ชัด → **note ลง `docs/06_open_questions.md` แล้วเดินต่อทันที** อย่าหยุดรอ
+- logic ที่ยังตัดสินใจไม่ได้ → เปิดเป็น **ที่ว่าง (empty hook)** ไว้ใน BDEF พร้อม comment
+- **จบทุก phase ต้องไล่รีวิวทะเบียนข้อสงสัยทั้งตาราง** ก่อนขึ้น phase ถัดไป

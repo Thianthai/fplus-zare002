@@ -1,0 +1,80 @@
+# ZARE002 — Object List
+
+รายชื่อ repository object ทั้งหมด + ไฟล์ที่จะเกิดใน repo
+(`⬜` = ยังไม่สร้าง · `🟨` = ส่ง code ให้ใน chat แล้ว รอผู้ใช้สร้าง/activate บน tenant · `✅` = activate + push ขึ้น repo แล้ว)
+
+> **ABAP object ทุกตัวในเอกสารนี้ผู้ใช้เป็นคนสร้างใน ADT และ push เอง** — Claude ส่ง code ให้ทาง chat
+> ไม่เขียนไฟล์ ABAP ลง repo (ดู `CLAUDE.md` §Git) คอลัมน์ "ไฟล์" คือ path ที่ abapGit จะ serialize ไปลง
+
+## Package
+
+ทุก object ลง package **`ZARE002`** ตัวเดียว ไม่มี sub-package
+
+| Package | Folder | Description | Status |
+|---------|--------|-------------|--------|
+| `ZARE002` | `src/` | Automatic Incoming Payments (Report) | ⬜ |
+
+path ที่แน่นอนจะรู้หลัง SAP serialize `.abapgit.xml` ขึ้นมาใน Phase 0.7
+(ZARI002 ได้ `STARTING_FOLDER = /src/` + `FOLDER_LOGIC = FULL` — ตัวนี้น่าจะเหมือนกัน)
+
+## DDIC
+
+| Object | Type | ไฟล์ | Phase | Status |
+|--------|------|------|-------|--------|
+| `ZTAR_E002_ITEM_D` | Draft table ของ `ZR_ZARE002` | `src/ztar_e002_item_d.tabl.xml` | 1 | ⬜ |
+| `ZARE002` | Message class — สร้างตอนเริ่มใส่ logic ปุ่ม | `src/zare002.msag.xml` | 5+ | ⬜ |
+
+**ไม่สร้าง data element / domain ใหม่** — reuse `ZE_REQUEST_STATUS` (package `ZARI002`)
+
+## Table ที่ใช้ — เป็นของ package `ZARI002` ไม่ใช่ของเรา
+
+| Object | Owner | ZARE002 ทำอะไร | หมายเหตุ |
+|---|---|---|---|
+| `ZTAR_I002_PYMT` | ZARI002 | read | (เฟสถัดไป) update `status` |
+| `ZTAR_I002_ITEM` | ZARI002 | read + **update `reject_reason`** | **ต้องขอเพิ่ม `last_changed_at`** (Phase 1.1) |
+| ~~`ZTAR_E002_EDIT`~~ | — | **ยกเลิกแล้ว** | ใช้ `ZTAR_I002_ITEM.REJECT_REASON` แทน — เหตุผลใน `01_architecture.md` §2 |
+
+## CDS
+
+| Object | Type | ไฟล์ | Phase | Status |
+|--------|------|------|-------|--------|
+| `ZI_ZARE002_PYMT` | Interface view บน `ztar_i002_pymt` (1:1) | `src/zi_zare002_pymt.ddls.asddls` | 2 | ⬜ |
+| `ZI_ZARE002_ITEM` | Interface view บน `ztar_i002_item` (1:1) + assoc `_Payment` `_Customer` | `src/zi_zare002_item.ddls.asddls` | 2 | ⬜ |
+| `ZR_ZARE002` | **Root view entity** — projection บน `ZI_ZARE002_ITEM` | `src/zr_zare002.ddls.asddls` | 3 | ⬜ |
+| `ZC_ZARE002` | Projection view — + path expression ดึง field header | `src/zc_zare002.ddls.asddls` | 4 | ⬜ |
+| `ZC_ZARE002` | Metadata extension — UI annotation ทั้งหมด | `src/zc_zare002.ddlx.asddlxs` | 4 | ⬜ |
+
+## Behavior
+
+| Object | Type | ไฟล์ | Phase | Status |
+|--------|------|------|-------|--------|
+| `ZR_ZARE002` | Behavior definition (managed, **with draft**, update only) | `src/zr_zare002.bdef.asbdef` | 3 | ⬜ |
+| `ZBP_R_ZARE002` | Behavior pool — `lhc_Item` | `src/zbp_r_zare002.clas.abap` | 3 | ⬜ |
+| `ZC_ZARE002` | Behavior projection (`use update` · `use draft` · `use action`) | `src/zc_zare002.bdef.asbdef` | 4 | ⬜ |
+
+`ZBP_C_ZARE002` (behavior pool ของ projection) **ยังไม่ต้องสร้าง** — สร้างเมื่อมี logic ที่ต้องอยู่ชั้น projection เท่านั้น
+
+## Service
+
+| Object | Type | ไฟล์ | Phase | Status |
+|--------|------|------|-------|--------|
+| `ZUI_ZARE002` | Service definition (UI) | `src/zui_zare002.srvd.srvdsrv` | 6 | ⬜ |
+| `ZUI_ZARE002_O4` | Service binding (UI, OData V4) | `src/zui_zare002_o4.srvb.xml` | 6 | ⬜ |
+
+**ไม่ทำ Web API service** — RICEFW นี้เป็น UI ล้วน ไม่มี consumer ภายนอก
+
+## Authorization / Fiori (object type ต้องยืนยันใน ADT ตอนทำจริง)
+
+| สิ่งที่ต้องทำ | ขึ้น git ไหม | Phase | Status |
+|---|---|-------|--------|
+| IAM App | ✔ repository object | 6 | ⬜ |
+| Business Catalog | ✔ repository object | 6 | ⬜ |
+| Business Role + assign user | ✘ config ใน Fiori | 6 | ⬜ |
+
+## Action ที่ประกาศ
+
+| Action | ชนิด | Phase | Logic | Status |
+|---|---|-------|-------|--------|
+| `Submit` | instance action | 5 | **ว่าง** — รอเฟสถัดไป | ⬜ |
+| `Reject` | instance action | 5 | **ว่าง** — รอเฟสถัดไป | ⬜ |
+| `Edit` `Activate` `Discard` `Resume` `Prepare` | draft action (standard) | 3 | framework | ⬜ |
