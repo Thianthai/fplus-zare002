@@ -35,7 +35,7 @@ Fiori elements **List Report** บน OData V4 · **ไม่มี Object Page*
 
 | # | พฤติกรรม | ได้มาจาก |
 |---|---|---|
-| 3.1 | คลิกช่อง Reject Reason แล้วพิมพ์แก้ได้ทันทีในตาราง | inline edit (**ต้องการ draft** — ดู `01_architecture.md` §5) |
+| 3.1 | ~~คลิกช่อง Reject Reason แล้วพิมพ์แก้ได้ทันทีในตาราง~~ **ทำไม่ได้** — ติ๊กแถว → กดปุ่ม **Edit Reject Reason** → กรอกใน dialog แทน | action `setRejectReason` ที่มี parameter · FE generate dialog ให้เอง (OQ-06) |
 | 3.2 | กด Save แล้วค่าลง `ztar_i002_item.reject_reason` จริง | `update` ใน BDEF + managed save |
 | 3.3 | ติ๊ก checkbox หลายแถวได้ · แสดง "N Selected" | multi-select ของ List Report (เปิดอัตโนมัติเมื่อมี action) |
 | 3.4 | ปุ่ม Submit / Reject ขึ้น toolbar และกดได้โดยไม่ error | instance action + `lhc` ที่ไม่ทำอะไร |

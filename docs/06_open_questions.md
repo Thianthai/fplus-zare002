@@ -13,7 +13,6 @@
 | OQ-03 | mockup ทำปุ่ม Submit เขียว / Reject แดง — Fiori elements ไม่ให้กำหนดสีปุ่ม action เอง รับได้ไหม | ผู้ใช้ | Phase 0 | ไม่บล็อก | 🟨 |
 | OQ-04 | **`status` อยู่ระดับ header แต่ `reject_reason` อยู่ระดับ item** — ผู้ใช้ติ๊ก reject 1 item จาก 3 item ในใบเดียวกัน `status` ของใบนั้นจะเป็นอะไร | ผู้ใช้ / FI | Phase 0 | **ไม่บล็อกเฟสนี้** (ปุ่มยังเปล่า) แต่ **บล็อกเฟสถัดไปเต็ม ๆ** ต้องตอบก่อนเขียน logic | ⬜ |
 | OQ-05 | `ZD_REQUEST_STATUS` มี 4 ค่า (`N` `C` `R` `E`) แต่ mockup มี 3 icon — `R` กับ `E` ใช้สีแดงเหมือนกันได้ไหม หรือต้องแยก | ผู้ใช้ | Phase 3 | ไม่บล็อก — ใช้สีแดงทั้งคู่ไปก่อน | 🟨 |
-| OQ-06 | **inline edit ใน List Report ต้อง draft-enabled จริงหรือไม่** — draft ถูกเปิดใช้ไปแล้วและ push ขึ้น repo แล้ว **แต่ยังไม่มีใครยืนยันว่าเคยทดสอบแบบ non-draft ก่อนหรือเปล่า (4.1)** จึงยังไม่ปิดเป็นข้อพิสูจน์ | ผู้ใช้ | Phase 0 | ไม่บล็อกอะไร — draft พร้อมใช้แล้ว · ค้างไว้เพื่อ**บันทึกข้อเท็จจริงให้ RICEFW ตัวถัดไป** ว่าต้องใช้ draft จริงหรือไม่ | ⬜ |
 | OQ-09 | **สิทธิ์อ่าน `I_BusinessPartner` ของ business role ที่จะใช้จริง** — association ใน CDS ใช้ `WITH PRIVILEGED ACCESS` ไม่ได้ view ถูกอ่านด้วยสิทธิ์ผู้ใช้เสมอ | ผู้ใช้ | Phase 1 | ไม่บล็อก — path expression เป็น LEFT OUTER JOIN แถวไม่หาย แต่ **Customer Name จะว่าง** ถ้าไม่มีสิทธิ์ | ⬜ |
 | OQ-10 | ใครเป็นผู้ใช้ app นี้ / business role ที่มีอยู่แล้วตัวไหนที่จะเอา catalog ไปแปะ | ผู้ใช้ | Phase 6 | บล็อก Phase 6.5 | ⬜ |
 | OQ-11 | object type ของ IAM App / Business Catalog บน tenant นี้ — ยังไม่เคยทำใน RICEFW ก่อนหน้า (ZARI002 เป็น headless API) | ผู้ใช้ (ADT) | Phase 6 | บล็อก Phase 6.3–6.4 | ⬜ |
@@ -28,6 +27,7 @@
 | # | เรื่อง | ข้อสรุป | ปิดเมื่อ |
 |---|--------|---------|---------|
 | OQ-00 | **แยก table `ZTAR_E002_EDIT` เก็บ `reject_reason` หรือใช้จาก `ZTAR_I002_ITEM`** | **ใช้ `ZTAR_I002_ITEM.REJECT_REASON` · ยกเลิก `ZTAR_E002_EDIT`** — field มีอยู่แล้วและ ZARI002 ออกแบบไว้ให้ ZARE002 เขียนตั้งแต่แรก · managed RAP BO เขียนได้ table เดียว การแยก table บังคับให้ต้องใช้ unmanaged save เพื่อ field เดียว · เหตุผลเต็มใน `01_architecture.md` §2 | 2026-09-07 |
+| OQ-06 | **inline edit ใน List Report ต้อง draft-enabled จริงหรือไม่** | **คำถามผิดตั้งแต่ต้น** — ทดสอบจริง 2026-09-07 แล้ว **แก้ในตารางไม่ได้ทั้ง draft และ non-draft** · List Report ที่ไม่มี Object Page ไม่มี edit flow ในตัวเอง และ inline / mass edit เป็น feature ระดับ **manifest ของ Fiori app** ซึ่ง Preview ของ service binding ใน ADT ตั้งไม่ได้ · แก้ด้วย **action ที่มี parameter** ให้ FE generate dialog แทน → draft ถูกถอดออก | 2026-09-07 |
 | OQ-08 | **ขอเพิ่ม `last_changed_at` ที่ `ZTAR_I002_ITEM`** | **ทำแล้ว** — เพิ่ม `abp_lastchange_tstmpl` ต่อท้าย `last_changed_by` · ZARI002 ไม่ต้องแก้โค้ด · push ขึ้น `fplus-zari002` แล้ว (commit `0762ada`) · ปลดล็อกให้ `total etag LastChangedAt` ประกาศได้ | 2026-09-07 |
 | OQ-07 | **ชื่อลูกค้าดึงจาก view ไหน** — mockup มี Customer Name แต่ไม่มีใน table | **`I_BusinessPartner`** · `BusinessPartner = customer_code` เทียบตรง ๆ ได้เพราะ ZARI002 แปลง `ALPHA = IN` ก่อน insert อยู่แล้ว · ชื่อลูกค้า **ต่อเอง** จาก `OrganizationBPName1..4` คั่นด้วยช่องว่าง ผ่าน view `ZI_ZARE002_BP` ไม่ใช้ `BusinessPartnerFullName` | 2026-09-07 |
 
