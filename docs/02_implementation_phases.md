@@ -13,7 +13,7 @@
 | # | งาน | ฝั่ง | Status |
 |---|-----|------|--------|
 | 0.1 | **Spike: inline edit ใน List Report ต้องใช้ draft จริงไหม** — ลองสร้าง BO ทิ้ง ๆ ทั้งสองแบบบน tenant แล้วดูว่าช่องแก้ได้ไหม | ผู้ใช้ + Claude | ⬜ |
-| 0.2 | **เช็ค `I_Customer` ใน Released Objects** + หา field ชื่อลูกค้าที่ใช้ได้ | ผู้ใช้ | ⬜ |
+| 0.2 | ~~เช็ค view ที่ให้ชื่อลูกค้า~~ — **ตอบแล้ว 2026-09-07**: ใช้ `I_BusinessPartner` · `BusinessPartner = customer_code` | ผู้ใช้ | ✅ |
 | 0.3 | สร้าง local repo + `docs/` + `README.md` + `CLAUDE.md` | Claude | 🟨 |
 | 0.4 | Push commit แรก (เอกสารล้วน) ขึ้น GitHub | ผู้ใช้ | ⬜ |
 | 0.5 | สร้าง package `ZARE002` บน tenant | ผู้ใช้ | ⬜ |
@@ -47,9 +47,10 @@
 | # | งาน | ฝั่ง | Status |
 |---|-----|------|--------|
 | 2.1 | `ZI_ZARE002_PYMT` — interface view บน `ztar_i002_pymt` (1:1) | Claude → ผู้ใช้ | ⬜ |
-| 2.2 | `ZI_ZARE002_ITEM` — interface view บน `ztar_i002_item` (1:1) + association `_Payment` `_Customer` | Claude → ผู้ใช้ | ⬜ |
+| 2.2 | `ZI_ZARE002_ITEM` — interface view บน `ztar_i002_item` (1:1) + association `_Payment` `_BusinessPartner` | Claude → ผู้ใช้ | ⬜ |
 | 2.3 | ใส่ `@Semantics.amount.currencyCode` ให้ field จำนวนเงินทุกตัว | Claude → ผู้ใช้ | ⬜ |
-| 2.4 | ทดสอบ Data Preview — เห็นข้อมูลจริงที่ ZARI002 ยิงเข้ามา ครบทุกคอลัมน์ที่ต้องใช้ **รวม Customer Name** | ผู้ใช้ | ⬜ |
+| 2.4 | ดู Data Preview ของ `I_BusinessPartner` — เลือก field ชื่อที่มีค่าจริง (`BusinessPartnerFullName` เป็นตัวหลัก) | ผู้ใช้ | ⬜ |
+| 2.5 | ทดสอบ Data Preview — เห็นข้อมูลจริงที่ ZARI002 ยิงเข้ามา ครบทุกคอลัมน์ที่ต้องใช้ **รวม Customer Name** | ผู้ใช้ | ⬜ |
 
 **Exit criteria**: Data Preview แสดงครบทั้ง 12 คอลัมน์ตาม `04_field_mapping.md`
 

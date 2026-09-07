@@ -161,16 +161,34 @@ annotation `@Semantics.systemDateTime.lastChangedAt` ซึ่ง ZARI002 พิ
 
 ---
 
-## 6. Customer Name — ไม่มีในฐานข้อมูล
+## 6. Customer Name — ดึงจาก `I_BusinessPartner` (ตกลง 2026-09-07)
 
 mockup มีคอลัมน์ **Customer Name** แต่ทั้ง `ztar_i002_pymt` และ `ztar_i002_item`
-เก็บแค่ `customer_code` → ต้องดึงชื่อจาก released CDS view ผ่าน association
+เก็บแค่ `customer_code` → ดึงชื่อผ่าน association ไปที่ **`I_BusinessPartner`**
 
-- ตัวเลือกแรก: `I_Customer` — ZARI002 ใช้ตัวนี้ validate `customer_code` อยู่แล้ว จึงมั่นใจว่า released
-- ต้องเช็คว่ามี field ชื่อลูกค้าที่ใช้ได้ (`CustomerName` / ผ่าน `_Customer._BusinessPartner`)
-- ⚠️ ZARI002 บันทึกไว้ว่าเคยต้องใช้ `WITH PRIVILEGED ACCESS` อ่าน `I_Customer` จาก
-  communication user — **แต่ ZARE002 เป็น UI ที่ผู้ใช้จริง login** สิทธิ์มาจาก business role
-  จึงน่าจะอ่านได้ปกติ ต้องทดสอบ
+```
+_BusinessPartner : [0..1] to I_BusinessPartner
+  on $projection.CustomerCode = _BusinessPartner.BusinessPartner
+```
+
+**key ตรงกันโดยไม่ต้องแปลงอะไร** — `ZTAR_I002_ITEM.customer_code` ถูก ZARI002 ยิงผ่าน
+`to_internal_key( )` (`ALPHA = IN`) ก่อน insert ทุกครั้ง จึงเป็น internal format `CHAR 10`
+เหมือนกับ `I_BusinessPartner-BusinessPartner` เทียบตรง ๆ ได้เลย
+(หลักฐาน: `zari002/src/zcl_zari002_processor.clas.abap:262`)
+
+field ชื่อที่จะใช้: `BusinessPartnerFullName` เป็นตัวเลือกหลัก
+— รายละเอียดและตัวสำรองอยู่ใน `04_field_mapping.md` §4
+
+### ⚠️ เรื่องสิทธิ์ที่ยังต้องทดสอบ
+
+ZARI002 ต้องใช้ `WITH PRIVILEGED ACCESS` อ่าน `I_Customer` เพราะเรียกจาก communication user
+**แต่ ZARE002 เป็น UI ที่ผู้ใช้จริง login** — และที่สำคัญกว่านั้น
+**association ใน CDS ใช้ `WITH PRIVILEGED ACCESS` ไม่ได้เลย** ไม่ว่ากรณีไหน
+view ถูกอ่านด้วยสิทธิ์ของผู้ใช้เสมอ
+
+ผลถ้า business role ไม่มีสิทธิ์ดู business partner: path expression ของ CDS
+สร้าง **LEFT OUTER JOIN** ให้อยู่แล้ว → **แถวไม่หาย** แต่ **Customer Name จะว่าง**
+เป็น failure mode ที่ยอมรับได้ ไม่ทำให้รายงานพัง (OQ-09)
 
 ---
 

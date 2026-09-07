@@ -11,7 +11,7 @@
 | 3 | Company Code | `ZTAR_I002_PYMT` | `company_code` | `CompanyCode` | `_Payment` | ✘ |
 | 4 | Posting Date | `ZTAR_I002_PYMT` | `posting_date` | `PostingDate` | `_Payment` | ✘ |
 | 5 | Customer Code | `ZTAR_I002_ITEM` | `customer_code` | `CustomerCode` | item | ✘ |
-| 6 | Customer Name | **ไม่มีใน table** | — | `CustomerName` | `_Customer` (released view) | ✘ |
+| 6 | Customer Name | **ไม่มีใน table** | — | `CustomerName` | `_BusinessPartner` | ✘ |
 | 7 | Billing Note No. | `ZTAR_I002_ITEM` | `billing_note_no` | `BillingNoteNo` | item | ✘ |
 | 8 | Accounting Document | `ZTAR_I002_ITEM` | `accounting_document` | `AccountingDocument` | item | ✘ |
 | 9 | Billing Document | `ZTAR_I002_ITEM` | `billing_document` | `BillingDocument` | item | ✘ |
@@ -49,10 +49,31 @@
 | Association | Target | Cardinality | On |
 |---|---|---|---|
 | `_Payment` | `ZI_ZARE002_PYMT` | `[1..1]` | `$projection.PaymentUuid = _Payment.PaymentUuid` |
-| `_Customer` | `I_Customer` (released — ต้องยืนยัน) | `[0..1]` | `$projection.CustomerCode = _Customer.Customer` |
+| `_BusinessPartner` | `I_BusinessPartner` | `[0..1]` | `$projection.CustomerCode = _BusinessPartner.BusinessPartner` |
 
 `_Payment` เป็น to-one จริง เพราะ `payment_uuid` เป็น key ของ header
 → ดึงขึ้นมาเป็นคอลัมน์ใน projection view ด้วย path expression ได้ปลอดภัย
+
+### `_BusinessPartner` — key ตรงกันโดยไม่ต้องแปลงอะไร (ยืนยัน 2026-09-07)
+
+`ZTAR_I002_ITEM.customer_code` เก็บเป็น **internal format อยู่แล้ว** — ZARI002 ยิงผ่าน
+`to_internal_key( )` (`|{ lv_key ALPHA = IN }|`) ก่อน insert ทุกครั้ง
+(`zari002/src/zcl_zari002_processor.clas.abap:262`)
+
+`I_BusinessPartner-BusinessPartner` ก็เป็น internal format `CHAR 10` เหมือนกัน
+→ **เทียบตรง ๆ ได้เลย ไม่ต้องมี conversion ใน CDS**
+(ต่างจากเคส `gl_account` ที่ ZARI002 เคยเจอปัญหา alpha conversion)
+
+### ชื่อลูกค้า — เลือก field ไหนใน `I_BusinessPartner`
+
+| Field | ใช้กับ | หมายเหตุ |
+|---|---|---|
+| `BusinessPartnerFullName` | **ตัวเลือกหลัก** | ชื่อเต็มที่ระบบต่อให้แล้ว — organization ได้ `OrganizationBPName1..4` ต่อกัน |
+| `BusinessPartnerName` | สำรอง | ถ้า `FullName` ว่างบน tenant นี้ |
+| `OrganizationBPName1` | สำรอง | ถ้าลูกค้าเป็น organization ล้วนและอยากได้บรรทัดแรกอย่างเดียว |
+
+⚠️ **ต้องดู Data Preview ของ `I_BusinessPartner` บน tenant จริงก่อน** ว่า field ไหนมีค่า —
+mockup ต้องการ `ABC Company Limited` ซึ่งเป็นชื่อ organization
 
 ## 5. Status — ค่าและสีตาม mockup
 
