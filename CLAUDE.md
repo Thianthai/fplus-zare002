@@ -55,6 +55,10 @@
 
 ## Coding rules
 
+- **projection view ที่วางบน root entity ต้องประกาศ `root` ด้วย**
+  (เจอจริง 2026-09-07: `ROOT keyword missing in "ZC_ZARE002", since "ZR_ZARE002" has the root property`)
+  → `define root view entity ZC_ZARE002 as projection on ZR_ZARE002`
+  คุณสมบัติ root ไม่ได้สืบทอดมาให้เอง ต้องเขียนซ้ำทุกชั้นที่ project ต่อ
 - **`@Semantics.currencyCode` / `@Semantics.unitOfMeasure` ใช้ใน view entity ไม่ได้**
   (เจอจริง 2026-09-07: `Annotation Semantics.currencyCode is not allowed in view entities`)
   เป็น annotation ของ **DDIC-based view** เท่านั้น · ใน view entity ตัว currency/unit field
