@@ -55,6 +55,15 @@
 
 ## Coding rules
 
+- **`use draft;` + `strict` → ต้องไล่ประกาศ draft action ทีละตัวใน projection**
+  (เจอจริง 2026-09-07: `If "use draft" is used with "strict", the draft action "Edit"
+  must be included explicitly in the projection.`)
+  → `use action Prepare; use action Edit; use action Activate; use action Discard; use action Resume;`
+  `use draft;` ครอบให้อัตโนมัติเฉพาะตอน**ไม่มี** `strict` เท่านั้น
+- **projection view ของ RAP BO ต้องมี `@ObjectModel.provider_contract: #TRANSACTIONAL_QUERY`**
+  (เจอจริง 2026-09-07: `the provider contract "transactional_query" should be defined
+  for the entity "ZC_ZARE002"`) — ประกาศว่าเป็นหน้าบ้านของ BO ไม่ใช่ view อ่านข้อมูลทั่วไป
+  · ถ้า ADT ฟ้องต่อ ให้ root view ใช้ `#TRANSACTIONAL_INTERFACE` คู่กัน
 - **projection view ที่วางบน root entity ต้องประกาศ `root` ด้วย**
   (เจอจริง 2026-09-07: `ROOT keyword missing in "ZC_ZARE002", since "ZR_ZARE002" has the root property`)
   → `define root view entity ZC_ZARE002 as projection on ZR_ZARE002`
