@@ -73,15 +73,15 @@ field นี้ถูกออกแบบมาให้ ZARE002 เป็น�
 
 ## 3. รูปทรงของ RAP BO
 
+**เริ่มแบบ non-draft ก่อน** (ตกลง 2026-09-07 — เหตุผลใน §5)
+
 ```
 managed implementation in class ZBP_R_ZARE002 unique;
 strict ( 2 );
-with draft;
 
 define behavior for ZR_ZARE002 alias Item
 persistent table ztar_i002_item
-draft table ztar_e002_item_d
-lock master total etag LastChangedAt
+lock master
 authorization master ( global )
 etag master LocalLastChangedAt
 {
@@ -89,18 +89,20 @@ etag master LocalLastChangedAt
   field ( readonly ) <ทุก field ยกเว้น RejectReason>;
   action Submit;               // เปล่า
   action Reject;               // เปล่า
-  draft action Edit / Activate / Discard / Resume / Prepare;
+  mapping for ztar_i002_item corresponding;
 }
 ```
 
 **จุดสำคัญ**
 
 - **ไม่มี `create` / `delete`** — รายงานนี้ไม่เคยสร้างหรือลบ item · row เกิดจาก ZARI002 เท่านั้น
-- `authorization master ( global )` — สิทธิ์ระดับ app ไม่ใช่ระดับ instance
+- **ไม่ประกาศ `total etag`** — ประกาศได้เฉพาะ BO ที่มี draft (ZARI002 พิสูจน์แล้ว 2026-08-27)
+- `authorization master ( global )` — ทุกคนที่เข้า app ได้เห็นทุกแถวทุก company code (OQ-15)
 - Submit / Reject เป็น **instance action** (ไม่ใช่ static) เพื่อให้ปุ่มขึ้น toolbar
   แล้วทำงานกับแถวที่ติ๊กเลือกไว้ตาม mockup ("2 Selected")
 
----
+ถ้าต้องอัปเกรดเป็น draft จะเพิ่ม `with draft` + `draft table ztar_e002_item_d`
++ `total etag LastChangedAt` เข้าไป — ไม่ได้รื้อของเดิม
 
 ## 4. ทำไม JOIN ไม่อยู่ที่ root view
 
@@ -123,43 +125,47 @@ BDEF จะ activate ไม่ผ่าน (`Field ... is not mapped to a field 
 
 ---
 
-## 5. Draft — ทำไมต้องมี และต้นทุนที่ต้องจ่าย
+## 5. Draft — เดิน non-draft ก่อน แล้ววัดผลจริง (ตกลง 2026-09-07)
 
-### ทำไมต้องมี
+### เดิมคิดว่าอย่างไร
 
-requirement บอกว่า `reject_reason` **กดแก้ในตารางได้** — inline edit ใน List Report ของ
-Fiori elements V4 รองรับเฉพาะ **draft-enabled BO** เพราะค่าที่พิมพ์ค้างไว้ยังไม่ save
-ต้องมีที่เก็บ (draft table) และ List Report ไม่มี edit mode แบบ Object Page
+inline edit ใน List Report ของ Fiori elements V4 **น่าจะ**รองรับเฉพาะ draft-enabled BO
+เพราะค่าที่พิมพ์ค้างไว้ยังไม่ save ต้องมีที่เก็บ และ List Report ไม่มี edit mode แบบ Object Page
 
-> ⚠️ **ต้อง spike ยืนยันบน tenant จริงก่อน (Phase 0)** — ถ้ากลายเป็นว่าทำแบบ non-draft ได้
-> จะประหยัดทั้ง draft table และการแก้ table ของ ZARI002 ไปทั้งก้อน
+### ทำไมไม่ยึดข้อนั้นเป็นสมมติฐานตั้งต้น
 
-### ต้นทุน — `ztar_i002_item` ไม่มี `last_changed_at`
+ต้นทุนของ draft **ไม่ได้อยู่ที่ draft table** แต่อยู่ที่ **ต้องไปแก้ `ZTAR_I002_ITEM`
+ซึ่งเป็น table ของ package `ZARI002`** — draft root ต้องประกาศ `total etag` และ
+`total etag` ต้องผูกกับ field `abp_lastchange_tstmpl` ที่ item **ยังไม่มี** (header มี)
 
-draft root ต้องประกาศ `total etag` และ `total etag` ต้องผูกกับ field
-`abp_lastchange_tstmpl` ในตาราง active — ซึ่ง `ztar_i002_item` **ไม่มี** (มีแต่ที่ header)
-
-ZARI002 จงใจไม่ใส่ไว้ และเขียนกำกับไว้ว่า *"เป็น pattern มาตรฐานของ RAP ห้ามไปแก้ให้เท่ากัน"*
-แต่เหตุผลของเขาคือ *"BO นี้เป็น API ไม่มี draft"* — พอ ZARE002 ต้องการ draft
-field นี้ก็กลายเป็นของจำเป็น เอกสารของเขาเองก็เปิดทางไว้แล้ว:
+ZARI002 จงใจไม่ใส่ไว้และเขียนกำกับว่า *"ห้ามไปแก้ให้เท่ากัน"* — แต่เหตุผลของเขาคือ
+*"BO นี้เป็น API ไม่มี draft"* และเปิดทางไว้แล้วว่า:
 
 > `zari002/docs/01_architecture.md` §3.4
 > `last_changed_at` ... ตั้งใจไว้ให้เป็น `total etag` ... **ถ้าวันหน้าทำ draft ก็พร้อมใช้เป็น total etag ทันที**
 
-**สิ่งที่ต้องขอ**: เพิ่ม `last_changed_at : abp_lastchange_tstmpl` เข้า `ztar_i002_item`
-— เป็นการเพิ่ม field อย่างเดียว **ZARI002 ไม่ต้องแก้โค้ด** (managed runtime เติมค่าให้เองจาก
-annotation `@Semantics.systemDateTime.lastChangedAt` ซึ่ง ZARI002 พิสูจน์แล้วเมื่อ 2026-08-28
-ว่าทำงานโดยไม่ต้องประกาศ `total etag`)
+การไปแก้ table ของอีก RICEFW เพราะ**สมมติฐานที่ยังไม่ได้พิสูจน์** ไม่คุ้ม
 
-### Concurrency
+### ลำดับที่เลือกเดิน
+
+1. ทำ BO **non-draft** ให้เสร็จ (Phase 2–3)
+2. preview แล้ว**ลองคลิกช่อง Reject Reason พิมพ์ดูจริง ๆ** (Phase 4.1)
+3. ถ้าพิมพ์ได้ → จบ ไม่ต้องแตะ table ของ ZARI002 เลย
+4. ถ้าพิมพ์ไม่ได้ → ค่อยเพิ่ม `last_changed_at` + draft table + `with draft` (Phase 4.3–4.7)
+
+การอัปเกรดจาก non-draft เป็น draft **เป็นการเติม ไม่ใช่การรื้อ** — root view, projection view,
+metadata extension, `field ( readonly )` ทั้งหมดใช้ต่อได้เหมือนเดิม
+
+การเพิ่ม field ท้ายตารางที่มีข้อมูลอยู่เป็น `ALTER TABLE` ธรรมดา **ข้อมูลเดิมไม่หาย**
+และผู้ใช้เป็นเจ้าของ ZARI002 เองอยู่แล้ว จึงไม่มี lead time รอทีมอื่น
+
+### Concurrency (ทั้งสองแบบเหมือนกัน)
 
 `local_last_changed_at` ที่ item มีอยู่แล้ว → `etag master` ใช้ได้เต็มรูปแบบ
 **แก้คนละ item ในใบเดียวกันพร้อมกันได้ไม่ชนกัน**
 
 ส่วน ZARI002 ที่ `INSERT` + `COMMIT WORK` ตรง ๆ ไม่ผ่าน RAP lock — **ไม่ชนกันในทางปฏิบัติ**
 เพราะ ZARI002 **insert อย่างเดียว** ส่วน ZARE002 **update row ที่มีอยู่แล้วอย่างเดียว**
-
----
 
 ## 6. Customer Name — ดึงจาก `I_BusinessPartner` (ตกลง 2026-09-07)
 
@@ -206,3 +212,4 @@ view ถูกอ่านด้วยสิทธิ์ของผู้ใช
 | 3 | mockup ดูเหมือน 1 row = 1 payment แต่ requirement บอก line item level | ใบที่มี 3 item จะได้ 3 แถวที่ header ซ้ำกัน — ยึดตาม requirement (OQ-01) |
 | 4 | `reject_reason` ยาว 200 ตัวอักษร | ในตารางต้องใช้ `@UI.multiLineText` ไม่งั้นคอลัมน์กว้างมาก |
 | 5 | Cross-package — table เป็นของ `ZARI002` | ถ้า ZARI002 แก้โครงสร้าง CDS ของเราพังทันที ต้องแจ้งกันสองทาง |
+| 6 | **สิทธิ์ระดับ company code ยังไม่ตัดสิน** — เดิน `authorization master ( global )` ไปก่อน | ถ้าภายหลังต้องแยกตาม CC ต้องรื้อ BDEF เป็น `( instance )` + เพิ่ม restriction type/field ที่ IAM App และ business role (OQ-15) |

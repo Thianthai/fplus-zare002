@@ -51,7 +51,24 @@ Fiori elements **List Report** บน OData V4 · **ไม่มี Object Page*
 | 1 row = 1 payment (No. of Items = 2 แต่ขึ้นแถวเดียว) | **1 row = 1 item** | ตาม requirement — ใบที่มี 3 item ได้ 3 แถว header ซ้ำกัน (OQ-01) |
 | ปุ่ม Submit เขียว / Reject แดง | สีตาม theme | FE ไม่ให้กำหนดสีปุ่ม action เอง — ทำได้แค่ `#FOR_ACTION` ธรรมดา (OQ-03) |
 
-## 5. ปุ่ม Submit / Reject — เฟสนี้เปล่า
+## 5. ค่า default ที่ตกลงไว้ (2026-09-07)
+
+ยังไม่มีใครระบุมา — เลือกไว้แบบนี้ก่อน **แก้ทีหลังได้ถูก ๆ ที่ metadata extension ไม่ต้องรื้ออะไร**
+
+| เรื่อง | ค่าที่ใช้ | annotation |
+|---|---|---|
+| เรียงลำดับเริ่มต้น | `PostingDate` มากไปน้อย แล้ว `PaymentDocumentNo` | `@UI.presentationVariant.sortOrder` |
+| Filter bar | Company Code · Posting Date · Status · Customer Code · Payment Document No. | `@UI.selectionField` |
+| Default filter | **ไม่มี** — แสดงทุกสถานะตาม mockup | — (OQ-12) |
+| Label | ภาษาอังกฤษทั้งหมดตาม mockup | `@EndUserText.label` |
+| Invoice Amount | แสดงคู่ currency ตาม standard | `@Semantics.amount.currencyCode` |
+| `RejectReason` | แก้ได้ทุกสถานะ ไม่คุมตาม `status` | — (OQ-13) |
+| สิทธิ์ | ทุกคนที่เข้า app ได้เห็นทุก company code | `authorization master ( global )` (OQ-15) |
+
+⚠️ ไม่มี default filter แปลว่า **รายการโตไม่มีเพดาน** ตามเวลาที่ ZARI002 ยิงข้อมูลเข้ามา
+ถ้าวันหน้าช้าให้ใส่ default date range ที่ `@UI.selectionVariant` — ไม่ต้องแก้ CDS
+
+## 6. ปุ่ม Submit / Reject — เฟสนี้เปล่า
 
 ```abap
 " ใน lhc_Item
