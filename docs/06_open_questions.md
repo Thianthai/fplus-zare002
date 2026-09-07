@@ -20,6 +20,7 @@
 | OQ-11 | object type ของ IAM App / Business Catalog บน tenant นี้ — ยังไม่เคยทำใน RICEFW ก่อนหน้า (ZARI002 เป็น headless API) | ผู้ใช้ (ADT) | Phase 6 | บล็อก Phase 6.3–6.4 | ⬜ |
 | OQ-12 | รายงานควร filter เฉพาะ `status = 'N'` โดย default ไหม หรือแสดงทุกสถานะ · mockup แสดงทั้ง 🕐 ✅ ❌ = แสดงทุกสถานะ | ผู้ใช้ | Phase 3 | ไม่บล็อก — แสดงทุกสถานะตาม mockup ไปก่อน | 🟨 |
 | OQ-13 | **`reject_reason` แก้ได้ทุกสถานะหรือเฉพาะ `N`** — ใบที่ post ไปแล้ว (`C`) ควรแก้เหตุผลได้อีกไหม | ผู้ใช้ / business | Phase 3 | ไม่บล็อก — เปิดให้แก้ได้หมดไปก่อน · ถ้าต้องคุมใช้ `field ( features : instance )` เพิ่มทีหลังได้ | ⬜ |
+| OQ-16 | **Status แสดงเป็นข้อความ + icon สี ไม่ใช่ icon เปล่าตาม mockup** — FE V4 ไม่มีโหมด icon-only มาตรฐาน · รับได้ไหม | ผู้ใช้ | Phase 3 | ไม่บล็อก — ถ้ายืนยันว่าต้อง icon เปล่าจริง ต้องหาทางอื่นนอก standard annotation | ⬜ |
 | OQ-14 | ต้อง log ไหมว่าใครแก้ `reject_reason` เป็นอะไรเมื่อไหร่ — ตอนนี้มีแค่ `last_changed_by` ที่เก็บค่าล่าสุด ไม่มีประวัติ | ผู้ใช้ / audit | Phase 3 | ไม่บล็อก — ถ้าต้องการให้ทำเป็น append-only log table แยก **ไม่ใช่** ย้ายที่เก็บค่าปัจจุบัน (ดู `01_architecture.md` §2) | ⬜ |
 | OQ-15 | **สิทธิ์ระดับ company code — ผู้ใช้ควรเห็นทุก CC หรือเฉพาะของตัวเอง** · mockup มีทั้ง `1000` และ `2000` ปนกัน · **ยังไม่รู้คำตอบ ตกลงเดิน `authorization master ( global )` ไปก่อน (2026-09-07)** | ผู้ใช้ / business | Phase 0 | ไม่บล็อกตอนนี้ — แต่ถ้าคำตอบเปลี่ยนเป็น "แยกตาม CC" ต้องรื้อ BDEF เป็น `( instance )` + `get_instance_authorizations` + restriction type/field ที่ IAM App และ business role · **ยิ่งตอบช้ายิ่งรื้อเยอะ** | ⬜ |
 

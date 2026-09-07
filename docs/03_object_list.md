@@ -60,8 +60,10 @@ path ที่แน่นอนจะรู้หลัง SAP serialize `.abap
 
 | Object | Type | ไฟล์ | Phase | Status |
 |--------|------|------|-------|--------|
-| `ZUI_ZARE002` | Service definition (UI) | `src/zui_zare002.srvd.srvdsrv` | 3 (ชั่วคราว) / 6 | ⬜ |
-| `ZUI_ZARE002_O4` | Service binding (UI, OData V4) | `src/zui_zare002_o4.srvb.xml` | 3 (ชั่วคราว) / 6 | ⬜ |
+| `ZUI_ZARE002` | Service definition (UI) | `src/zui_zare002.srvd.srvdsrv` | 3 | ⬜ |
+| `ZUI_ZARE002_O4` | Service binding (UI, OData V4) | `src/zui_zare002_o4.srvb.xml` | 3 | ⬜ |
+
+`ZI_ZARE002_PYMT` ได้ element `StatusCriticality` เพิ่มที่ Phase 3.0 (`case` → `abap.int1`)
 
 **ไม่ทำ Web API service** — RICEFW นี้เป็น UI ล้วน ไม่มี consumer ภายนอก
 

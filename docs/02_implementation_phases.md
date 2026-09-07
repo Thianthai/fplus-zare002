@@ -67,14 +67,15 @@
 
 | # | งาน | ฝั่ง | Status |
 |---|-----|------|--------|
-| 3.1 | `ZC_ZARE002` — projection view + path expression ดึง field header + `CustomerName` | Claude → ผู้ใช้ | ⬜ |
+| 3.0 | เพิ่ม `StatusCriticality` (case → int1) ที่ `ZI_ZARE002_PYMT` — แก้ view ที่ activate ไปแล้ว | Claude → ผู้ใช้ | ⬜ |
+| 3.1 | `ZC_ZARE002` — projection view + path expression ดึง field header ครบ + `CustomerName` | Claude → ผู้ใช้ | ⬜ |
 | 3.2 | `ZC_ZARE002` — behavior projection (`use update`) | Claude → ผู้ใช้ | ⬜ |
 | 3.3 | `ZC_ZARE002` — metadata extension: `@UI.lineItem` เรียง header → item → reject_reason | Claude → ผู้ใช้ | ⬜ |
 | 3.4 | Status ใช้ `@UI.criticality` ให้ได้ icon 3 สีตาม mockup | Claude → ผู้ใช้ | ⬜ |
 | 3.5 | `@UI.selectionField` — filter bar (ดู `05_ui_spec.md` §6) | Claude → ผู้ใช้ | ⬜ |
 | 3.6 | `reject_reason` ใช้ `@UI.multiLineText` | Claude → ผู้ใช้ | ⬜ |
 | 3.7 | **ไม่ใส่ `@UI.facet`** — ยืนยันว่าไม่มี Object Page | Claude | ⬜ |
-| 3.8 | สร้าง service definition + binding ชั่วคราวเพื่อ preview | ผู้ใช้ | ⬜ |
+| 3.8 | `ZUI_ZARE002` service definition + `ZUI_ZARE002_O4` service binding (V4 UI) → publish → preview | ผู้ใช้ | ⬜ |
 
 **Exit criteria**: preview ได้หน้าจอตรง mockup — คอลัมน์ครบ ลำดับถูก icon ขึ้น
 
@@ -120,8 +121,7 @@
 
 | # | งาน | ฝั่ง | Status |
 |---|-----|------|--------|
-| 6.1 | `ZUI_ZARE002` — service definition ตัวจริง | Claude → ผู้ใช้ | ⬜ |
-| 6.2 | `ZUI_ZARE002_O4` — service binding (OData V4 UI) + publish | ผู้ใช้ | ⬜ |
+| 6.1 | ~~service definition / binding~~ — **สร้างไปแล้วที่ Phase 3.8** ตัวเดียวกัน ไม่ใช่ของชั่วคราว | — | ✅ ยุบเข้า 3.8 |
 | 6.3 | IAM App | ผู้ใช้ | ⬜ |
 | 6.4 | Business Catalog + app assignment | ผู้ใช้ | ⬜ |
 | 6.5 | Business Role + assign ให้ user ทดสอบ (Fiori — ไม่ขึ้น git) | ผู้ใช้ | ⬜ |
