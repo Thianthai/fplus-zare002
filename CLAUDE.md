@@ -55,6 +55,12 @@
 
 ## Coding rules
 
+- **`@Semantics.currencyCode` / `@Semantics.unitOfMeasure` ใช้ใน view entity ไม่ได้**
+  (เจอจริง 2026-09-07: `Annotation Semantics.currencyCode is not allowed in view entities`)
+  เป็น annotation ของ **DDIC-based view** เท่านั้น · ใน view entity ตัว currency/unit field
+  ถูกจำแนกจาก **type ของมันเอง** (`abap.cuky` / `abap.unit`) ไม่ต้อง annotate
+  ส่วน **`@Semantics.amount.currencyCode` / `@Semantics.quantity.unitOfMeasure`**
+  บน field จำนวนเงิน/ปริมาณ **ยังใช้ได้ปกติ** — อย่าลบทิ้งไปด้วยกัน
 - **Comment ใน BDEF (`.asbdef`) ใช้ `//` ไม่ใช่ `"`** — `"` เป็นของ ABAP ใช้ใน `.asbdef` ไม่ได้
 - **RAP derived type (`TYPE STRUCTURE FOR READ RESULT ...`) ใช้ตรง ๆ ใน method signature ไม่ได้**
   parser จะกิน token ถัดไป (`RETURNING`, `EXPORTING`) เข้ามาเป็นส่วนหนึ่งของ type
