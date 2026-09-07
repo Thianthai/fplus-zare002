@@ -60,20 +60,32 @@
   must be included explicitly in the projection.`)
   → `use action Prepare; use action Edit; use action Activate; use action Discard; use action Resume;`
   `use draft;` ครอบให้อัตโนมัติเฉพาะตอน**ไม่มี** `strict` เท่านั้น
-- **projection view ของ RAP BO ต้องมี `@ObjectModel.provider_contract: #TRANSACTIONAL_QUERY`**
-  (เจอจริง 2026-09-07: `the provider contract "transactional_query" should be defined
-  for the entity "ZC_ZARE002"`) — ประกาศว่าเป็นหน้าบ้านของ BO ไม่ใช่ view อ่านข้อมูลทั่วไป
-  · ถ้า ADT ฟ้องต่อ ให้ root view ใช้ `#TRANSACTIONAL_INTERFACE` คู่กัน
+- **⚠️ view entity ไม่ใช่ DDIC-based view — อย่าหยิบ annotation ของอีกแบบมาใช้**
+  พลาดมาแล้ว 2 ครั้งใน project นี้ (2026-09-07) ทั้งคู่เป็นเรื่องเดียวกัน:
+  ของที่ DDIC-based view เขียนเป็น **annotation** ใน view entity หลายตัวเป็น **DDL clause**
+  หรือหายไปเลยเพราะอนุมานจาก type ได้เอง · **เจอ syntax ที่ไม่แน่ใจให้ดู template ของ
+  view entity โดยตรง อย่าเทียบจากตัวอย่าง DDIC-based view ที่เจอบนเน็ต**
+
+  | เรื่อง | DDIC-based view | view entity |
+  |---|---|---|
+  | provider contract | `@ObjectModel.provider_contract: #TRANSACTIONAL_QUERY` | `provider contract transactional_query` (clause หลังชื่อ view ก่อน `as projection on`) |
+  | currency / unit reference field | `@Semantics.currencyCode: true` | **ไม่ต้องเขียน** — ดูจาก type (`abap.cuky` / `abap.unit`) |
+
+  ```abap
+  define root view entity ZC_ZARE002
+    provider contract transactional_query
+    as projection on ZR_ZARE002
+  ```
+  root view ถ้าต้องประกาศคู่กันใช้ `provider contract transactional_interface`
 - **projection view ที่วางบน root entity ต้องประกาศ `root` ด้วย**
   (เจอจริง 2026-09-07: `ROOT keyword missing in "ZC_ZARE002", since "ZR_ZARE002" has the root property`)
   → `define root view entity ZC_ZARE002 as projection on ZR_ZARE002`
   คุณสมบัติ root ไม่ได้สืบทอดมาให้เอง ต้องเขียนซ้ำทุกชั้นที่ project ต่อ
 - **`@Semantics.currencyCode` / `@Semantics.unitOfMeasure` ใช้ใน view entity ไม่ได้**
   (เจอจริง 2026-09-07: `Annotation Semantics.currencyCode is not allowed in view entities`)
-  เป็น annotation ของ **DDIC-based view** เท่านั้น · ใน view entity ตัว currency/unit field
-  ถูกจำแนกจาก **type ของมันเอง** (`abap.cuky` / `abap.unit`) ไม่ต้อง annotate
-  ส่วน **`@Semantics.amount.currencyCode` / `@Semantics.quantity.unitOfMeasure`**
-  บน field จำนวนเงิน/ปริมาณ **ยังใช้ได้ปกติ** — อย่าลบทิ้งไปด้วยกัน
+  → ดูตารางเทียบข้างบน · แต่ **`@Semantics.amount.currencyCode` /
+  `@Semantics.quantity.unitOfMeasure`** บน field จำนวนเงิน/ปริมาณ **ยังใช้ได้ปกติ**
+  ชื่อคล้ายกันมาก อย่าลบทิ้งไปด้วยกัน
 - **Comment ใน BDEF (`.asbdef`) ใช้ `//` ไม่ใช่ `"`** — `"` เป็นของ ABAP ใช้ใน `.asbdef` ไม่ได้
 - **RAP derived type (`TYPE STRUCTURE FOR READ RESULT ...`) ใช้ตรง ๆ ใน method signature ไม่ได้**
   parser จะกิน token ถัดไป (`RETURNING`, `EXPORTING`) เข้ามาเป็นส่วนหนึ่งของ type
