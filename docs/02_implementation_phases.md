@@ -32,10 +32,10 @@
 
 | # | งาน | ฝั่ง | Status |
 |---|-----|------|--------|
-| 1.1 | `ZI_ZARE002_PYMT` — interface view บน `ztar_i002_pymt` (1:1) | Claude → ผู้ใช้ | ⬜ |
-| 1.2 | `ZI_ZARE002_BP` — interface view บน `I_BusinessPartner` ต่อ `OrganizationBPName1..4` เป็น `CustomerName` | Claude → ผู้ใช้ | ⬜ |
-| 1.3 | `ZI_ZARE002_ITEM` — interface view บน `ztar_i002_item` (1:1) + association `_Payment` `_BusinessPartner` | Claude → ผู้ใช้ | ⬜ |
-| 1.4 | ใส่ `@Semantics.amount.currencyCode` ให้ field จำนวนเงินทุกตัว | Claude → ผู้ใช้ | ⬜ |
+| 1.1 | `ZI_ZARE002_PYMT` — interface view บน `ztar_i002_pymt` (1:1) | Claude → ผู้ใช้ | 🟦 |
+| 1.2 | `ZI_ZARE002_BP` — interface view บน `I_BusinessPartner` ต่อ `OrganizationBPName1..4` เป็น `CustomerName` | Claude → ผู้ใช้ | 🟦 |
+| 1.3 | `ZI_ZARE002_ITEM` — interface view บน `ztar_i002_item` (1:1) + association `_Payment` `_BusinessPartner` | Claude → ผู้ใช้ | 🟦 |
+| 1.4 | ใส่ `@Semantics.amount.currencyCode` ให้ field จำนวนเงินทุกตัว | Claude → ผู้ใช้ | 🟦 |
 | 1.5 | Data Preview `ZI_ZARE002_BP` — ยืนยันว่าชื่อที่ต่อออกมาตรงกับที่ต้องการ ไม่มีช่องว่างซ้อน | ผู้ใช้ | ⬜ |
 | 1.6 | Data Preview `ZI_ZARE002_ITEM` — เห็นข้อมูลจริงที่ ZARI002 ยิงเข้ามาครบทุกคอลัมน์ **รวม Customer Name** | ผู้ใช้ | ⬜ |
 

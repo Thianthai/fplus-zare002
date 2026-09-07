@@ -10,7 +10,7 @@
 | Protocol | **OData V4** (UI service binding) |
 | UI | SAP Fiori elements **List Report ล้วน ไม่มี Object Page** |
 | Operation ที่เปิด | **update อย่างเดียว** (แก้ `reject_reason`) — ไม่มี create / delete |
-| Draft | **มี** — จำเป็นสำหรับ inline edit ใน List Report |
+| Draft | **ยังไม่ใช้** — เริ่ม non-draft ก่อน แล้ววัดผลจริงที่ Phase 4 |
 | Repo sync | abapGit (local ⇄ GitHub ⇄ S/4HANA Cloud) |
 | Package | **`ZARE002`** — package เดียว ไม่มี sub-package |
 | Data source | `ZTAR_I002_PYMT` / `ZTAR_I002_ITEM` (**เป็นของ package `ZARI002`**) |
@@ -75,4 +75,4 @@ Remote: https://github.com/Thianthai/fplus-zare002.git
 
 ## สถานะปัจจุบัน
 
-**Phase 0** — วางแผน / ตั้ง repo · ยังไม่มี ABAP object ใด ๆ บน tenant
+**Phase 1** — CDS read layer · `ZI_ZARE002_PYMT` `ZI_ZARE002_BP` `ZI_ZARE002_ITEM` activate ผ่านแล้ว รอ push
