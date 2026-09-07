@@ -1,0 +1,4 @@
+@EndUserText.label: 'Automatic Incoming Payments'
+define service ZUI_ZARE002 {
+  expose ZC_ZARE002 as Item;
+}
