@@ -122,8 +122,13 @@
 | สิ่งที่ทำ | ใคร commit/push |
 |---|---|
 | **ABAP object ทุกชนิด** (CDS, BDEF, behavior pool, DDIC, service def/binding) | **ผู้ใช้** |
-| **เอกสาร** (`docs/`, `README.md`, `CLAUDE.md`) | **Claude** commit · ผู้ใช้ push |
+| **เอกสาร** (`docs/`, `README.md`, `CLAUDE.md`) | **Claude** commit **และ push เอง** ทันทีที่ commit — ไม่ต้องรอสั่ง |
 
+- ⚠️ **"ผม push ขึ้น Git" ของผู้ใช้ = abapGit push จาก ADT เท่านั้น** ไม่ใช่เอกสาร
+  (ตีความผิดมาแล้ว 2026-09-07 → 09-15: เอกสารค้าง 13 commit ไม่ได้ push เพราะ Claude รอผู้ใช้)
+  **abapGit push จาก ADT ไม่ได้ push เอกสารไปด้วย** — สองฝั่งแยกกันเด็ดขาด
+- **ลำดับ push**: Claude push เอกสาร → ผู้ใช้ abapGit push · ถ้า abapGit push ไปก่อน
+  local จะ diverge ต้อง `git rebase origin/main` ก่อน push (ไม่ conflict เพราะคนละไฟล์)
 - Claude **ห้ามสร้างไฟล์ ABAP ลง repo** (`src/**/*.abap`, `*.ddls.asddls`, `*.asbdef` ฯลฯ)
   → ส่งเป็น **code block ใน chat** ให้ผู้ใช้ copy ไปสร้างใน ADT แล้ว push ผ่าน abapGit เอง
   เหตุผล: source of truth ของ ABAP object คือ tenant และ abapGit reformat code เอง
