@@ -100,6 +100,13 @@
 - **คอลัมน์ที่อยากได้แต่ icon สี** — อย่าเขียนทับ field ข้อมูลด้วย `''` (filter จะพัง)
   ให้เพิ่ม element literal `''` แยก แล้วใส่ `@UI.lineItem` + `criticality` ที่ตัวนั้น
   ส่วน field จริงเหลือ `@UI.selectionField` และ**ห้าม `@UI.hidden`** (จะหายจาก filter bar)
+- **saver class ต้องคู่กับ BDEF เสมอ** — `lsc_*` ที่มี `save_modified REDEFINITION` จะถูกเรียก
+  ก็ต่อเมื่อ BDEF ประกาศ `with additional save` หรือ `with unmanaged save` · ไม่ประกาศ = dead code
+  ที่หลอกคนอ่าน · **ห้ามเปิดทิ้งไว้เผื่อ** — ถึงเวลาใช้ค่อยเพิ่มพร้อมกันทั้ง BDEF และ pool
+- **เขียน table นอก BO (เช่น `ztar_i002_pymt`) ต้องทำใน saver (`with additional save`)**
+  ไม่ใช่ใน action handler — RAP ห้าม modify database ใน interaction phase
+  · เขียนเฉพาะ field ด้วย `UPDATE ... SET` **ห้าม `MODIFY ... FROM TABLE`** (แทนที่ทั้ง row)
+  · ดู `docs/01_architecture.md` §3
 - ทุก method มี ABAP Doc comment สั้น ๆ อธิบาย purpose
 - Error ทั้งหมดรวมศูนย์ที่ message class `ZARE002` (สร้างตอนเริ่มใส่ logic ปุ่ม)
 

@@ -104,6 +104,34 @@ etag master LocalLastChangedAt
 ถ้าต้องอัปเกรดเป็น draft จะเพิ่ม `with draft` + `draft table ztar_e002_item_d`
 + `total etag LastChangedAt` เข้าไป — ไม่ได้รื้อของเดิม
 
+### การเขียน `status` ลง header ในเฟส logic — ต้องผ่าน saver ไม่ใช่ action handler (บันทึก 2026-09-15)
+
+`ztar_i002_pymt` **ไม่ได้อยู่ใน BO นี้** (root = item อย่างเดียว) → ใช้ EML เขียนไม่ได้
+และ RAP **ห้าม** modify database ใน interaction phase (action handler) → `UPDATE` ตรง ๆ ใน
+`submitItem` / `rejectItem` ผิดกติกา
+
+ทางที่ถูก:
+
+```
+BDEF   managed implementation ... with additional save;
+pool   CLASS lsc_Item DEFINITION INHERITING FROM cl_abap_behavior_saver.
+         METHODS save_modified REDEFINITION.
+       → UPDATE ztar_i002_pymt SET status = @lv_status, ...
+           WHERE payment_uuid IN @lr_payment_uuid.
+```
+
+- `with additional save` = framework ยังเขียน `ztar_i002_item` ให้เหมือนเดิม แล้วค่อยเรียก
+  `save_modified` เพิ่ม — ไม่ใช่ `with unmanaged save` ที่จะโยนงานเขียน item มาให้เราทั้งหมด
+- เขียน**เฉพาะ field** ด้วย `UPDATE ... SET` — **ห้าม `MODIFY ... FROM TABLE`** เพราะแทนที่ทั้ง row
+  field ที่ไม่ได้ใส่จะกลายเป็นค่าว่าง
+- action handler แค่**จำ**ว่าจะทำอะไร (เช่น เก็บ payment_uuid + status ใหม่ไว้ใน buffer ระดับ class)
+  แล้ว saver ค่อยเขียนตอน save phase
+- ชื่อ saver class = `lsc_Item` ตามกฎ `lsc_<Entity>`
+
+⚠️ **ตอนนี้ยังไม่มี saver และห้ามมี** — เคยมี `lsc_zr_zare002` ค้างอยู่ใน pool โดย BDEF ไม่ได้
+ประกาศ additional/unmanaged save = ไม่เคยถูกเรียก และโค้ดข้างในเป็น `MODIFY` แบบไม่ใส่ key
+ถ้าถูกเรียกขึ้นมาจะเขียนทับ row ผิดและล้าง field อื่นทิ้ง → ลบออกใน Phase 5
+
 ## 4. ทำไม JOIN ไม่อยู่ที่ root view
 
 requirement เดิมอยากให้ root entity มี field header → field item → `reject_reason` เรียงกัน
