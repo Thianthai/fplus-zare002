@@ -74,8 +74,8 @@ field นี้ถูกออกแบบมาให้ ZARE002 เป็น�
 ## 3. รูปทรงของ RAP BO
 
 **เป้าหมาย** (ตกลง 2026-09-15 — ดู "สถานะจริงบน tenant" ท้ายหัวข้อนี้ว่ายังไม่ตรง):
-`managed` ธรรมดา framework เขียน table เอง · draft **คงไว้ก่อน** จนกว่าทีม Fiori จะบอกว่า
-จะ edit คอลัมน์ด้วยวิธีไหน (OQ-17)
+`managed` ธรรมดา framework เขียน table เอง · **draft คงไว้** — ทีม Fiori จะเปิด inline / mass
+edit มาตรฐานของ FE ใน manifest ซึ่งต้องใช้ draft (OQ-17 ปิดแล้ว 2026-09-15)
 
 ```
 managed implementation in class ZBP_R_ZARE002 unique;
