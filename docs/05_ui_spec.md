@@ -26,7 +26,7 @@ Fiori elements **List Report** บน OData V4 · **ไม่มี Object Page*
 | ชื่อ app / header | `@UI.headerInfo: { typeName: 'Payment Item', typeNamePlural: 'Items' }` |
 | คอลัมน์ | `@UI.lineItem: [{ position: 10, importance: #HIGH }]` — เรียง 10, 20, 30 … ตาม `04_field_mapping.md` |
 | filter bar | `@UI.selectionField: [{ position: 10 }]` |
-| icon สถานะ | `@UI.lineItem: [{ position: 110, criticality: 'StatusCriticality' }]` |
+| icon สถานะ | `@UI.lineItem: [{ position: 110, criticality: 'StatusCriticality' }]` บน **`StatusIcon`** (ค่า `''` เสมอ → FE วาดแต่ icon) · `Status` ตัวจริงมีแค่ `@UI.selectionField` ห้าม `@UI.hidden` ไม่งั้นหายจาก filter |
 | ช่องพิมพ์ยาว | `@UI.multiLineText: true` ที่ `RejectReason` |
 | ปุ่ม toolbar | `@UI.lineItem: [{ type: #FOR_ACTION, dataAction: 'Submit', label: 'Submit' }]` |
 | **ห้ามใส่** | `@UI.facet` — จะทำให้เกิด Object Page |
@@ -50,7 +50,6 @@ Fiori elements **List Report** บน OData V4 · **ไม่มี Object Page*
 | Payment Document No. เป็น link สีน้ำเงิน | **text ธรรมดา** | ไม่มี Object Page ให้ไป · ถ้าอยากได้ link ต้องตกลงว่าจะไปไหน (OQ-02) |
 | 1 row = 1 payment (No. of Items = 2 แต่ขึ้นแถวเดียว) | **1 row = 1 item** | ตาม requirement — ใบที่มี 3 item ได้ 3 แถว header ซ้ำกัน (OQ-01) |
 | ปุ่ม Submit เขียว / Reject แดง | สีตาม theme | FE ไม่ให้กำหนดสีปุ่ม action เอง — ทำได้แค่ `#FOR_ACTION` ธรรมดา (OQ-03) |
-| Status เป็น icon เปล่า ๆ | **ข้อความ + icon สี** | FE V4 ไม่มีโหมด icon-only สำหรับ `@UI.lineItem` ที่มี criticality · ได้ข้อความจาก fixed value ของ domain พร้อม icon สีจาก `StatusCriticality` — อ่านง่ายกว่าและ accessible กว่า (OQ-16) |
 
 ## 5. ค่า default ที่ตกลงไว้ (2026-09-07)
 

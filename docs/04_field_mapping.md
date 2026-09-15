@@ -16,7 +16,7 @@
 | 8 | Accounting Document | `ZTAR_I002_ITEM` | `accounting_document` | `AccountingDocument` | item | ✘ |
 | 9 | Billing Document | `ZTAR_I002_ITEM` | `billing_document` | `BillingDocument` | item | ✘ |
 | 10 | Invoice Amount | `ZTAR_I002_ITEM` | `invoice_amount` | `InvoiceAmount` | item | ✘ |
-| 11 | Status | `ZTAR_I002_PYMT` | `status` | `Status` | `_Payment` | ✘ |
+| 11 | Status (icon) | — | — | `StatusIcon` = `''` | `_Payment` | ✘ |
 | 12 | Reject Reason | `ZTAR_I002_ITEM` | `reject_reason` | `RejectReason` | item | **✔** |
 
 > **`RejectReason` เป็น field เดียวที่แก้ได้ทั้งหน้าจอ** — ที่เหลือ `field ( readonly )` ทั้งหมด
@@ -28,7 +28,9 @@
 | `ItemUuid` | key ของ entity |
 | `PaymentUuid` | ใช้ผูก association `_Payment` |
 | `Currency` | `@Semantics.amount.currencyCode` ของ `InvoiceAmount` — ขาดไม่ได้ ไม่งั้น activate ไม่ผ่าน |
-| `StatusCriticality` | virtual/calculated element ให้ `@UI.criticality` วาด icon 3 สี |
+| `Status` | ค่าจริง `N/C/R/E` — ใช้ **filter** อย่างเดียว ไม่เป็นคอลัมน์ (OQ-16) |
+| `StatusCriticality` | calculated element ใน `ZI_ZARE002_PYMT` ให้ `@UI.criticality` วาด icon 3 สี |
+| `StatusIcon` | literal `''` ใน `ZI_ZARE002_PYMT` — คอลัมน์ที่ถือ criticality แต่ไม่มีข้อความ → icon อย่างเดียว |
 | `LocalLastChangedAt` | `etag master` |
 | `LastChangedAt` | `total etag` ของ draft — **ยังไม่มีใน table ต้องขอเพิ่ม** |
 | `CreatedBy` `CreatedAt` `LastChangedBy` | admin field |

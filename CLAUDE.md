@@ -94,9 +94,12 @@
   ไม่ทิ้งข้อมูลใน transactional buffer ของค้างจะถูก save ไปพร้อม test ถัดไป
 - **`FAILED` / `REPORTED` ต้องระบุ `LATE` ใน handler ของ save phase**
   `FOR VALIDATE ON SAVE` / `FOR DETERMINE ON SAVE` ได้ `failed`/`reported` แบบ **LATE**
-- **`total etag` ประกาศได้เฉพาะ BO ที่มี draft** — BO นี้มี draft จึงประกาศได้
-  แต่ต้องมี field `last_changed_at` (`abp_lastchange_tstmpl`) ใน active table ก่อน
-  (`ztar_i002_item` **ยังไม่มี** — ดู `docs/01_architecture.md` §5)
+- **`total etag` ประกาศได้เฉพาะ BO ที่มี draft** — BO นี้มี draft และประกาศ
+  `total etag LastChangedAt` แล้ว · field `last_changed_at` ถูกเพิ่มเข้า `ztar_i002_item`
+  (repo `fplus-zari002` commit `0762ada`) เพื่อการนี้โดยเฉพาะ — ดู `docs/01_architecture.md` §5
+- **คอลัมน์ที่อยากได้แต่ icon สี** — อย่าเขียนทับ field ข้อมูลด้วย `''` (filter จะพัง)
+  ให้เพิ่ม element literal `''` แยก แล้วใส่ `@UI.lineItem` + `criticality` ที่ตัวนั้น
+  ส่วน field จริงเหลือ `@UI.selectionField` และ**ห้าม `@UI.hidden`** (จะหายจาก filter bar)
 - ทุก method มี ABAP Doc comment สั้น ๆ อธิบาย purpose
 - Error ทั้งหมดรวมศูนย์ที่ message class `ZARE002` (สร้างตอนเริ่มใส่ logic ปุ่ม)
 
