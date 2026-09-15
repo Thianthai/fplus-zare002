@@ -70,20 +70,21 @@ Fiori elements **List Report** บน OData V4 · **ไม่มี Object Page*
 
 ## 6. ปุ่ม Submit / Reject — เฟสนี้เปล่า
 
-```abap
-" ใน lhc_Item
-METHOD submit.
-  " ยังไม่มี logic — เฟสนี้เปิดแค่ปุ่มตาม requirement
-  " เฟสถัดไป: post FI แล้ว stamp status = S / W / E ที่ header
-ENDMETHOD.
-
-METHOD reject.
-  " ยังไม่มี logic — เฟสนี้เปิดแค่ปุ่มตาม requirement
-  " เฟสถัดไป: stamp status = R ที่ header + เขียน reject_reason
-ENDMETHOD.
-```
+| Action | Label | ชนิด | `invocationGrouping` |
+|---|---|---|---|
+| `submitItem` | Submit | instance · ไม่มี parameter · ไม่มี result | `#CHANGE_SET` |
+| `rejectItem` | Reject | instance · ไม่มี parameter · ไม่มี result | `#CHANGE_SET` |
 
 **ต้องไม่ raise error และไม่แก้ข้อมูลใด ๆ** — กดแล้วเงียบเป็นพฤติกรรมที่ถูกต้องของเฟสนี้
 
-⚠️ ตอนใส่ logic จริงจะเจอปัญหาว่า **`status` อยู่ระดับ header แต่แถวที่ผู้ใช้ติ๊กเป็นระดับ item**
-เลือก reject แค่ 1 item จาก 3 item ในใบเดียวกันแล้ว `status` จะเป็นอะไร — ต้องตกลงก่อน (OQ-04)
+### กติกาที่ตกลงแล้วสำหรับเฟส logic (OQ-04 — 2026-09-15)
+
+**เลือก item ใดก็ตาม = เลือกทั้ง payment** — ผู้ใช้ติ๊ก 1 ใน 3 item แล้วกด Reject
+ระบบต้อง reject ทั้ง 3 และ stamp `status` ที่ header · ทำที่ RAP ล้วน ไม่ต้องแก้ Fiori:
+
+```
+keys ที่ติ๊ก → distinct PaymentUuid → SELECT item ทุกตัวของ payment เหล่านั้น → ทำงานกับชุดเต็ม
+```
+
+`#CHANGE_SET` จำเป็นต่อกติกานี้: ถ้าเป็น isolated FE จะยิงทีละแถว ติ๊ก 2 item ใบเดียวกัน
+handler โดนเรียก 2 รอบแล้ว post ใบเดิมซ้ำ · `#CHANGE_SET` ทำให้ keys ทั้งหมดมาถึงรอบเดียว

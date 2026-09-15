@@ -111,10 +111,10 @@
 
 | # | งาน | ฝั่ง | Status |
 |---|-----|------|--------|
-| 5.1 | ประกาศ `action Submit;` `action Reject;` ใน BDEF | Claude → ผู้ใช้ | ⬜ |
-| 5.2 | `use action Submit; use action Reject;` ใน behavior projection | Claude → ผู้ใช้ | ⬜ |
-| 5.3 | implement ใน `lhc_Item` — **ไม่ทำอะไร ไม่ raise error** พร้อม comment ว่ารอ logic เฟสถัดไป | Claude → ผู้ใช้ | ⬜ |
-| 5.4 | `@UI.lineItem: [{ type: #FOR_ACTION }]` ให้ปุ่มขึ้น toolbar + เปิด multi-select | Claude → ผู้ใช้ | ⬜ |
+| 5.1 | ประกาศ `action submitItem;` `action rejectItem;` ใน BDEF | Claude → ผู้ใช้ | 🟨 |
+| 5.2 | `use action submitItem; use action rejectItem;` ใน behavior projection | Claude → ผู้ใช้ | 🟨 |
+| 5.3 | implement ใน `lhc_Item` — **ไม่ทำอะไร ไม่ raise error** + เติม `%action-*` ใน `get_global_authorizations` | Claude → ผู้ใช้ | 🟨 |
+| 5.4 | `@UI.lineItem: [{ type: #FOR_ACTION, invocationGrouping: #CHANGE_SET }]` ให้ปุ่มขึ้น toolbar + multi-select + keys มาถึง handler รอบเดียว | Claude → ผู้ใช้ | 🟨 |
 
 **Exit criteria**: ปุ่ม Submit / Reject ขึ้นบน toolbar · ติ๊กหลายแถวแล้วกดได้โดยไม่ error
 
@@ -157,7 +157,8 @@
 
 - **logic ปุ่ม Submit** — post FI จริง แล้ว stamp `status` = `S`/`W`/`E` ที่ header
 - **logic ปุ่ม Reject** — stamp `status` = `R` + เขียน `reject_reason`
-  · ⚠️ ต้องตอบ **OQ-04** ก่อน (`status` อยู่ระดับ header แต่ผู้ใช้ติ๊กเป็นระดับ item)
+- **ทั้งสองปุ่ม**: distinct `PaymentUuid` จาก keys → ทำงานกับ item **ทุกตัว** ของ payment
+  เหล่านั้น ไม่ใช่แค่ที่ติ๊ก (OQ-04 ตอบแล้ว) · `#CHANGE_SET` ตั้งไว้แล้วรองรับเรื่องนี้
 - **Object Page** — ถ้าวันหน้าต้องดูรายละเอียดรายใบ
 - **สิทธิ์ระดับ company code** — ถ้า OQ-15 เปลี่ยนคำตอบ
 - **การแจ้งผลกลับ Salesforce** — เป็นงานของ ZARI003

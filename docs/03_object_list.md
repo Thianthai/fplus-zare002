@@ -80,6 +80,6 @@ baseline ที่ tenant serialize มาแล้ว (commit `7936197`) — ob
 
 | Action | ชนิด | Phase | Logic | Status |
 |---|---|-------|-------|--------|
-| `Submit` | instance action | 5 | **ว่าง** — รอเฟสถัดไป | ⬜ |
-| `Reject` | instance action | 5 | **ว่าง** — รอเฟสถัดไป | ⬜ |
+| `submitItem` | instance action · `#CHANGE_SET` | 5 | **ว่าง** — รอเฟสถัดไป | 🟨 |
+| `rejectItem` | instance action · `#CHANGE_SET` | 5 | **ว่าง** — รอเฟสถัดไป | 🟨 |
 | `Edit` `Activate` `Discard` `Resume` `Prepare` | draft action (standard) | 4 | framework · **ต้องไล่ประกาศทีละตัวใน projection เพราะมี `strict`** | ✅ |
