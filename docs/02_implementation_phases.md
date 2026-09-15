@@ -111,10 +111,10 @@
 
 | # | งาน | ฝั่ง | Status |
 |---|-----|------|--------|
-| 5.1 | ประกาศ `action submitItem;` `action rejectItem;` ใน BDEF | Claude → ผู้ใช้ | 🟨 |
-| 5.2 | `use action submitItem; use action rejectItem;` ใน behavior projection | Claude → ผู้ใช้ | 🟨 |
-| 5.3 | implement ใน `lhc_Item` — **ไม่ทำอะไร ไม่ raise error** + เติม `%action-*` ใน `get_global_authorizations` | Claude → ผู้ใช้ | 🟨 |
-| 5.4 | `@UI.lineItem: [{ type: #FOR_ACTION, invocationGrouping: #CHANGE_SET }]` ให้ปุ่มขึ้น toolbar + multi-select + keys มาถึง handler รอบเดียว | Claude → ผู้ใช้ | 🟨 |
+| 5.1 | ประกาศ `action submitItem;` `action rejectItem;` ใน BDEF | Claude → ผู้ใช้ | ✅ |
+| 5.2 | `use action submitItem; use action rejectItem;` ใน behavior projection | Claude → ผู้ใช้ | ✅ |
+| 5.3 | implement ใน `lhc_Item` — **ไม่ทำอะไร ไม่ raise error** + เติม `%action-*` ใน `get_global_authorizations` | Claude → ผู้ใช้ | ✅ |
+| 5.4 | `@UI.lineItem: [{ type: #FOR_ACTION, invocationGrouping: #CHANGE_SET }]` ให้ปุ่มขึ้น toolbar + multi-select + keys มาถึง handler รอบเดียว | Claude → ผู้ใช้ | ✅ |
 
 **Exit criteria**: ปุ่ม Submit / Reject ขึ้นบน toolbar · ติ๊กหลายแถวแล้วกดได้โดยไม่ error
 

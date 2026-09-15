@@ -75,5 +75,5 @@ Remote: https://github.com/Thianthai/fplus-zare002.git
 
 ## สถานะปัจจุบัน
 
-**Phase 4** — object ของ Phase 1–4 activate + push ขึ้น repo แล้วครบ (commit `7936197`)
-เหลือทดสอบว่าแก้ `reject_reason` ในตารางได้จริง (4.8) แล้วไป Phase 5 (ปุ่ม Submit / Reject)
+**Phase 5 เสร็จ** — BO ครบ: แก้ `reject_reason` ในตารางได้ · ปุ่ม Submit / Reject ขึ้น toolbar (ยังว่าง) · commit `af4217f`
+ถัดไป **Phase 6** — IAM App / Business Catalog / Business Role เพื่อให้ business user เปิดจาก launchpad ได้
