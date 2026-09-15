@@ -60,7 +60,12 @@ define view entity ZI_ZARE002_PYMT
           when 'R' then 1   // Reject
           when 'E' then 1   // Error
           else          0
-        end as abap.int1 )  as StatusCriticality,
+        end as abap.int1 )        as StatusCriticality,
+
+      // คอลัมน์ Status บนหน้าจอ — ว่างเสมอ เพื่อให้ FE วาดแต่ icon สีจาก StatusCriticality
+      // ค่าจริงของสถานะยังอยู่ที่ Status ใช้ filter ได้ตามปกติ
+      @EndUserText.label: 'Status'
+      ''                          as StatusIcon,
         
       salesforce_status           as SalesforceStatus,
       @EndUserText.label: 'Salesforce Message'

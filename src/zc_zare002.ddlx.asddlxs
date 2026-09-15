@@ -45,9 +45,11 @@ annotate entity ZC_ZARE002 with
   @UI.lineItem: [ { position: 100, importance: #HIGH } ]
   InvoiceAmount;
 
-  @UI.lineItem:      [ { position: 110, importance: #HIGH, criticality: 'StatusCriticality' } ]
   @UI.selectionField: [ { position: 30 } ]
   Status;
+
+  @UI.lineItem: [ { position: 110, importance: #HIGH, criticality: 'StatusCriticality' } ]
+  StatusIcon;
 
   @UI.hidden: true
   StatusCriticality;

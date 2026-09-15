@@ -35,6 +35,7 @@ define root view entity ZC_ZARE002
 
       _Payment.Status                 as Status,
       _Payment.StatusCriticality      as StatusCriticality,
+      _Payment.StatusIcon             as StatusIcon,
       _Payment.SalesforceStatus       as SalesforceStatus,
       _Payment.SalesforceMessage      as SalesforceMessage,
 

@@ -1,19 +1,24 @@
-managed implementation in class zbp_r_zare002 unique;
+managed with unmanaged save implementation in class zbp_r_zare002 unique;
 strict ( 2 );
 with draft;
 
 define behavior for ZR_ZARE002 alias Item
-persistent table ztar_i002_item
+//persistent table ztar_i002_item
 draft table ztar_e002_item_d
 lock master total etag LastChangedAt
 authorization master ( global )
 etag master LocalLastChangedAt
 {
   // report นี้ไม่เคยสร้างหรือลบ item — row เกิดจาก ZARI002 เท่านั้น
+  create;
   update;
+  delete;
 
   // RejectReason เป็น field เดียวที่แก้ได้ทั้ง BO
+  field ( numbering : managed ) ItemUuid;
+
   field ( readonly ) PaymentUuid,
+                     ItemUuid,
                      SalesforceItemId,
                      CustomerCode,
                      BillingNoteNo,
