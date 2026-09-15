@@ -73,7 +73,9 @@ field นี้ถูกออกแบบมาให้ ZARE002 เป็น�
 
 ## 3. รูปทรงของ RAP BO
 
-**เริ่มแบบ non-draft ก่อน** (ตกลง 2026-09-07 — เหตุผลใน §5)
+**เป้าหมาย** (ตกลง 2026-09-15 — ดู "สถานะจริงบน tenant" ท้ายหัวข้อนี้ว่ายังไม่ตรง):
+`managed` ธรรมดา framework เขียน table เอง · draft **คงไว้ก่อน** จนกว่าทีม Fiori จะบอกว่า
+จะ edit คอลัมน์ด้วยวิธีไหน (OQ-17)
 
 ```
 managed implementation in class ZBP_R_ZARE002 unique;
@@ -128,9 +130,22 @@ pool   CLASS lsc_Item DEFINITION INHERITING FROM cl_abap_behavior_saver.
   แล้ว saver ค่อยเขียนตอน save phase
 - ชื่อ saver class = `lsc_Item` ตามกฎ `lsc_<Entity>`
 
-⚠️ **ตอนนี้ยังไม่มี saver และห้ามมี** — เคยมี `lsc_zr_zare002` ค้างอยู่ใน pool โดย BDEF ไม่ได้
-ประกาศ additional/unmanaged save = ไม่เคยถูกเรียก และโค้ดข้างในเป็น `MODIFY` แบบไม่ใส่ key
-ถ้าถูกเรียกขึ้นมาจะเขียนทับ row ผิดและล้าง field อื่นทิ้ง → ลบออกใน Phase 5
+### ⚠️ สถานะจริงบน tenant ณ 2026-09-15 — BO ไม่มีคนเขียน table (ต้องแก้)
+
+commit `2e48c3e` เปลี่ยน BDEF เป็น **`managed with unmanaged save`** และ comment
+`persistent table` ทิ้ง (ทำระหว่าง session ที่พยายามให้ save ผ่าน) → framework **เลิกเขียน**
+`ztar_i002_item` ให้ ผู้เขียนคนเดียวคือ saver `lsc_zr_zare002` ซึ่ง Phase 5 **ลบทิ้งไป**
+(Claude วิเคราะห์จาก BDEF ของ commit `7936197` ที่ยังเป็น managed ธรรมดา — ไม่ได้อ่านซ้ำ)
+
+ผล: ตอนนี้ update `RejectReason` ผ่าน service **ไม่ลง database** เพราะไม่มีใครเขียน
+
+**ทางแก้ = กลับเป็น managed ธรรมดา** (`managed implementation ...` + `persistent table
+ztar_i002_item`) — "RAP ทำไม่ได้" ที่พบใน OQ-06 คือ **ช่องบนจอไม่รับการพิมพ์** ไม่ใช่การ save
+การ save ผ่าน managed runtime ทำงานถูกอยู่แล้ว และเป็นสิ่งที่ทีม Fiori ต้องพึ่ง: ยิง OData
+update มาแล้ว framework เขียน `reject_reason` + admin field ให้เอง ไม่ต้องมี saver ใด ๆ
+
+saver `lsc_zr_zare002` ตัวเดิมถึงจะเรียกถูกก็ใช้ไม่ได้: `MODIFY ... FROM TABLE` โดยไม่ใส่
+`item_uuid` → เขียน row ผิด และล้าง field อื่นทิ้งทั้ง row
 
 ## 4. ทำไม JOIN ไม่อยู่ที่ root view
 

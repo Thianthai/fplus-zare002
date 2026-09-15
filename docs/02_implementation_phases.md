@@ -120,7 +120,13 @@
 
 ---
 
-## Phase 6 — Service + Fiori app
+## Phase 6 — Fiori app · IAM · Launchpad — **ผู้ใช้ทำเองทั้งหมด** (ตกลง 2026-09-15)
+
+งานของ Claude ใน RICEFW นี้จบที่ service definition / binding · เฟสนี้ผู้ใช้ทำเอง แล้ว push
+ให้ Claude **รีวิว object ใน git** ย้อนหลัง · การแก้คอลัมน์ Reject Reason เป็นงาน**ทีม Fiori** (OQ-17)
+
+**ก่อนส่ง service ให้ทีม Fiori ต้องปิด OQ-18 ก่อน** — BDEF ต้องกลับเป็น managed ธรรมดา
+ไม่งั้น update ที่ทีม Fiori ยิงมาไม่ลง table
 
 | # | งาน | ฝั่ง | Status |
 |---|-----|------|--------|

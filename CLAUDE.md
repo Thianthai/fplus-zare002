@@ -100,9 +100,13 @@
 - **คอลัมน์ที่อยากได้แต่ icon สี** — อย่าเขียนทับ field ข้อมูลด้วย `''` (filter จะพัง)
   ให้เพิ่ม element literal `''` แยก แล้วใส่ `@UI.lineItem` + `criticality` ที่ตัวนั้น
   ส่วน field จริงเหลือ `@UI.selectionField` และ**ห้าม `@UI.hidden`** (จะหายจาก filter bar)
-- **saver class ต้องคู่กับ BDEF เสมอ** — `lsc_*` ที่มี `save_modified REDEFINITION` จะถูกเรียก
-  ก็ต่อเมื่อ BDEF ประกาศ `with additional save` หรือ `with unmanaged save` · ไม่ประกาศ = dead code
-  ที่หลอกคนอ่าน · **ห้ามเปิดทิ้งไว้เผื่อ** — ถึงเวลาใช้ค่อยเพิ่มพร้อมกันทั้ง BDEF และ pool
+- **⚠️ ก่อนวิเคราะห์ behavior pool ต้อง `git show origin/main:src/<bdef>` อ่าน BDEF ตัวล่าสุดเสมอ**
+  (พลาดจริง 2026-09-15: ตัดสินว่า saver "ไม่เคยถูกเรียก" จาก BDEF ของ commit เก่า ทั้งที่ commit
+  ถัดมาเปลี่ยนเป็น `with unmanaged save` ไปแล้ว → สั่งลบ saver → BO ไม่มีคนเขียน table)
+  ผู้ใช้แก้ BDEF ระหว่าง session ได้เสมอ · BDEF กับ pool ต้องอ่านคู่กันจาก commit เดียวกัน
+- **saver class ต้องคู่กับ BDEF เสมอ** — `with unmanaged save` = framework **ไม่เขียน** table
+  ต้องมี `lsc_*` เขียนเอง · `with additional save` = framework เขียนแล้วค่อยเรียก saver เพิ่ม
+  · ไม่ประกาศทั้งคู่ = saver ไม่เคยถูกเรียก · **แก้ฝั่งเดียวไม่ได้ ต้องแก้พร้อมกันทั้ง BDEF และ pool**
 - **เขียน table นอก BO (เช่น `ztar_i002_pymt`) ต้องทำใน saver (`with additional save`)**
   ไม่ใช่ใน action handler — RAP ห้าม modify database ใน interaction phase
   · เขียนเฉพาะ field ด้วย `UPDATE ... SET` **ห้าม `MODIFY ... FROM TABLE`** (แทนที่ทั้ง row)
