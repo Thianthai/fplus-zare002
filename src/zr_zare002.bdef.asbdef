@@ -44,6 +44,11 @@ etag master LocalLastChangedAt
   draft action Discard;
   draft determine action Prepare;
 
+  // ปุ่มบน toolbar — เฟสนี้ยังไม่มี logic (docs/05_ui_spec.md §6)
+  // เฟสถัดไป: ขยาย keys ที่ติ๊กมาให้ครอบทุก item ของ payment เดียวกันก่อนทำงาน
+  action submitItem;
+  action rejectItem;
+
   mapping for ztar_i002_item
     {
       ItemUuid           = item_uuid;

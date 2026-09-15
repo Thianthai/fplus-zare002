@@ -6,6 +6,9 @@ define behavior for ZC_ZARE002 alias Item
 {
   use update;
 
+  use action submitItem;
+  use action rejectItem;
+
   use action Prepare;
   use action Edit;
   use action Activate;

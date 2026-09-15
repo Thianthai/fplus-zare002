@@ -11,7 +11,11 @@ annotate entity ZC_ZARE002 with
   @UI.hidden: true
   ItemUuid;
 
-  @UI.lineItem:      [ { position: 10, importance: #HIGH } ]
+  @UI.lineItem: [ { position: 10, importance: #HIGH },
+                  { type: #FOR_ACTION, dataAction: 'submitItem', label: 'Submit',
+                    position: 1, invocationGrouping: #CHANGE_SET },
+                  { type: #FOR_ACTION, dataAction: 'rejectItem', label: 'Reject',
+                    position: 2, invocationGrouping: #CHANGE_SET } ]
   @UI.selectionField: [ { position: 50 } ]
   PaymentDocumentNo;
 
