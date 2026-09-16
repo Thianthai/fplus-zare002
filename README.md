@@ -77,5 +77,5 @@ Remote: https://github.com/Thianthai/fplus-zare002.git
 ## สถานะปัจจุบัน
 
 **พร้อมส่งต่อทีม Fiori** — BO managed + draft · update `RejectReason` ผ่าน OData ลง `ztar_i002_item` ด้วย managed runtime · ปุ่ม Submit / Reject ขึ้น toolbar (ยังว่าง) · commit `f1063da`
-**Phase 6 เสร็จ** (2026-09-16) — app เปิดจาก launchpad ด้วย business user ได้ · ข้อมูลจริง 17 แถว · Customer Name / icon สถานะ / filter ครบ
-ถัดไป: เฟส logic ปุ่ม Submit / Reject (นอก scope เดิม) — ต้องตอบ OQ-15 ก่อน
+**Phase 7 เกือบจบ** (2026-09-16) — inline edit Reject Reason ทำงานบน launchpad · Reject validate + stamp `status = R` ลง DB จริง · ค้าง OQ-26 (all-or-nothing) + unit test + ลบ spike class
+**Phase 8 ถัดไป** — Submit / Reject → post FI document (รอ spec จากผู้ใช้ 2026-09-17)

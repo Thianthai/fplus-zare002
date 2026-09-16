@@ -165,10 +165,24 @@
 
 **Exit criteria**: Reject ใบที่มีหลาย item แล้ว `ztar_i002_pymt.status = 'R'` จริง · item ที่ไม่มีเหตุผลถูกกันด้วย message · แถวเรียงตาม posting date ล่าสุดก่อน
 
+## Phase 8 — Submit / Reject → post FI document (เปิด 2026-09-17 · รอ spec)
+
+ผู้ใช้แจ้ง 2026-09-16 ตอนปิดวัน: **ทั้ง Submit และ Reject ต้องเอา payment ที่เลือกไป post FI document**
+รายละเอียดจะส่งมาให้ · ยังไม่มี object list ยังไม่มี code — เริ่มจากรีวิว spec ก่อนตามกติกา
+
+สิ่งที่ต้องถามทันทีที่ได้ spec:
+- Reject post FI document **แบบไหน** (reversal? ใบ reject แยก? หรือแค่ Submit ที่ post) — ประโยคที่แจ้งมาบอกว่า "สองปุ่ม" ต้อง confirm
+- released API สำหรับ post: `I_JournalEntryTP` (RAP BO) หรือ `I_OperationalAcctgDocItemCube`… ต้องเช็ค Released Objects บน tenant
+- หลัง post สำเร็จ stamp `status` = `S`/`W`/`E` + `salesforce_status` / `salesforce_message` (OQ-21 กลับมามีความหมาย)
+- ทำใน action handler ไม่ได้ (ห้ามเขียน DB ใน interaction phase) → post ผ่าน EML ของ `I_JournalEntryTP` ใน handler ได้ (เป็น RAP BO) แต่ commit เกิดพร้อม LUW ของเรา · หรือ post ใน saver `lsc_Item` — ต้องตัดสิน
+- OQ-26 (all-or-nothing) ต้องตอบก่อน เพราะ post FI หลายใบใน change set เดียว = ถ้าใบหนึ่ง post ไม่ผ่านทุกใบ rollback
+
+ค้างจาก Phase 7 ที่ยังต้องทำ: 7.6 ABAP Unit · 7.8 concurrency / draft ค้าง · ลบ `ZCL_ZARE002_SPIKE`
+
+---
+
 ## นอก scope เฟสนี้ — บันทึกไว้กันลืม
 
-- **logic ปุ่ม Submit** — distinct `PaymentUuid` จาก keys → ทำงานกับ item **ทุกตัว** ของ payment
-  (OQ-04) · `#CHANGE_SET` ตั้งไว้แล้ว · pattern เดียวกับ Reject ที่ทำใน Phase 7
 - **สิทธิ์ตาม company code** — hold (OQ-15) · เมื่อทำ: auth object + DCL + `#CHECK` + IAM restriction + role
 - **Object Page** — ถ้าวันหน้าต้องดูรายละเอียดรายใบ
 - **การแจ้งผลกลับ Salesforce** — เป็นงานของ ZARI003
