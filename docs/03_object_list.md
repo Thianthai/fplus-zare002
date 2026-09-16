@@ -47,7 +47,7 @@ baseline ที่ tenant serialize มาแล้ว (commit `7936197`) — ob
 | `ZI_ZARE002_BP` | Interface view บน `I_BusinessPartner` — ต่อ `OrganizationBPName1..4` เป็น `CustomerName` | `src/zi_zare002_bp.ddls.asddls` | 1 | ✅ |
 | `ZR_ZARE002` | **Root view entity** — projection บน `ZI_ZARE002_ITEM` | `src/zr_zare002.ddls.asddls` | 2 | ✅ |
 | `ZC_ZARE002` | Projection view — + path expression ดึง field header | `src/zc_zare002.ddls.asddls` | 3 | ✅ |
-| `ZC_ZARE002` | Metadata extension — UI annotation ทั้งหมด · **ไม่มี `@UI.multiLineText`** (ตัดออก 7.6b) | `src/zc_zare002.ddlx.asddlxs` | 3 / 7 | 🟦 |
+| `ZC_ZARE002` | Metadata extension — UI annotation ทั้งหมด · **ไม่มี `@UI.multiLineText`** (ตัดออก 7.6b) | `src/zc_zare002.ddlx.asddlxs` | 3 / 7 | ✅ |
 
 ## Behavior
 
