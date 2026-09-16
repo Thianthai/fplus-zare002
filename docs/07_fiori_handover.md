@@ -1,5 +1,10 @@
 # ZARE002 — Brief สำหรับทีม Fiori: เปิดแก้คอลัมน์ Reject Reason
 
+> ✅ **ทำสำเร็จแล้ว 2026-09-16** — inline edit ทำงานบน launchpad ค่าลง `ztar_i002_item` จริง
+> สิ่งที่ต้องทำจริงมี 2 อย่าง: (1) `inlineEdit.enabledFields: ["RejectReason"]` ใน manifest
+> (2) **ตัด `@UI.multiLineText` ออกจาก metadata extension ฝั่ง backend** — annotation นี้ทำให้
+> FE render ช่องเป็น ExpandableText ซึ่ง inline edit ไม่จับ · เอกสารด้านล่างคงไว้เป็น reference
+
 > ส่งต่อได้ทั้งไฟล์ · ฝั่ง ABAP (RAP) พร้อมแล้วทั้งหมด งานที่เหลืออยู่ในฝั่ง Fiori app เท่านั้น
 
 ## 1. เป้าหมาย
@@ -59,7 +64,9 @@ app นี้ Min UI5 **1.148.8** → ใช้ได้ · เงื่อน�
 
 ### พฤติกรรมของ inline edit ที่ต้องรู้
 
-- คลิกช่อง → พิมพ์ → Enter หรือคลิกออก = **save ทันที ไม่มีปุ่ม Save แยก**
+- **hover ที่ช่อง → ขึ้นเส้นใต้ + icon ดินสอ → คลิกดินสอ** (หรือ focus แล้ว Enter) → พิมพ์ → ✓
+  = save ทันที ไม่มีปุ่ม Save แยก · double-click ใช้ไม่ได้กับ ResponsiveTable
+- **ห้ามมี `@UI.multiLineText` บน field ที่จะ inline edit** — ตัดออกแล้ว 2026-09-16
 - **อัปเดต active version ตรง ๆ ไม่สร้าง draft** (ตามเอกสาร) — RAP รองรับเพราะ feature นี้
   ออกแบบมาคู่กับ RAP draft BO · ⚠️ ข้อความเดิมในไฟล์นี้ที่ว่า "PATCH active จะถูกปฏิเสธ" **ผิด**
   สำหรับ inline edit — ลบออกแล้ว

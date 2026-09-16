@@ -107,6 +107,18 @@
 - **`total etag` ประกาศได้เฉพาะ BO ที่มี draft** — BO นี้มี draft และประกาศ
   `total etag LastChangedAt` แล้ว · field `last_changed_at` ถูกเพิ่มเข้า `ztar_i002_item`
   (repo `fplus-zari002` commit `0762ada`) เพื่อการนี้โดยเฉพาะ — ดู `docs/01_architecture.md` §5
+- **FE inline edit (SAPUI5 ≥ 1.136) ใช้กับ RAP draft BO ได้** — พิสูจน์แล้ว 2026-09-16 ทั้งใน
+  demo (`Thianthai/demo-rapedit`) และ ZARE002 · RAP ส่ง `__EntityControl/Updatable = true` ให้ active
+  row และรับ PATCH active ตรงโดยไม่สร้าง draft · **อย่าเชื่อประโยค "Edit must be used first" ในเอกสาร
+  RAP ว่าครอบคลุมเคสนี้** — Claude เคยสรุปผิดจากประโยคนั้นแล้วเสียเวลาไปครึ่งวัน
+  · เปิดที่ manifest: `routing.targets.<LR>.options.settings.inlineEdit.enabledFields: ["<Field>"]`
+- **`@UI.multiLineText: true` ทำให้ FE inline edit ไม่ทำงานกับ field นั้น** (เจอจริง 2026-09-16 —
+  ช่องเป็น read-only ไม่มีดินสอ ทั้งที่ backend ให้ `Updatable true` + field control `3` · ตัด annotation
+  ออกแล้วแก้ได้ทันที) · FE render multiLineText ในตารางเป็น `ExpandableText` ซึ่ง inline edit ไม่จับ
+  · **ก่อนใส่ annotation ที่เปลี่ยน control ของช่อง ให้ถามก่อนว่าช่องนั้นต้องแก้ inline ไหม**
+- **วิธี debug "ช่องแก้ไม่ได้" ให้ยิง OData ดูค่าจริงก่อนเดา** — `Item?$top=1&$select=__EntityControl,
+  __FieldControl` ใน console บอกได้ทันทีว่า backend หรือ FE เป็นคนปฏิเสธ (ใช้ 1 บรรทัด ประหยัดกว่า
+  ไล่เทียบ BDEF ทั้งไฟล์)
 - **`@UI.presentationVariant` ต้องมี `visualizations: [ { type: #AS_LINEITEM } ]`** ไม่งั้น FE V4
   ไม่หยิบมาเป็น default sort ของ List Report (เจอจริง 2026-09-16 — แถวเรียงตาม insert order)
 - **คอลัมน์ที่อยากได้แต่ icon สี** — อย่าเขียนทับ field ข้อมูลด้วย `''` (filter จะพัง)
