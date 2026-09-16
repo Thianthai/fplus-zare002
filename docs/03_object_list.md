@@ -24,11 +24,11 @@ baseline ที่ tenant serialize มาแล้ว (commit `7936197`) — ob
 | Object | Type | ไฟล์ | Phase | Status |
 |--------|------|------|-------|--------|
 | `ZTAR_E002_ITEM_D` | Draft table ของ `ZR_ZARE002` — สร้างด้วย quick-fix จาก BDEF · include `SYCH_BDL_DRAFT_ADMIN_INC` เป็น `%ADMIN` ครบ | `src/ztar_e002_item_d.tabl.xml` | 4 | ✅ |
-| `ZARE002` | Message class — `001` reject reason missing (per item, ชี้ `%element-RejectReason`) · `002` already rejected · `003` rejected OK · `001–099` Reject · `100+` Submit | `src/zare002.msag.xml` | 7 | 🟨 |
+| `ZARE002` | Message class — `001` reject reason missing (per item, ชี้ `%element-RejectReason`) · `002` already rejected · `003` rejected OK · `001–099` Reject · `100+` Submit | `src/zare002.msag.xml` | 7 | 🟦 |
 
 **ไม่สร้าง data element / domain ใหม่** — reuse `ZE_REQUEST_STATUS` (package `ZARI002`)
 
-| `ZCL_ZARE002_STATUS_BUFFER` | Class — static buffer `payment_uuid → status` ส่งจาก action ไป saver | `src/zcl_zare002_status_buffer.clas.abap` | 7 | ⬜ |
+| `ZCL_ZARE002_STATUS_BUFFER` | Class — static buffer `payment_uuid → status` ส่งจาก action ไป saver · `add` / `get_all` / `clear` · 3 unit test | `src/zcl_zare002_status_buffer.clas.abap` | 7 | 🟨 |
 
 ## Table ที่ใช้ — เป็นของ package `ZARI002` ไม่ใช่ของเรา
 

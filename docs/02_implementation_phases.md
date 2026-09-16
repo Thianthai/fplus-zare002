@@ -152,8 +152,8 @@
 | # | งาน | ฝั่ง | Status |
 |---|-----|------|--------|
 | 7.5 | metadata ext — เติม `visualizations: [ { type: #AS_LINEITEM } ]` ให้ sort ทำงาน (OQ-20) — เห็นบน launchpad แล้ว 16.09 → 15.09 → 14.09 | Claude → ผู้ใช้ | ✅ |
-| 7.1 | Message class `ZARE002` — `001` reason missing (per item) · `002` already rejected · `003` success | Claude → ผู้ใช้ | 🟨 |
-| 7.2 | `ZCL_ZARE002_STATUS_BUFFER` — static buffer `payment_uuid → status` ระหว่าง action กับ saver | Claude → ผู้ใช้ | ⬜ |
+| 7.1 | Message class `ZARE002` — `001` reason missing (per item) · `002` already rejected · `003` success | Claude → ผู้ใช้ | 🟦 |
+| 7.2 | `ZCL_ZARE002_STATUS_BUFFER` — static buffer `payment_uuid → status` ระหว่าง action กับ saver · 3 unit test | Claude → ผู้ใช้ | 🟨 |
 | 7.3 | BDEF — `with additional save` · `action ( features : instance )` ทั้งสองปุ่ม · `rejectItem result [1] $self` · `field ( features : instance ) RejectReason` | Claude → ผู้ใช้ | ⬜ |
 | 7.4 | `ZBP_R_ZARE002` — `get_instance_features` · `rejectItem` logic (distinct payment → validate reason ทุก item → buffer → บังคับ save ด้วย update ค่าเดิม) · `lsc_Item` `save_modified` → `UPDATE ztar_i002_pymt SET status = 'R'` | Claude → ผู้ใช้ | ⬜ |
 | 7.6 | ABAP Unit ของ validation ใน `ZBP_R_ZARE002` | Claude → ผู้ใช้ | ⬜ |
