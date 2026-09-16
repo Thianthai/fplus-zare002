@@ -157,7 +157,8 @@
 | 7.3 | BDEF — `with additional save` · `action ( features : instance )` ทั้งสองปุ่ม · `rejectItem result [1] $self` · `field ( features : instance ) RejectReason` | Claude → ผู้ใช้ | ✅ |
 | 7.4 | `ZBP_R_ZARE002` — `get_instance_features` · `rejectItem` logic (distinct payment → validate reason ทุก item → buffer → บังคับ save ด้วย update ค่าเดิม) · `lsc_Item` `save_modified` → `UPDATE ztar_i002_pymt SET status = 'R'` | Claude → ผู้ใช้ | ✅ |
 | 7.6 | ABAP Unit ของ validation ใน `ZBP_R_ZARE002` | Claude → ผู้ใช้ | ⬜ |
-| 7.7 | ทดสอบบน launchpad: ติ๊กบาง item → Reject → ทุก item ของ payment icon แดง · Reject Reason readonly · ปุ่มทั้งคู่ dim | ผู้ใช้ | ⬜ |
+| 7.6a | ทดสอบ backend ผ่าน EML (console class ชั่วคราว) — ยืนยัน saver ถูกเรียกและ `ztar_i002_pymt.status = R` จริง (OQ-24) โดยไม่รอ UI | Claude → ผู้ใช้ | ⬜ |
+| 7.7 | ทดสอบบน launchpad: ติ๊กบาง item → Reject → ทุก item ของ payment icon แดง · Reject Reason readonly · ปุ่มทั้งคู่ dim — **รอทีม Fiori เปิด edit ก่อน (OQ-25 · `docs/07_fiori_handover.md`)** | ผู้ใช้ + ทีม Fiori | ⏸ |
 | 7.8 | ทดสอบ 2 user แก้คนละ item ในใบเดียวกันพร้อมกัน · draft ค้างแล้วกลับมา | ผู้ใช้ | ⬜ |
 | 7.9 | รีวิว OQ ทั้งตาราง + object list ตรงกับ tenant | Claude | ⬜ |
 
