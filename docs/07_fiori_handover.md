@@ -35,51 +35,55 @@ validate ว่าทุก item ของ payment มีเหตุผล → 
 | 7 | Message จาก `rejectItem` ผูก **target = `RejectReason` ของแถวที่ขาดเหตุผล** (1 message ต่อแถว) | message popover มาตรฐานของ FE จะไฮไลต์ช่องของแถวนั้น ไม่ต้องทำ custom |
 | 8 | default sort `PostingDate` DESC · คอลัมน์ Status เป็น icon อย่างเดียว (`StatusIcon` + criticality) | ทำที่ annotation แล้ว ไม่ต้องทำใน manifest |
 
-## 4. สิ่งที่ต้องแก้ใน app — เรียงจากง่ายไปยาก
+## 4. สิ่งที่ต้องแก้ใน app — ยืนยันจากเอกสาร SAPUI5 แล้ว (2026-09-16)
 
-> ⚠️ ชื่อ key ใน manifest ขึ้นกับ SAPUI5 version ที่ app ใช้ — **โปรดยืนยันจากเอกสาร SAPUI5
-> ของ version นั้น** ก่อนใช้ ค่าข้างล่างเป็นแนวทาง ไม่ใช่ค่าที่ทดสอบแล้วบน tenant นี้
+**inline edit ใน List Report เป็น feature มาตรฐานของ Fiori elements V4 ตั้งแต่ SAPUI5 1.136**
+app นี้ Min UI5 **1.148.8** → ใช้ได้ · เงื่อนไข: service ต้อง draft-enabled (เป็นอยู่แล้ว)
+ที่มา: [Inline Edit — SAPUI5 docs](https://github.com/SAP-docs/sapui5/blob/main/docs/06_SAP_Fiori_Elements/inline-edit-bb56175.md)
 
-### A. Mass Edit (มาตรฐาน FE V4 — แนะนำให้ลองก่อน)
+### แก้ไฟล์เดียว `manifest.json` — 2 จุด
 
-ผู้ใช้ติ๊กหลายแถว → ปุ่ม **Edit** → dialog ให้ใส่ Reject Reason → Save → ทุกแถวที่ติ๊กได้ค่าเดียวกัน
+**จุดที่ 1 — เปิด inline edit** · `sap.ui5.routing.targets.ItemList.options.settings`
 
-manifest.json → `sap.ui5.routing.targets.<ListReport>.options.settings.controlConfiguration`
-→ `@com.sap.vocabularies.UI.v1.LineItem` → `tableSettings`:
-- เปิด mass edit (ชื่อ key ตาม version — เช่น `enableMassEdit`)
-- `selectionMode: "Multi"` (น่าจะเป็น Multi อยู่แล้วเพราะมี action)
-
-ข้อจำกัด: ใส่ค่าเดียวกันให้ทุกแถวที่ติ๊ก — ถ้าธุรกิจต้องการเหตุผล**ต่างกันรายแถว** ต้องใช้ B หรือทำทีละแถว
-
-### B. Inline Edit ในตาราง (ถ้า SAPUI5 version รองรับ)
-
-พิมพ์ในช่องได้โดยตรง — FE V4 รุ่นใหม่มี inline editing สำหรับตารางใน List Report
-ตรวจว่า version ที่ใช้รองรับหรือไม่ ถ้ารองรับเปิดใน `tableSettings` เช่นกัน
-
-### C. ถ้า A และ B ใช้ไม่ได้ทั้งคู่ — custom
-
-ทำตาราง editable เองผ่าน controller extension แต่ **ต้องเดินตาม draft flow เท่านั้น**:
-
-```
-1. POST  Item(ItemUuid=...,IsActiveEntity=true)/com.sap.gateway...Edit   → ได้ draft
-2. PATCH Item(ItemUuid=...,IsActiveEntity=false)  { "RejectReason": "..." }
-3. POST  Item(ItemUuid=...,IsActiveEntity=false)/...Activate              → กลับเป็น active
+```json
+"inlineEdit": {
+  "enabledFields": ["RejectReason"]
+}
 ```
 
-**PATCH ไปที่ active instance ตรง ๆ จะถูกปฏิเสธ** — BO ที่มี draft ไม่รับการแก้ active โดยไม่ผ่าน Edit
+ระบุ `RejectReason` ตัวเดียว — field อื่น backend readonly อยู่แล้ว แต่ระบุให้ชัดกันโผล่
+
+**จุดที่ 2 — ปิด Object Page** (generator สร้าง `ItemObjectPage` ติดมา requirement ไม่มี)
+· `routing.routes` ลบ route `ItemObjectPage` · `routing.targets` ลบ block `ItemObjectPage`
+· `targets.ItemList.options.settings` ลบ block `navigation` ที่ชี้ไป `ItemObjectPage`
+
+### พฤติกรรมของ inline edit ที่ต้องรู้
+
+- คลิกช่อง → พิมพ์ → Enter หรือคลิกออก = **save ทันที ไม่มีปุ่ม Save แยก**
+- **อัปเดต active version ตรง ๆ ไม่สร้าง draft** (ตามเอกสาร) — RAP รองรับเพราะ feature นี้
+  ออกแบบมาคู่กับ RAP draft BO · ⚠️ ข้อความเดิมในไฟล์นี้ที่ว่า "PATCH active จะถูกปฏิเสธ" **ผิด**
+  สำหรับ inline edit — ลบออกแล้ว
+- ประเมิน editability รายแถว → แถวที่ payment ถูก reject แล้ว (`R`) จะพิมพ์ไม่ได้เอง
+- ไม่รองรับ flexible column layout · ไม่รองรับหลาย entity set ใน List Report (เราไม่มีทั้งคู่)
+
+### ทางสำรอง — Mass Edit (ถ้า inline edit ติดอะไรที่คาดไม่ถึง)
+
+`controlConfiguration["@com.sap.vocabularies.UI.v1.LineItem"].tableSettings.enableMassEdit: true`
+· ทุกแถวที่ติ๊กได้ค่าเดียวกัน · ⚠️ key นี้ยังไม่ได้ยืนยันจากเอกสารเท่า inline edit
 
 ## 5. สิ่งที่ห้ามทำ
 
 - ห้ามเพิ่ม Object Page / navigation ออกจากแถว
-- ห้าม PATCH active instance โดยไม่ผ่าน `Edit` (ข้อ 4C)
+- ห้ามเขียน controller / PATCH เอง — ใช้ `inlineEdit` ของ FE เท่านั้น
 - ห้ามทำคอลัมน์อื่นนอกจาก `RejectReason` ให้แก้ได้
 - ห้ามเพิ่มปุ่ม Create / Delete
+- ห้ามเพิ่ม local annotation ทับของ backend
 
 ## 6. ทดสอบหลังแก้ — ใช้ payment ที่มีหลาย item (เช่น `1000000101` มี 5 item)
 
 | # | ทำ | ต้องเห็น |
 |---|---|---|
-| 1 | แก้ Reject Reason ของ 1 แถว → Save | ค่าอยู่ · reload หน้าแล้วยังอยู่ · Data Preview `ztar_i002_item.reject_reason` มีค่า |
+| 1 | คลิกช่อง Reject Reason 1 แถว → พิมพ์ → Enter | save ทันที · reload หน้าแล้วค่ายังอยู่ · Data Preview `ztar_i002_item.reject_reason` มีค่า |
 | 2 | ติ๊ก 1 แถวของใบที่**ยังไม่ครบ**เหตุผล → Reject | error **1 ข้อความต่อแถวที่ว่าง** ชี้ช่องของแถวนั้น · ยังไม่ reject |
 | 3 | กรอกครบทุกแถว → ติ๊ก 1 แถว → Reject | success · **icon แดงทุกแถวของใบ** · ช่องทุกแถว readonly · ติ๊กแถวของใบนี้ → ปุ่ม Submit / Reject dim ทั้งคู่ |
 | 4 | Data Preview `ztar_i002_pymt` where `payment_document_no = '1000000101'` | `status = R` |
