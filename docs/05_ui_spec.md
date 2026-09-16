@@ -88,3 +88,7 @@ keys ที่ติ๊ก → distinct PaymentUuid → SELECT item ทุกต
 
 `#CHANGE_SET` จำเป็นต่อกติกานี้: ถ้าเป็น isolated FE จะยิงทีละแถว ติ๊ก 2 item ใบเดียวกัน
 handler โดนเรียก 2 รอบแล้ว post ใบเดิมซ้ำ · `#CHANGE_SET` ทำให้ keys ทั้งหมดมาถึงรอบเดียว
+
+⚠️ **ผลข้างเคียงของ `#CHANGE_SET` (เห็นจริง 2026-09-16)**: all-or-nothing — ติ๊กหลายใบแล้วมีใบใดตก
+validation ทั้ง change set ถูก rollback ไม่มีใบไหนถูก reject FE แจ้ง "No items were processed"
+ผู้ใช้กำลัง confirm ว่า requirement ต้องการแบบนี้หรือไม่ (OQ-26)

@@ -157,9 +157,9 @@
 | 7.3 | BDEF — `with additional save` · `action ( features : instance )` ทั้งสองปุ่ม · `rejectItem result [1] $self` · `field ( features : instance ) RejectReason` | Claude → ผู้ใช้ | ✅ |
 | 7.4 | `ZBP_R_ZARE002` — `get_instance_features` · `rejectItem` logic (distinct payment → validate reason ทุก item → buffer → บังคับ save ด้วย update ค่าเดิม) · `lsc_Item` `save_modified` → `UPDATE ztar_i002_pymt SET status = 'R'` | Claude → ผู้ใช้ | ✅ |
 | 7.6 | ABAP Unit ของ validation ใน `ZBP_R_ZARE002` | Claude → ผู้ใช้ | ⬜ |
-| 7.6a | ทดสอบ backend ผ่าน EML (console class ชั่วคราว) — ยืนยัน saver ถูกเรียกและ `ztar_i002_pymt.status = R` จริง (OQ-24) โดยไม่รอ UI | Claude → ผู้ใช้ | ⬜ |
+| 7.6a | ~~ทดสอบ backend ผ่าน EML~~ — ไม่ต้องแล้ว 7.7 ข้อ 4 ยืนยัน OQ-24 ผ่าน UI จริง | — | ✅ ยุบเข้า 7.7 |
 | 7.6b | inline edit ทำงานบน launchpad — manifest `inlineEdit` + ตัด `@UI.multiLineText` (OQ-25) | ผู้ใช้ + Claude | ✅ |
-| 7.7 | ทดสอบบน launchpad: ติ๊กบาง item → Reject → ทุก item ของ payment icon แดง · Reject Reason ไม่มีดินสอ · ปุ่มทั้งคู่ dim | ผู้ใช้ | ⬜ |
+| 7.7 | ทดสอบบน launchpad — **ผ่าน 4/5** (2026-09-16): validate per item ✅ · reject ทั้ง payment ✅ · readonly + ปุ่ม dim ✅ · `status = R` ใน DB ✅ · ข้อ 5 (2 ใบพร้อมกัน) = all-or-nothing ตาม `#CHANGE_SET` → OQ-26 รอ confirm ว่าต้องการแบบนี้ไหม | ผู้ใช้ | 🟨 |
 | 7.8 | ทดสอบ 2 user แก้คนละ item ในใบเดียวกันพร้อมกัน · draft ค้างแล้วกลับมา | ผู้ใช้ | ⬜ |
 | 7.9 | รีวิว OQ ทั้งตาราง + object list ตรงกับ tenant | Claude | ⬜ |
 
