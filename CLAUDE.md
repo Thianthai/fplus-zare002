@@ -34,6 +34,9 @@
 | Service binding (UI, V4) | `ZUI_<APP>_O4` | `ZUI_ZARE002_O4` |
 | Draft table | — | `ZTAR_E002_ITEM_D` |
 | Message class | `Z<APP>` | `ZARE002` |
+| IAM App | `ZIAM_<APP>` (+ `_EXT` ระบบต่อให้) | `ZIAM_ZARE002_EXT` |
+| Business Catalog | `ZBC_<APP>` | `ZBC_ZARE002` |
+| Launchpad App Descriptor Item | `<APP>_UI5R` | `ZARE002_UI5R` |
 
 ### ข้อยกเว้นที่ตกลงไว้ (2026-09-07)
 
