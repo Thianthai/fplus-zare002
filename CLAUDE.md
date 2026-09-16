@@ -89,6 +89,13 @@
   → ดูตารางเทียบข้างบน · แต่ **`@Semantics.amount.currencyCode` /
   `@Semantics.quantity.unitOfMeasure`** บน field จำนวนเงิน/ปริมาณ **ยังใช้ได้ปกติ**
   ชื่อคล้ายกันมาก อย่าลบทิ้งไปด้วยกัน
+- **draft-enabled root ต้องมี `create` และ `delete` อย่างน้อยแบบ `internal`** ถึงจะเป็น BO
+  update-only ก็ตาม (เจอจริง 2026-09-16: `The operation "create" is required (at least "internal")
+  for draft-enabled entity`) — draft machinery ใช้สร้าง/ทิ้ง draft instance ·
+  `internal` = ไม่โผล่ใน OData · **ห้าม `use create` / `use delete` ใน projection**
+- **key field ใน strict(2) ต้อง `field ( readonly : update ) <Key>`** (warning: `should be
+  flagged as "readonly" or "readonly:update"`) — ใช้ `readonly : update` ไม่ใช่ `readonly` เฉย ๆ
+  เพราะพอมี `create` (แม้ internal) RAP จะถามหา numbering ให้ key ที่ readonly เต็ม
 - **Comment ใน BDEF (`.asbdef`) ใช้ `//` ไม่ใช่ `"`** — `"` เป็นของ ABAP ใช้ใน `.asbdef` ไม่ได้
 - **RAP derived type (`TYPE STRUCTURE FOR READ RESULT ...`) ใช้ตรง ๆ ใน method signature ไม่ได้**
   parser จะกิน token ถัดไป (`RETURNING`, `EXPORTING`) เข้ามาเป็นส่วนหนึ่งของ type
