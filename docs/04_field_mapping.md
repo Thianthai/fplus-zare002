@@ -127,3 +127,13 @@ ZC_ZARE002:     _BusinessPartner.CustomerName as CustomerName    // path ธร�
 
 `InvoiceAmount` เป็น `curr(23,2)` → ต้องมี `@Semantics.amount.currencyCode: 'Currency'`
 และ `Currency` ต้องอยู่ใน entity เดียวกัน — `ztar_i002_item.currency` copy มาจาก header อยู่แล้ว
+
+## 7. Company code บน tenant (export 2026-09-16 จาก `I_CompanyCode`)
+
+| CC | ชื่อ | สกุลเงิน | Company |
+|---|---|---|---|
+| `1000` | F-PLUS CO., LTD. | THB | FPLUS |
+| `2000` | ONE TWO TRADING CO., LTD. | THB | OTT |
+
+ทั้งคู่ THB · chart of accounts `YCOA` · ข้อมูลใน `ztar_i002_pymt` ณ 2026-09-16 มีแต่ `2000`
+แต่ `1000` มีอยู่ใน master data และจะเข้ามาแน่ → สิทธิ์ต้องรองรับตั้งแต่ตอนนี้ (OQ-15)
