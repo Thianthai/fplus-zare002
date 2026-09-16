@@ -21,7 +21,6 @@
 | OQ-23 | **ปุ่ม Submit ต้องปิดด้วยไหมเมื่อ payment ถูก Reject แล้ว** (`status = 'R'`) — Reject ปิดแน่ (OQ-13) · Submit ยังไม่มีใครระบุ | ผู้ใช้ | Phase 7 | ไม่บล็อก — default: ปิดทั้งคู่เมื่อ `R` | ⬜ |
 | OQ-24 | **`save_modified` ของ `with additional save` ถูกเรียกไหมถ้า action ไม่ได้แก้ field ใดของ item** — Reject เขียนแค่ header ผ่าน buffer · ถ้า framework ข้าม save เพราะ buffer ของ item ว่าง status จะไม่ถูก stamp · **ต้อง spike บน tenant** · fallback: ให้ action `MODIFY ENTITIES UPDATE` RejectReason ค่าเดิมเพื่อบังคับ save phase | Claude + ผู้ใช้ | Phase 7 | **บล็อก 7.6** ถ้าไม่ผ่าน | ⬜ |
 | OQ-14 | ต้อง log ไหมว่าใครแก้ `reject_reason` เป็นอะไรเมื่อไหร่ — ตอนนี้มีแค่ `last_changed_by` ที่เก็บค่าล่าสุด ไม่มีประวัติ | ผู้ใช้ / audit | Phase 3 | ไม่บล็อก — ถ้าต้องการให้ทำเป็น append-only log table แยก **ไม่ใช่** ย้ายที่เก็บค่าปัจจุบัน (ดู `01_architecture.md` §2) | ⬜ |
-| OQ-15 | **สิทธิ์ระดับ company code** — **ตอบแล้ว 2026-09-16: ต้องรองรับหลาย CC** (ใน DB มีทั้ง `1000` F-PLUS CO., LTD. และ `2000` ONE TWO TRADING CO., LTD.) → authorization object + DCL + `authorization master ( instance )` + restriction ที่ business role · Claude ตีความว่า = ผู้ใช้เห็น/แก้ได้เฉพาะ CC ที่ role อนุญาต **รอ confirm** | ผู้ใช้ | Phase 0 | spec ของ Phase 7 — **ต้องทำก่อน logic อื่นเพราะเปลี่ยน BDEF** | 🟨 |
 
 ## ที่ปิดไปแล้ว
 
@@ -37,6 +36,7 @@
 | OQ-01 | **1 row = 1 item หรือ 1 payment** | **item level ตาม requirement — เห็นจริงบน launchpad 2026-09-16**: payment `1000000002` (3 item) ขึ้น 3 แถว header ซ้ำกัน · ผู้ใช้รับได้ | 2026-09-16 |
 | OQ-09 | **สิทธิ์อ่าน `I_BusinessPartner` ของ business role จริง** | **ไม่มีปัญหา** — เปิดด้วย business user บน launchpad แล้ว Customer Name ขึ้นครบทุกแถว รวมชื่อไทยหลายท่อน (`บริษัท สยามแม็คโคร จำกัด สำนักงานใหญ่`) ที่ `concat_with_space` ต่อให้ | 2026-09-16 |
 | OQ-10 | **ใครใช้ app / role ไหน** | business role สร้างและ assign แล้ว (Phase 6.5) — รายละเอียด role อยู่ฝั่ง Fiori config ไม่ขึ้น git | 2026-09-16 |
+| OQ-15 | **สิทธิ์ระดับ company code** | **แยกตาม CC · คุมด้วย Business Role** (confirm 2026-09-16): คน CC 1000 ไม่เห็นแถว 2000 · auth object `Z_ARE002` → IAM App restriction type → business role ใส่ค่า CC · DCL กรองการอ่าน + `get_instance_authorizations` กันการแก้/กดปุ่ม อ่าน auth object เดียวกัน · เพิ่ม CC ใหม่ = แก้ role อย่างเดียว | 2026-09-16 |
 | OQ-07 | **ชื่อลูกค้าดึงจาก view ไหน** — mockup มี Customer Name แต่ไม่มีใน table | **`I_BusinessPartner`** · `BusinessPartner = customer_code` เทียบตรง ๆ ได้เพราะ ZARI002 แปลง `ALPHA = IN` ก่อน insert อยู่แล้ว · ชื่อลูกค้า **ต่อเอง** จาก `OrganizationBPName1..4` คั่นด้วยช่องว่าง ผ่าน view `ZI_ZARE002_BP` ไม่ใช้ `BusinessPartnerFullName` | 2026-09-07 |
 
 ## วิธีใช้
