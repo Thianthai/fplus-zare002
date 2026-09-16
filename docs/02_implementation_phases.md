@@ -144,27 +144,29 @@
 
 ---
 
-## Phase 7 — Test & handover
+## Phase 7 — Reject logic · sort (เปิด 2026-09-16)
+
+ขอบเขตหลังตกลง: OQ-13 / 19 / 20 / 21 / 22 / 23 / 24 · **company code (OQ-15) hold** ·
+`submitItem` ยังว่าง · `authorization master ( global )` และ `#NOT_REQUIRED` คงเดิม
 
 | # | งาน | ฝั่ง | Status |
 |---|-----|------|--------|
-| 7.1 | ABAP Unit ของ `ZBP_R_ZARE002` (`ROLLBACK ENTITIES` ใน `setup`) | Claude → ผู้ใช้ | ⬜ |
-| 7.2 | ทดสอบกับข้อมูลจริงหลายใบ / หลาย item ต่อใบ | ผู้ใช้ | ⬜ |
-| 7.3 | ทดสอบ 2 user แก้คนละ item ในใบเดียวกันพร้อมกัน | ผู้ใช้ | ⬜ |
-| 7.4 | ถ้าจบแบบมี draft — ทดสอบ draft ค้าง เปิดแก้แล้วปิด browser แล้วกลับมา | ผู้ใช้ | ⬜ |
-| 7.5 | ไล่รีวิว `06_open_questions.md` ทั้งตาราง | Claude | ⬜ |
-| 7.6 | อัปเดต `03_object_list.md` ให้ตรงกับของจริงบน tenant | Claude | ⬜ |
+| 7.5 | metadata ext — เติม `visualizations: [ { type: #AS_LINEITEM } ]` ให้ sort ทำงาน (OQ-20) | Claude → ผู้ใช้ | 🟨 |
+| 7.1 | Message class `ZARE002` | Claude → ผู้ใช้ | ⬜ |
+| 7.2 | `ZCL_ZARE002_STATUS_BUFFER` — static buffer `payment_uuid → status` ระหว่าง action กับ saver | Claude → ผู้ใช้ | ⬜ |
+| 7.3 | BDEF — `with additional save` · `action ( features : instance )` ทั้งสองปุ่ม · `rejectItem result [1] $self` · `field ( features : instance ) RejectReason` | Claude → ผู้ใช้ | ⬜ |
+| 7.4 | `ZBP_R_ZARE002` — `get_instance_features` · `rejectItem` logic (distinct payment → validate reason ทุก item → buffer → บังคับ save ด้วย update ค่าเดิม) · `lsc_Item` `save_modified` → `UPDATE ztar_i002_pymt SET status = 'R'` | Claude → ผู้ใช้ | ⬜ |
+| 7.6 | ABAP Unit ของ validation ใน `ZBP_R_ZARE002` | Claude → ผู้ใช้ | ⬜ |
+| 7.7 | ทดสอบบน launchpad: ติ๊กบาง item → Reject → ทุก item ของ payment icon แดง · Reject Reason readonly · ปุ่มทั้งคู่ dim | ผู้ใช้ | ⬜ |
+| 7.8 | ทดสอบ 2 user แก้คนละ item ในใบเดียวกันพร้อมกัน · draft ค้างแล้วกลับมา | ผู้ใช้ | ⬜ |
+| 7.9 | รีวิว OQ ทั้งตาราง + object list ตรงกับ tenant | Claude | ⬜ |
 
-**Exit criteria**: ทะเบียนข้อสงสัยไม่มี `⬜` ที่บล็อกการส่งมอบ
-
----
+**Exit criteria**: Reject ใบที่มีหลาย item แล้ว `ztar_i002_pymt.status = 'R'` จริง · item ที่ไม่มีเหตุผลถูกกันด้วย message · แถวเรียงตาม posting date ล่าสุดก่อน
 
 ## นอก scope เฟสนี้ — บันทึกไว้กันลืม
 
-- **logic ปุ่ม Submit** — post FI จริง แล้ว stamp `status` = `S`/`W`/`E` ที่ header
-- **logic ปุ่ม Reject** — stamp `status` = `R` + เขียน `reject_reason`
-- **ทั้งสองปุ่ม**: distinct `PaymentUuid` จาก keys → ทำงานกับ item **ทุกตัว** ของ payment
-  เหล่านั้น ไม่ใช่แค่ที่ติ๊ก (OQ-04 ตอบแล้ว) · `#CHANGE_SET` ตั้งไว้แล้วรองรับเรื่องนี้
+- **logic ปุ่ม Submit** — distinct `PaymentUuid` จาก keys → ทำงานกับ item **ทุกตัว** ของ payment
+  (OQ-04) · `#CHANGE_SET` ตั้งไว้แล้ว · pattern เดียวกับ Reject ที่ทำใน Phase 7
+- **สิทธิ์ตาม company code** — hold (OQ-15) · เมื่อทำ: auth object + DCL + `#CHECK` + IAM restriction + role
 - **Object Page** — ถ้าวันหน้าต้องดูรายละเอียดรายใบ
-- **สิทธิ์ระดับ company code** — ถ้า OQ-15 เปลี่ยนคำตอบ
 - **การแจ้งผลกลับ Salesforce** — เป็นงานของ ZARI003
