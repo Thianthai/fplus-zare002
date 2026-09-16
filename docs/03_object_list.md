@@ -75,10 +75,10 @@ object type จริงบน tenant นี้ (ปิด OQ-11) และช�
 
 | Object | Type (abapGit) | ชื่อจริง | หมายเหตุ | Status |
 |---|---|---|---|---|
-| IAM App | `SIA6` | `ZIAM_ZARE002_EXT` | ตั้งชื่อ `ZIAM_ZARE002` ระบบต่อ `_EXT` (External App) ให้เอง · ผูก `ZUI_ZARE002_O4` | 🟦 |
-| Business Catalog | `SIA1` | `ZBC_ZARE002` | หน่วยที่ business role เอาไปผูก | 🟦 |
-| Business Catalog App Assignment | `SIA7` | `ZBC_ZARE002_0001` | ระบบสร้างตอนผูก IAM App เข้า catalog | 🟦 |
-| Launchpad App Descriptor Item | `UIAD` | `ZARE002_UI5R` | tile / target ของ Fiori app ที่ deploy จาก BAS | 🟦 |
+| IAM App | `SIA6` | `ZIAM_ZARE002_EXT` | type **EXT** = External App — ใช้เมื่อ UI เป็น UI5 app ที่ deploy จาก BAS (`UI_APP_ID = ZARE002_UI5R`) · ผูก `ZUI_ZARE002_O4` (`G4BA`) · published | ✅ |
+| Business Catalog | `SIA1` | `ZBC_ZARE002` | หน่วยที่ business role เอาไปผูก · published · `IS_RESTRICTABLE_EDITABLE = X` (รองรับ restriction ถ้า OQ-15 เปลี่ยน) | ✅ |
+| Business Catalog App Assignment | `SIA7` | `ZBC_ZARE002_0001` | ระบบสร้างตอนผูก IAM App เข้า catalog | ✅ |
+| Launchpad App Descriptor Item | `UIAD` | `ZARE002_UI5R` | UI5 app id `com.fplus.fi.ar.zare002` · semantic object `ZARE002` action `manage` · static tile "Automatic Incoming Payments" · ไฟล์เป็น `.uiad.json` | ✅ |
 | Fiori app (UI5) | — | สร้าง + deploy จาก BAS โดยผู้ใช้ | inline edit ของ Reject Reason อยู่ใน manifest ของ app นี้ · abapGit อาจไม่ serialize ตัว app | — |
 | Business Role + assign user | — (config) | ตั้งใน Maintain Business Roles | ไม่ขึ้น git | ⬜ |
 

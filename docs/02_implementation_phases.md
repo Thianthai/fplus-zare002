@@ -131,8 +131,8 @@
 | # | งาน | ฝั่ง | Status |
 |---|-----|------|--------|
 | 6.1 | ~~service definition / binding~~ — **สร้างไปแล้วที่ Phase 3.8** ตัวเดียวกัน ไม่ใช่ของชั่วคราว | — | ✅ ยุบเข้า 3.8 |
-| 6.3 | IAM App | ผู้ใช้ | ⬜ |
-| 6.4 | Business Catalog + app assignment | ผู้ใช้ | ⬜ |
+| 6.3 | IAM App `ZIAM_ZARE002_EXT` (type EXT · ผูก `ZUI_ZARE002_O4` + UI5 app) | ผู้ใช้ | ✅ |
+| 6.4 | Business Catalog `ZBC_ZARE002` + assignment `ZBC_ZARE002_0001` · Launchpad App Descriptor Item `ZARE002_UI5R` · Fiori app deploy จาก BAS | ผู้ใช้ | ✅ |
 | 6.5 | Business Role + assign ให้ user ทดสอบ (Fiori — ไม่ขึ้น git) | ผู้ใช้ | ⬜ |
 | 6.6 | เปิดจาก Fiori Launchpad ได้จริง | ผู้ใช้ | ⬜ |
 | 6.7 | ยืนยัน Customer Name ยังขึ้นตอนเปิดด้วย business user จริง (ไม่ใช่ ADT preview) | ผู้ใช้ | ⬜ |
