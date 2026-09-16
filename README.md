@@ -55,7 +55,8 @@ fplus-zare002/
 │   ├── 04_field_mapping.md       # คอลัมน์บนหน้าจอ ↔ table field
 │   ├── 05_ui_spec.md             # UI annotation + พฤติกรรมหน้าจอ
 │   ├── 06_open_questions.md      # ทะเบียนข้อสงสัย — รีวิวทุกครั้งที่จบ phase
-│   └── 07_fiori_handover.md      # brief ส่งทีม Fiori: เปิด edit คอลัมน์ Reject Reason
+│   ├── 07_fiori_handover.md      # brief ส่งทีม Fiori: เปิด edit คอลัมน์ Reject Reason
+│   └── 08_flow_reject_reason_edit.md  # flow ละเอียด: inline edit → RAP → DB ทีละ method
 ├── .abapgit.xml                  # ← tenant serialize เอง ห้ามแก้มือ (ยังไม่มี)
 └── src/                          # ← abapGit sync เฉพาะโฟลเดอร์นี้ (ยังไม่มี)
 ```
