@@ -15,7 +15,6 @@
 | OQ-12 | รายงานควร filter เฉพาะ `status = 'N'` โดย default ไหม หรือแสดงทุกสถานะ · mockup แสดงทั้ง 🕐 ✅ ❌ = แสดงทุกสถานะ | ผู้ใช้ | Phase 3 | ไม่บล็อก — แสดงทุกสถานะตาม mockup ไปก่อน | 🟨 |
 | OQ-13 | **`reject_reason` แก้ได้ทุกสถานะหรือเฉพาะ `N`** — **ตอบแล้ว 2026-09-16**: หลังกด Reject (header `status = 'R'`) **ห้ามแก้อีก** → `field ( features : instance ) RejectReason` readonly เมื่อ `_Payment.Status = 'R'` | ผู้ใช้ | Phase 3 | spec ของ Phase 7 | 🟨 |
 | OQ-19 | **กติกา: กด Reject ต้องมี `reject_reason`** — **ยืนยันซ้ำ 2026-09-16** validate เสมอ · ยังต้องตกลง scope: ทุก item ของ payment หรือเฉพาะ item ที่ติ๊ก (OQ-22) | ผู้ใช้ | Phase 6 | spec ของ Phase 7 | 🟨 |
-| OQ-20 | **default sort ไม่ทำงาน** — **สั่งแก้แล้ว 2026-09-16** เรียง `PostingDate` มากไปน้อย → เติม `visualizations: [ { type: #AS_LINEITEM } ]` ใน `@UI.presentationVariant` | Claude → ผู้ใช้ | Phase 6 | Phase 7.8 | 🟨 |
 | OQ-21 | **ตอน Reject ต้องเขียน `salesforce_status` / `salesforce_message` ด้วยไหม** — **ตอบแล้ว 2026-09-16: เขียนแค่ `status = 'R'` ไปก่อน** · เพิ่ม 2 field ทีหลังในจุดเดียวกัน (saver) | ผู้ใช้ | Phase 7 | spec ของ 7.6 | 🟨 |
 | OQ-22 | **scope ของ validation reject reason** — **ตอบแล้ว 2026-09-16: ทุก item ของ payment** เหตุผล: logic บังคับว่า Reject ครอบทุก item ของ payment อยู่แล้ว (OQ-04) ต่อให้ผู้ใช้ติ๊กไม่ครบ ดังนั้นทุก item ที่จะถูก reject ต้องมีเหตุผล | ผู้ใช้ | Phase 7 | spec ของ 7.6 | 🟨 |
 | OQ-23 | **ปุ่ม Submit ปิดด้วยไหมเมื่อ `status = 'R'`** — **ตอบแล้ว 2026-09-16: ปิดทั้ง Submit และ Reject** → `action ( features : instance )` ทั้งสองตัว | ผู้ใช้ | Phase 7 | spec ของ 7.5 / 7.6 | 🟨 |
@@ -37,6 +36,7 @@
 | OQ-01 | **1 row = 1 item หรือ 1 payment** | **item level ตาม requirement — เห็นจริงบน launchpad 2026-09-16**: payment `1000000002` (3 item) ขึ้น 3 แถว header ซ้ำกัน · ผู้ใช้รับได้ | 2026-09-16 |
 | OQ-09 | **สิทธิ์อ่าน `I_BusinessPartner` ของ business role จริง** | **ไม่มีปัญหา** — เปิดด้วย business user บน launchpad แล้ว Customer Name ขึ้นครบทุกแถว รวมชื่อไทยหลายท่อน (`บริษัท สยามแม็คโคร จำกัด สำนักงานใหญ่`) ที่ `concat_with_space` ต่อให้ | 2026-09-16 |
 | OQ-10 | **ใครใช้ app / role ไหน** | business role สร้างและ assign แล้ว (Phase 6.5) — รายละเอียด role อยู่ฝั่ง Fiori config ไม่ขึ้น git | 2026-09-16 |
+| OQ-20 | **default sort ไม่ทำงาน** | **แก้แล้ว 2026-09-16** — FE V4 หยิบ `@UI.presentationVariant` มาเป็น default ก็ต่อเมื่อมี `visualizations: [ { type: #AS_LINEITEM } ]` · เติมแล้วเรียง `PostingDate` DESC บน launchpad จริง | 2026-09-16 |
 | OQ-07 | **ชื่อลูกค้าดึงจาก view ไหน** — mockup มี Customer Name แต่ไม่มีใน table | **`I_BusinessPartner`** · `BusinessPartner = customer_code` เทียบตรง ๆ ได้เพราะ ZARI002 แปลง `ALPHA = IN` ก่อน insert อยู่แล้ว · ชื่อลูกค้า **ต่อเอง** จาก `OrganizationBPName1..4` คั่นด้วยช่องว่าง ผ่าน view `ZI_ZARE002_BP` ไม่ใช้ `BusinessPartnerFullName` | 2026-09-07 |
 
 ## วิธีใช้

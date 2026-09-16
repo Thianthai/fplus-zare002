@@ -100,6 +100,8 @@
 - **`total etag` ประกาศได้เฉพาะ BO ที่มี draft** — BO นี้มี draft และประกาศ
   `total etag LastChangedAt` แล้ว · field `last_changed_at` ถูกเพิ่มเข้า `ztar_i002_item`
   (repo `fplus-zari002` commit `0762ada`) เพื่อการนี้โดยเฉพาะ — ดู `docs/01_architecture.md` §5
+- **`@UI.presentationVariant` ต้องมี `visualizations: [ { type: #AS_LINEITEM } ]`** ไม่งั้น FE V4
+  ไม่หยิบมาเป็น default sort ของ List Report (เจอจริง 2026-09-16 — แถวเรียงตาม insert order)
 - **คอลัมน์ที่อยากได้แต่ icon สี** — อย่าเขียนทับ field ข้อมูลด้วย `''` (filter จะพัง)
   ให้เพิ่ม element literal `''` แยก แล้วใส่ `@UI.lineItem` + `criticality` ที่ตัวนั้น
   ส่วน field จริงเหลือ `@UI.selectionField` และ**ห้าม `@UI.hidden`** (จะหายจาก filter bar)
