@@ -119,6 +119,11 @@
 - **saver class ต้องคู่กับ BDEF เสมอ** — `with unmanaged save` = framework **ไม่เขียน** table
   ต้องมี `lsc_*` เขียนเอง · `with additional save` = framework เขียนแล้วค่อยเรียก saver เพิ่ม
   · ไม่ประกาศทั้งคู่ = saver ไม่เคยถูกเรียก · **แก้ฝั่งเดียวไม่ได้ ต้องแก้พร้อมกันทั้ง BDEF และ pool**
+- **saver ของ `with additional save` redefine ได้แค่ `save_modified` + `cleanup_finalize`**
+  (เจอจริง 2026-09-16: `The method "CLEANUP" cannot be redefined in accordance with BEHAVIOR
+  definition`) — `cleanup` / `finalize` / `check_before_save` / `save` เป็นของ **unmanaged save**
+  · ล้าง static buffer ใน `cleanup_finalize` · OData request ของ RAP เป็น stateless (session ใหม่
+  ทุก request) static buffer จึงไม่รั่วข้าม request อยู่แล้ว
 - **เขียน table นอก BO (เช่น `ztar_i002_pymt`) ต้องทำใน saver (`with additional save`)**
   ไม่ใช่ใน action handler — RAP ห้าม modify database ใน interaction phase
   · เขียนเฉพาะ field ด้วย `UPDATE ... SET` **ห้าม `MODIFY ... FROM TABLE`** (แทนที่ทั้ง row)
