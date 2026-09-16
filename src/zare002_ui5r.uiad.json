@@ -1,0 +1,34 @@
+{
+  "formatVersion": "2",
+  "header": {
+    "description": "Automatic Incoming Payments",
+    "originalLanguage": "en",
+    "abapLanguageVersion": "cloudDevelopment"
+  },
+  "generalInformation": {
+    "appType": "ui5",
+    "catalogId": "SAP_TC_ALV5_DEFAULT"
+  },
+  "ui5AppDetails": {
+    "appId": "com.fplus.fi.ar.zare002"
+  },
+  "navigation": {
+    "targetMappingId": "ZARE002_UI5R_TM",
+    "semanticObject": "ZARE002",
+    "action": "manage",
+    "desktop": true,
+    "tablet": true,
+    "phone": true
+  },
+  "tiles": [
+    {
+      "id": "ZARE002_UI5R_AL",
+      "tileType": "static",
+      "standard": {
+        "title": "Automatic Incoming Payments",
+        "subtitle": "ZARE002",
+        "keywords": "ZARE002"
+      }
+    }
+  ]
+}
