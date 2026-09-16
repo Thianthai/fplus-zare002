@@ -58,6 +58,15 @@ app นี้ Min UI5 **1.148.8** → ใช้ได้ · เงื่อน�
 
 ระบุ `RejectReason` ตัวเดียว — field อื่น backend readonly อยู่แล้ว แต่ระบุให้ชัดกันโผล่
 
+**ยืนยันจาก app ที่ทำงานจริง 2 ตัว (2026-09-16)** — key เดียวกัน ตำแหน่งเดียวกัน ต่างแค่วิธีระบุ field:
+
+| app | ค่าใน manifest | ความหมาย |
+|---|---|---|
+| ZARE002 | `"enabledFields": ["RejectReason"]` | whitelist — เปิดเฉพาะที่ระบุ |
+| demo `ydmorapedit` (`Thianthai/demo-rapedit`) | `"enabledFields": [], "disabledFields": []` | เปิดทุก field แล้วให้ `field ( readonly )` ฝั่ง RAP ตัดสิน |
+
+ทั้งสองแบบทำงาน · แบบ whitelist ปลอดภัยกว่าถ้าวันหน้า backend เปิด field เพิ่มโดยไม่ตั้งใจ
+
 **จุดที่ 2 — ปิด Object Page** (generator สร้าง `ItemObjectPage` ติดมา requirement ไม่มี)
 · `routing.routes` ลบ route `ItemObjectPage` · `routing.targets` ลบ block `ItemObjectPage`
 · `targets.ItemList.options.settings` ลบ block `navigation` ที่ชี้ไป `ItemObjectPage`
