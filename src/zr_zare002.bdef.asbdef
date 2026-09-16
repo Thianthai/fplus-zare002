@@ -8,17 +8,24 @@ draft table ztar_e002_item_d
 lock master total etag LastChangedAt
 authorization master ( global )
 etag master LocalLastChangedAt
+// saver lsc_Item เขียน status ลง ztar_i002_pymt (header ไม่อยู่ใน BO นี้)
+with additional save
 {
   // report นี้ไม่เคยสร้างหรือลบ item — row เกิดจาก ZARI002 เท่านั้น
-  create;
   update;
-  delete;
+
+  // draft ต้องการ create/delete ไว้สร้าง-ทิ้ง draft instance เอง
+  // internal = framework ใช้ได้ แต่ไม่โผล่ใน OData → FE สร้าง/ลบ item ไม่ได้อยู่ดี
+  internal create;
+  internal delete;
 
   // RejectReason เป็น field เดียวที่แก้ได้ทั้ง BO
-  field ( numbering : managed ) ItemUuid;
+  // และแก้ได้เฉพาะ payment ที่ยังไม่ถูก reject (OQ-13) → get_instance_features
+  field ( features : instance ) RejectReason;
+
+  field ( readonly : update ) ItemUuid;
 
   field ( readonly ) PaymentUuid,
-                     ItemUuid,
                      SalesforceItemId,
                      CustomerCode,
                      BillingNoteNo,
@@ -44,10 +51,10 @@ etag master LocalLastChangedAt
   draft action Discard;
   draft determine action Prepare;
 
-  // ปุ่มบน toolbar — เฟสนี้ยังไม่มี logic (docs/05_ui_spec.md §6)
-  // เฟสถัดไป: ขยาย keys ที่ติ๊กมาให้ครอบทุก item ของ payment เดียวกันก่อนทำงาน
-  action submitItem;
-  action rejectItem;
+  // ปุ่มบน toolbar — dim ทั้งคู่เมื่อ payment ถูก reject แล้ว (OQ-23)
+  // เลือก item ใดก็ตาม = ทำกับทุก item ของ payment นั้น (OQ-04)
+  action ( features : instance ) submitItem;                    // ยังว่าง
+  action ( features : instance ) rejectItem result [1] $self;
 
   mapping for ztar_i002_item
     {

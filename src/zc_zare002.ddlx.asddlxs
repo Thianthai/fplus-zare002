@@ -4,7 +4,8 @@
   headerInfo: { typeName: 'Payment Item',
                 typeNamePlural: 'Items' },
   presentationVariant: [ { sortOrder: [ { by: 'PostingDate',       direction: #DESC },
-                                        { by: 'PaymentDocumentNo', direction: #ASC  } ] } ]
+                                        { by: 'PaymentDocumentNo', direction: #ASC  } ],
+                           visualizations: [ { type: #AS_LINEITEM } ] } ]
 }
 annotate entity ZC_ZARE002 with
 {
