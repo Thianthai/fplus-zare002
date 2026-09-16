@@ -4,7 +4,7 @@
 
 > เจอจุดไหนไม่ชัดให้ **note ไว้ที่นี่แล้วเดินต่อ** อย่าหยุดรอ
 
-สถานะ: `⬜` เปิดอยู่ · `🟨` มีคำตอบชั่วคราวแล้ว เดินต่อได้ · `✅` ปิด
+สถานะ: `⬜` เปิดอยู่ · `🟨` มีคำตอบชั่วคราวแล้ว เดินต่อได้ · `⏸` hold โดยผู้ใช้ · `✅` ปิด
 
 | # | เรื่อง | เจ้าของคำตอบ | ยกมาจาก | บล็อกอะไร | สถานะ |
 |---|--------|-------------|---------|-----------|--------|
@@ -20,6 +20,7 @@
 | OQ-22 | **scope ของ validation reject reason** — **ตอบแล้ว 2026-09-16: ทุก item ของ payment** เหตุผล: logic บังคับว่า Reject ครอบทุก item ของ payment อยู่แล้ว (OQ-04) ต่อให้ผู้ใช้ติ๊กไม่ครบ ดังนั้นทุก item ที่จะถูก reject ต้องมีเหตุผล | ผู้ใช้ | Phase 7 | spec ของ 7.6 | 🟨 |
 | OQ-23 | **ปุ่ม Submit ปิดด้วยไหมเมื่อ `status = 'R'`** — **ตอบแล้ว 2026-09-16: ปิดทั้ง Submit และ Reject** → `action ( features : instance )` ทั้งสองตัว | ผู้ใช้ | Phase 7 | spec ของ 7.5 / 7.6 | 🟨 |
 | OQ-24 | **`save_modified` ถูกเรียกไหมถ้า action ไม่แก้ field ของ item** — **ตัดสินใจแล้ว 2026-09-16: ใช้ fallback ตั้งแต่ต้น** ไม่ spike — `rejectItem` จะ `MODIFY ENTITIES UPDATE FIELDS ( RejectReason )` ด้วยค่าเดิม เพื่อบังคับ save phase ให้ saver ถูกเรียกแน่นอน | ผู้ใช้ | Phase 7 | spec ของ 7.6 | 🟨 |
+| OQ-15 | **สิทธิ์ระดับ company code** — **hold (2026-09-16)** หลังตกลงว่าจะแยกตาม CC คุมด้วย business role · **ข้อเท็จจริงที่ต้องจำ: ตอนนี้ยังไม่มีอะไรกรองแถวเลย** — role ให้แค่สิทธิ์เข้า app · `#NOT_REQUIRED` · `( global )` · ไม่มี auth object · ข้อมูลเป็น 2000 ล้วนจึงยังไม่เห็นปัญหา · วันที่ CC 1000 เข้ามา ทุกคนจะเห็นทั้งสองบริษัท · เมื่อกลับมาทำ: auth object `Z_ARE002` + DCL `ZC_ZARE002` + `#CHECK` + IAM App restriction + role · **ไม่ต้องมี `get_instance_authorizations`** เพราะ DCL กันการอ่านแล้ว modify ล้มเอง | ผู้ใช้ | Phase 0 | ไม่บล็อก Reject logic — แต่เป็นความเสี่ยงทันทีที่มีข้อมูล CC 1000 | ⏸ hold |
 | OQ-14 | ต้อง log ไหมว่าใครแก้ `reject_reason` เป็นอะไรเมื่อไหร่ — ตอนนี้มีแค่ `last_changed_by` ที่เก็บค่าล่าสุด ไม่มีประวัติ | ผู้ใช้ / audit | Phase 3 | ไม่บล็อก — ถ้าต้องการให้ทำเป็น append-only log table แยก **ไม่ใช่** ย้ายที่เก็บค่าปัจจุบัน (ดู `01_architecture.md` §2) | ⬜ |
 
 ## ที่ปิดไปแล้ว
@@ -36,7 +37,6 @@
 | OQ-01 | **1 row = 1 item หรือ 1 payment** | **item level ตาม requirement — เห็นจริงบน launchpad 2026-09-16**: payment `1000000002` (3 item) ขึ้น 3 แถว header ซ้ำกัน · ผู้ใช้รับได้ | 2026-09-16 |
 | OQ-09 | **สิทธิ์อ่าน `I_BusinessPartner` ของ business role จริง** | **ไม่มีปัญหา** — เปิดด้วย business user บน launchpad แล้ว Customer Name ขึ้นครบทุกแถว รวมชื่อไทยหลายท่อน (`บริษัท สยามแม็คโคร จำกัด สำนักงานใหญ่`) ที่ `concat_with_space` ต่อให้ | 2026-09-16 |
 | OQ-10 | **ใครใช้ app / role ไหน** | business role สร้างและ assign แล้ว (Phase 6.5) — รายละเอียด role อยู่ฝั่ง Fiori config ไม่ขึ้น git | 2026-09-16 |
-| OQ-15 | **สิทธิ์ระดับ company code** | **แยกตาม CC · คุมด้วย Business Role** (confirm 2026-09-16): คน CC 1000 ไม่เห็นแถว 2000 · auth object `Z_ARE002` → IAM App restriction type → business role ใส่ค่า CC · DCL กรองการอ่าน + `get_instance_authorizations` กันการแก้/กดปุ่ม อ่าน auth object เดียวกัน · เพิ่ม CC ใหม่ = แก้ role อย่างเดียว | 2026-09-16 |
 | OQ-07 | **ชื่อลูกค้าดึงจาก view ไหน** — mockup มี Customer Name แต่ไม่มีใน table | **`I_BusinessPartner`** · `BusinessPartner = customer_code` เทียบตรง ๆ ได้เพราะ ZARI002 แปลง `ALPHA = IN` ก่อน insert อยู่แล้ว · ชื่อลูกค้า **ต่อเอง** จาก `OrganizationBPName1..4` คั่นด้วยช่องว่าง ผ่าน view `ZI_ZARE002_BP` ไม่ใช้ `BusinessPartnerFullName` | 2026-09-07 |
 
 ## วิธีใช้
