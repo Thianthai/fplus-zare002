@@ -28,7 +28,7 @@ baseline ที่ tenant serialize มาแล้ว (commit `7936197`) — ob
 
 **ไม่สร้าง data element / domain ใหม่** — reuse `ZE_REQUEST_STATUS` (package `ZARI002`)
 
-| `ZCL_ZARE002_STATUS_BUFFER` | Class — static buffer `payment_uuid → status` ส่งจาก action ไป saver · `add` / `get_all` / `clear` · 3 unit test | `src/zcl_zare002_status_buffer.clas.abap` | 7 | 🟨 |
+| `ZCL_ZARE002_STATUS_BUFFER` | Class — static buffer `payment_uuid → status` ส่งจาก action ไป saver · `add` / `get_all` / `clear` · 3 unit test | `src/zcl_zare002_status_buffer.clas.abap` | 7 | 🟦 |
 
 ## Table ที่ใช้ — เป็นของ package `ZARI002` ไม่ใช่ของเรา
 
@@ -53,8 +53,8 @@ baseline ที่ tenant serialize มาแล้ว (commit `7936197`) — ob
 
 | Object | Type | ไฟล์ | Phase | Status |
 |--------|------|------|-------|--------|
-| `ZR_ZARE002` | Behavior definition (managed, **non-draft ก่อน**, update only) | `src/zr_zare002.bdef.asbdef` | 2 | ✅ |
-| `ZBP_R_ZARE002` | Behavior pool — `lhc_Item` | `src/zbp_r_zare002.clas.abap` | 2 | ✅ |
+| `ZR_ZARE002` | Behavior definition — managed · with draft · with additional save · update only · features : instance บน RejectReason + 2 action | `src/zr_zare002.bdef.asbdef` | 2 / 7 | 🟨 |
+| `ZBP_R_ZARE002` | Behavior pool — `lhc_Item` (global auth · instance features · rejectItem) + `lsc_Item` (save_modified → `UPDATE ztar_i002_pymt` · cleanup) | `src/zbp_r_zare002.clas.abap` | 2 / 7 | 🟨 |
 | `ZC_ZARE002` | Behavior projection (`use update` · `use action` · `use draft` ถ้าอัปเกรด) | `src/zc_zare002.bdef.asbdef` | 3 | ✅ |
 
 `ZBP_C_ZARE002` (behavior pool ของ projection) **ยังไม่ต้องสร้าง** — สร้างเมื่อมี logic ที่ต้องอยู่ชั้น projection เท่านั้น
