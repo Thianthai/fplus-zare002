@@ -24,11 +24,11 @@ baseline ที่ tenant serialize มาแล้ว (commit `7936197`) — ob
 | Object | Type | ไฟล์ | Phase | Status |
 |--------|------|------|-------|--------|
 | `ZTAR_E002_ITEM_D` | Draft table ของ `ZR_ZARE002` — สร้างด้วย quick-fix จาก BDEF · include `SYCH_BDL_DRAFT_ADMIN_INC` เป็น `%ADMIN` ครบ | `src/ztar_e002_item_d.tabl.xml` | 4 | ✅ |
-| `ZARE002` | Message class — `001` reject reason missing (per item, ชี้ `%element-RejectReason`) · `002` already rejected · `003` rejected OK · `001–099` Reject · `100+` Submit | `src/zare002.msag.xml` | 7 | 🟦 |
+| `ZARE002` | Message class — `001` reject reason missing (per item, ชี้ `%element-RejectReason`) · `002` already rejected · `003` rejected OK · `001–099` Reject · `100+` Submit | `src/zare002.msag.xml` | 7 | ✅ |
 
 **ไม่สร้าง data element / domain ใหม่** — reuse `ZE_REQUEST_STATUS` (package `ZARI002`)
 
-| `ZCL_ZARE002_STATUS_BUFFER` | Class — static buffer `payment_uuid → status` ส่งจาก action ไป saver · `add` / `get_all` / `clear` · 3 unit test | `src/zcl_zare002_status_buffer.clas.abap` | 7 | 🟦 |
+| `ZCL_ZARE002_STATUS_BUFFER` | Class — static buffer `payment_uuid → status` ส่งจาก action ไป saver · `add` / `get_all` / `clear` · 3 unit test | `src/zcl_zare002_status_buffer.clas.abap` | 7 | ✅ |
 
 ## Table ที่ใช้ — เป็นของ package `ZARI002` ไม่ใช่ของเรา
 
@@ -53,8 +53,8 @@ baseline ที่ tenant serialize มาแล้ว (commit `7936197`) — ob
 
 | Object | Type | ไฟล์ | Phase | Status |
 |--------|------|------|-------|--------|
-| `ZR_ZARE002` | Behavior definition — managed · with draft · with additional save · update only · features : instance บน RejectReason + 2 action | `src/zr_zare002.bdef.asbdef` | 2 / 7 | 🟨 |
-| `ZBP_R_ZARE002` | Behavior pool — `lhc_Item` (global auth · instance features · rejectItem) + `lsc_Item` (save_modified → `UPDATE ztar_i002_pymt` · cleanup) | `src/zbp_r_zare002.clas.abap` | 2 / 7 | 🟨 |
+| `ZR_ZARE002` | Behavior definition — managed · with draft · with additional save · update only · features : instance บน RejectReason + 2 action | `src/zr_zare002.bdef.asbdef` | 2 / 7 | ✅ |
+| `ZBP_R_ZARE002` | Behavior pool — `lhc_Item` (global auth · instance features · rejectItem) + `lsc_Item` (save_modified → `UPDATE ztar_i002_pymt` · cleanup) | `src/zbp_r_zare002.clas.abap` | 2 / 7 | ✅ |
 | `ZC_ZARE002` | Behavior projection (`use update` · `use action` · `use draft` ถ้าอัปเกรด) | `src/zc_zare002.bdef.asbdef` | 3 | ✅ |
 
 `ZBP_C_ZARE002` (behavior pool ของ projection) **ยังไม่ต้องสร้าง** — สร้างเมื่อมี logic ที่ต้องอยู่ชั้น projection เท่านั้น
@@ -88,6 +88,6 @@ object type จริงบน tenant นี้ (ปิด OQ-11) และช�
 
 | Action | ชนิด | Phase | Logic | Status |
 |---|---|-------|-------|--------|
-| `submitItem` | instance action · `#CHANGE_SET` | 5 | **ว่าง** — รอเฟสถัดไป | ✅ |
-| `rejectItem` | instance action · `#CHANGE_SET` | 5 | **ว่าง** — รอเฟสถัดไป | ✅ |
+| `submitItem` | instance action · `#CHANGE_SET` · features : instance | 5 / 7 | **ว่าง** — รอเฟส post FI · dim เมื่อ `R` | ✅ |
+| `rejectItem` | instance action · `#CHANGE_SET` · features : instance · `result [1] $self` | 5 / 7 | validate reason ทุก item → buffer → saver stamp `R` | ✅ |
 | `Edit` `Activate` `Discard` `Resume` `Prepare` | draft action (standard) | 4 | framework · **ต้องไล่ประกาศทีละตัวใน projection เพราะมี `strict`** | ✅ |
