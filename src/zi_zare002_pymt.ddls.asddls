@@ -20,10 +20,8 @@ define view entity ZI_ZARE002_PYMT
       posting_date                as PostingDate,
       @EndUserText.label: 'G/L Account'
       gl_account                  as GlAccount,
-      @EndUserText.label: 'Payment Method (Text)'
-      payment_method              as PaymentMethod,
       @EndUserText.label: 'Payment Method'
-      sap_payment_method          as SapPaymentMethod,
+      payment_method              as PaymentMethod,
       @EndUserText.label: 'Cheque No.'
       cheque_no                   as ChequeNo,
       @EndUserText.label: 'Issue Date'

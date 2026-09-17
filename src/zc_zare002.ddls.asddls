@@ -16,7 +16,6 @@ define root view entity ZC_ZARE002
       _Payment.PostingDate            as PostingDate,
       _Payment.GlAccount              as GlAccount,
       _Payment.PaymentMethod          as PaymentMethod,
-      _Payment.SapPaymentMethod       as SapPaymentMethod,
       _Payment.ChequeNo               as ChequeNo,
       _Payment.IssueDate              as IssueDate,
       _Payment.DueOn                  as DueOn,
