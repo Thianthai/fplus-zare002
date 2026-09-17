@@ -30,7 +30,7 @@ baseline ที่ tenant serialize มาแล้ว (commit `7936197`) — ob
 
 | `ZCL_ZARE002_STATUS_BUFFER` | Class — static buffer `payment_uuid → status` ส่งจาก action ไป saver · `add` / `get_all` / `clear` · 3 unit test | `src/zcl_zare002_status_buffer.clas.abap` | 7 | ✅ |
 
-| `ZCL_ZARE002_SPIKE` | ⚠️ **ชั่วคราว** — `if_oo_adt_classrun` reset `reject_reason` + `status → N` + ลบ draft ของ payment ที่ระบุ เพื่อทดสอบ Reject ซ้ำ · เขียน DB ตรงข้าม RAP · **ลบทิ้งตอนจบ Phase 7** | `src/zcl_zare002_spike.clas.abap` | 7 | 🟨 temporary |
+| `ZCL_ZARE002_SPIKE` | ⚠️ **ชั่วคราว** — `if_oo_adt_classrun` reset `reject_reason` + `status → N` + ลบ draft ของ payment ที่ระบุ เพื่อทดสอบ Reject ซ้ำ · เขียน DB ตรงข้าม RAP · **ลบทิ้งตอนจบ Phase 7** | `src/zcl_zare002_spike.clas.abap` | 7 | ✅ temporary — **ลบก่อน handover** |
 
 ## Table ที่ใช้ — เป็นของ package `ZARI002` ไม่ใช่ของเรา
 
@@ -44,7 +44,7 @@ baseline ที่ tenant serialize มาแล้ว (commit `7936197`) — ob
 
 | Object | Type | ไฟล์ | Phase | Status |
 |--------|------|------|-------|--------|
-| `ZI_ZARE002_PYMT` | Interface view บน `ztar_i002_pymt` (1:1) | `src/zi_zare002_pymt.ddls.asddls` | 1 | ✅ |
+| `ZI_ZARE002_PYMT` | Interface view บน `ztar_i002_pymt` (1:1) · + `StatusCriticality` `StatusIcon` · **ไม่มี `SapPaymentMethod`** (2026-09-17) · ⚠️ `PaymentMethod` ขาด label — ใส่ `'Payment Method'` กลับรอบหน้า | `src/zi_zare002_pymt.ddls.asddls` | 1 | ✅ |
 | `ZI_ZARE002_ITEM` | Interface view บน `ztar_i002_item` (1:1) + assoc `_Payment` `_BusinessPartner` | `src/zi_zare002_item.ddls.asddls` | 1 | ✅ |
 | `ZI_ZARE002_BP` | Interface view บน `I_BusinessPartner` — ต่อ `OrganizationBPName1..4` เป็น `CustomerName` | `src/zi_zare002_bp.ddls.asddls` | 1 | ✅ |
 | `ZR_ZARE002` | **Root view entity** — projection บน `ZI_ZARE002_ITEM` | `src/zr_zare002.ddls.asddls` | 2 | ✅ |
