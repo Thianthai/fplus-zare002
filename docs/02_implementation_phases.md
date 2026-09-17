@@ -165,18 +165,41 @@
 
 **Exit criteria**: Reject ใบที่มีหลาย item แล้ว `ztar_i002_pymt.status = 'R'` จริง · item ที่ไม่มีเหตุผลถูกกันด้วย message · แถวเรียงตาม posting date ล่าสุดก่อน
 
-## Phase 8 — Submit / Reject → post FI document (เปิด 2026-09-17 · รอ spec)
+## Phase 8A — Reject → แจ้ง Salesforce (เปิด 2026-09-17 · กำลังเคลียร์ spec)
 
-ผู้ใช้แจ้ง 2026-09-16 ตอนปิดวัน: **ทั้ง Submit และ Reject ต้องเอา payment ที่เลือกไป post FI document**
-รายละเอียดจะส่งมาให้ · ยังไม่มี object list ยังไม่มี code — เริ่มจากรีวิว spec ก่อนตามกติกา
+spec จากผู้ใช้ 2026-09-17 (IN #3 Payment Result): หลัง Reject ต้อง PATCH สถานะ + reject reason
+กลับ SFDC ที่ `cgcloud__Order_Payment__c` **ราย item** (record Id = `salesforce_item_id`)
+· ตัวอย่าง JSON กับ auth ดู `docs/09_sfdc_api.md` (จะสร้างตอน confirm object)
 
-สิ่งที่ต้องถามทันทีที่ได้ spec:
-- Reject post FI document **แบบไหน** (reversal? ใบ reject แยก? หรือแค่ Submit ที่ post) — ประโยคที่แจ้งมาบอกว่า "สองปุ่ม" ต้อง confirm
-- **`sap_payment_method` ไม่มีแล้ว** (OQ-27) — แยกประเภทการจ่ายจาก `payment_method` (`Cheque` / `Cash` / `Transfer` ตามที่ SFDC ส่ง) ถ้า logic post ต้องแยก
-- released API สำหรับ post: `I_JournalEntryTP` (RAP BO) หรือ `I_OperationalAcctgDocItemCube`… ต้องเช็ค Released Objects บน tenant
-- หลัง post สำเร็จ stamp `status` = `S`/`W`/`E` + `salesforce_status` / `salesforce_message` (OQ-21 กลับมามีความหมาย)
-- ทำใน action handler ไม่ได้ (ห้ามเขียน DB ใน interaction phase) → post ผ่าน EML ของ `I_JournalEntryTP` ใน handler ได้ (เป็น RAP BO) แต่ commit เกิดพร้อม LUW ของเรา · หรือ post ใน saver `lsc_Item` — ต้องตัดสิน
-- OQ-26 (all-or-nothing) ต้องตอบก่อน เพราะ post FI หลายใบใน change set เดียว = ถ้าใบหนึ่ง post ไม่ผ่านทุกใบ rollback
+**ตกลงแล้ว (2026-09-17)**
+- ชื่อ field API ยึดตาม JSON example (มี `_` คั่น): `BST_Payment_Collection__c` `BST_SAP_Status__c`
+  `BST_SAP_Reject_Reason__c` `BST_SAP_Batch_Id__c` `BST_SAP_Response_Date__c`
+- Communication Scenario **สร้างเอง** `ZCS_REJECT_RESULT` · ใช้ Communication System `SFDC_DEV`
+  ของ ZARI002 (client id เดียวกัน · secret ผู้ใช้ถือ ใส่ใน Fiori)
+- `BST_SAP_Batch_Id__c` = `ztar_i002_pymt.request_id`
+- ยิงแบบ **composite** (SFDC dev แนะนำ) — 1 คลิก = 1 call · `allOrNone`
+- **ส่ง SFDC ไม่สำเร็จ → ห้าม stamp `R`** ผู้ใช้ต้องกด Reject ซ้ำได้ (re-send)
+  → **ย้ายจุดยิงจาก `save_modified` ไป `rejectItem`** (interaction phase ยิง HTTP ได้ ห้ามแค่เขียน DB)
+  ผล SFDC ผ่าน → buffer + save · พัง → `failed` + `reported` ไม่มีอะไรลง DB
+- ผลข้างเคียง: `salesforce_status` มีแต่ `S` (กรณี `E` ไม่ถูก save) — ความล้มเหลวเห็นแค่บนจอ
+
+**ยังรอคำตอบ**: composite = sObject Collections (`/composite/sobjects`) ใช่ไหม · เกิน 200 item
+ต่อคลิกทำยังไง · Response Date ส่ง UTC ได้ไหม · ต้องการ log ตอนส่งพลาดไหม · `request_id` > 15
+· OQ-26 ยึด all-or-nothing
+
+**Object (ยังไม่ confirm ชื่อ)**: Outbound Service SCO3 · Scenario `ZCS_REJECT_RESULT` SCO1 ·
+Arrangement (Fiori) · API class `ZCL_ZARE002_SFDC_*` · แก้ `lhc_Item->rejectItem` + `lsc_Item` · unit test
+
+## Phase 8B — Submit → post FI document (รอ spec)
+
+ทั้ง Submit และ Reject ต้องเกี่ยวกับ FI document (ผู้ใช้แจ้ง 2026-09-16) — Reject ทำ SFDC ก่อน (8A)
+ส่วน post FI ยังไม่มี spec · คำถามที่ต้องถามทันทีที่ได้ spec:
+- Reject post FI document **แบบไหน** (reversal? ใบ reject แยก? หรือแค่ Submit ที่ post)
+- **`sap_payment_method` ไม่มีแล้ว** (OQ-27) — แยกประเภทการจ่ายจาก `payment_method` (`Cheque` / `Cash` / `Transfer`)
+- released API สำหรับ post: `I_JournalEntryTP` หรืออื่น — เช็ค Released Objects
+- หลัง post สำเร็จ stamp `status` = `S`/`W`/`E` + แจ้ง SFDC `Completed` ด้วย class เดียวกับ 8A
+- post ผ่าน EML ของ BO SAP ใน handler (commit พร้อม LUW เรา) หรือใน saver — ต้องตัดสิน
+- OQ-26 (all-or-nothing) กระทบ post หลายใบใน change set เดียว
 
 ค้างจาก Phase 7 ที่ยังต้องทำ: 7.6 ABAP Unit · 7.8 concurrency / draft ค้าง · ลบ `ZCL_ZARE002_SPIKE`
 
