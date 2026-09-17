@@ -183,9 +183,17 @@ spec จากผู้ใช้ 2026-09-17 (IN #3 Payment Result): หลัง
   ผล SFDC ผ่าน → buffer + save · พัง → `failed` + `reported` ไม่มีอะไรลง DB
 - ผลข้างเคียง: `salesforce_status` มีแต่ `S` (กรณี `E` ไม่ถูก save) — ความล้มเหลวเห็นแค่บนจอ
 
-**ยังรอคำตอบ**: composite = sObject Collections (`/composite/sobjects`) ใช่ไหม · เกิน 200 item
-ต่อคลิกทำยังไง · Response Date ส่ง UTC ได้ไหม · ต้องการ log ตอนส่งพลาดไหม · `request_id` > 15
-· OQ-26 ยึด all-or-nothing
+**ตกลงเพิ่ม (2026-09-17 รอบ 2)**
+- composite = **sObject Collections** `PATCH /services/data/v66.0/composite/sobjects` · `allOrNone: true`
+- เกิน 200 item ต่อคลิก → **ปฏิเสธ** ด้วย message `ZARE002 004`
+- `BST_SAP_Response_Date__c` ต้องเป็น **`+0700`** ตาม spec — UTC + 7 ชม. แล้วต่อ `+0700` คงที่ (ไทยไม่มี DST)
+- log ตอนส่งพลาด: **ยังไม่ทำ** แต่ API class คืนผลเป็น structure ไว้ให้ต่อ log table ทีหลังได้
+
+**ยังรอคำตอบ**
+- ⚠️ **`BST_SAP_Batch_Id__c` (15) สั้นกว่า `request_id` จริง** — ตั้งแต่ 2026-09-16 SBPA ส่ง `RequestId`
+  เอง รูปแบบ `20260915_105645_1056` (20 ตัว · zari002 OQ-26) ไม่ใช่ `20260815_090039` (15) ที่ SAP
+  เคยสร้าง · ส่งค่าจริงจะได้ `STRING_TOO_LONG` ทุก call → **ต้องขอ SFDC ขยาย field เป็น 25** หรือตัดสินใจอื่น
+- OQ-26: (ก) all-or-nothing ตามที่เป็นอยู่ หรือ (ข) partial — รอผู้ใช้
 
 **Object (ยังไม่ confirm ชื่อ)**: Outbound Service SCO3 · Scenario `ZCS_REJECT_RESULT` SCO1 ·
 Arrangement (Fiori) · API class `ZCL_ZARE002_SFDC_*` · แก้ `lhc_Item->rejectItem` + `lsc_Item` · unit test
