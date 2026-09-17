@@ -189,14 +189,22 @@ spec จากผู้ใช้ 2026-09-17 (IN #3 Payment Result): หลัง
 - `BST_SAP_Response_Date__c` ต้องเป็น **`+0700`** ตาม spec — UTC + 7 ชม. แล้วต่อ `+0700` คงที่ (ไทยไม่มี DST)
 - log ตอนส่งพลาด: **ยังไม่ทำ** แต่ API class คืนผลเป็น structure ไว้ให้ต่อ log table ทีหลังได้
 
-**ยังรอคำตอบ**
-- ⚠️ **`BST_SAP_Batch_Id__c` (15) สั้นกว่า `request_id` จริง** — ตั้งแต่ 2026-09-16 SBPA ส่ง `RequestId`
-  เอง รูปแบบ `20260915_105645_1056` (20 ตัว · zari002 OQ-26) ไม่ใช่ `20260815_090039` (15) ที่ SAP
-  เคยสร้าง · ส่งค่าจริงจะได้ `STRING_TOO_LONG` ทุก call → **ต้องขอ SFDC ขยาย field เป็น 25** หรือตัดสินใจอื่น
-- OQ-26: (ก) all-or-nothing ตามที่เป็นอยู่ หรือ (ข) partial — รอผู้ใช้
+- OQ-26 = **(ก) all-or-nothing** · Batch Id ส่ง `request_id` เต็ม ไม่ตัด — SFDC ขยาย field (OQ-28)
 
-**Object (ยังไม่ confirm ชื่อ)**: Outbound Service SCO3 · Scenario `ZCS_REJECT_RESULT` SCO1 ·
-Arrangement (Fiori) · API class `ZCL_ZARE002_SFDC_*` · แก้ `lhc_Item->rejectItem` + `lsc_Item` · unit test
+**Object (เสนอ 2026-09-17 · รอ confirm ชื่อ)**
+
+| # | Object | Type | ชื่อ | Status |
+|---|---|---|---|---|
+| 8.1 | Outbound Service | SCO3 | `ZARE002_REJECT_RESULT` (+`_REST`) | ⬜ |
+| 8.2 | Communication Scenario outbound | SCO1 | `ZCS_REJECT_RESULT` — OAuth 2.0 client credentials | ⬜ |
+| 8.3 | Communication Arrangement | Fiori | `ZCA_REJECT_RESULT` × `SFDC_DEV` | ⬜ |
+| 8.4 | API class | CLAS | `ZCL_ZARE002_SFDC_RESULT` — `build_payload` / `parse_response` / `build_response_date` (pure) · `send` / `check_connection` | ⬜ |
+| 8.5 | Message class | MSAG | `ZARE002` + `004` (>200) `005` (SFDC success=false) `006` (unreachable) | ⬜ |
+| 8.6 | Behavior pool | CLAS | `lhc_Item->rejectItem` ยิง SFDC ก่อน buffer · `lsc_Item` เพิ่ม `salesforce_status = S` | ⬜ |
+| 8.7 | Unit test | | payload · parse · date — ไม่ต่อ SFDC | ⬜ |
+| 8.8 | ทดสอบ | | `check_connection` = 200 → Reject บน launchpad → ดู record ใน SFDC sandbox | ⬜ |
+
+ลำดับ: 8.1 → 8.2 → 8.3 (ADT + Fiori ก่อน) → 8.5 → 8.4 + 8.7 → check_connection → 8.6 → 8.8
 
 ## Phase 8B — Submit → post FI document (รอ spec)
 
