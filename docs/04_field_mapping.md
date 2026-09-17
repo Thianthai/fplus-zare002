@@ -37,7 +37,7 @@
 
 ## 3. Field ที่มีใน table แต่ไม่ใช้ในหน้าจอนี้
 
-**Header** — `request_id` `salesforce_id` `gl_account` `payment_method` `sap_payment_method`
+**Header** — `request_id` `salesforce_id` `gl_account` `payment_method` ~~`sap_payment_method`~~ (ZARI002 ลบ column 2026-09-17 — ZARE002 ถอดออกจาก `ZI_ZARE002_PYMT` / `ZC_ZARE002` ก่อน)
 `cheque_no` `issue_date` `due_on` `cheque_bank_branch` `rounding_diff` `advance_payment`
 `fees` `payment_amount` `salesforce_status` `salesforce_message`
 

@@ -172,6 +172,7 @@
 
 สิ่งที่ต้องถามทันทีที่ได้ spec:
 - Reject post FI document **แบบไหน** (reversal? ใบ reject แยก? หรือแค่ Submit ที่ post) — ประโยคที่แจ้งมาบอกว่า "สองปุ่ม" ต้อง confirm
+- **`sap_payment_method` ไม่มีแล้ว** (OQ-27) — แยกประเภทการจ่ายจาก `payment_method` (`Cheque` / `Cash` / `Transfer` ตามที่ SFDC ส่ง) ถ้า logic post ต้องแยก
 - released API สำหรับ post: `I_JournalEntryTP` (RAP BO) หรือ `I_OperationalAcctgDocItemCube`… ต้องเช็ค Released Objects บน tenant
 - หลัง post สำเร็จ stamp `status` = `S`/`W`/`E` + `salesforce_status` / `salesforce_message` (OQ-21 กลับมามีความหมาย)
 - ทำใน action handler ไม่ได้ (ห้ามเขียน DB ใน interaction phase) → post ผ่าน EML ของ `I_JournalEntryTP` ใน handler ได้ (เป็น RAP BO) แต่ commit เกิดพร้อม LUW ของเรา · หรือ post ใน saver `lsc_Item` — ต้องตัดสิน
