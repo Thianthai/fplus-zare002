@@ -13,7 +13,7 @@ CLASS zcl_zare002_status_buffer DEFINITION
       END OF ty_entry,
       tt_entry TYPE SORTED TABLE OF ty_entry WITH UNIQUE KEY payment_uuid.
 
-    "! จำว่า payment นี้ต้องได้ status ใหม่ — เรียกจาก action handler (interaction phase)
+    "! payment นี้ต้องได้ status ใหม่ — เรียกจาก action handler (interaction phase)
     "! เรียกซ้ำ payment เดิม = ทับด้วยค่าล่าสุด
     CLASS-METHODS add
       IMPORTING iv_payment_uuid TYPE sysuuid_x16
@@ -37,7 +37,6 @@ ENDCLASS.
 
 CLASS ZCL_ZARE002_STATUS_BUFFER IMPLEMENTATION.
 
-
   METHOD add.
     READ TABLE gt_entry ASSIGNING FIELD-SYMBOL(<lfs_entry>)
          WITH TABLE KEY payment_uuid = iv_payment_uuid.
@@ -58,4 +57,5 @@ CLASS ZCL_ZARE002_STATUS_BUFFER IMPLEMENTATION.
   METHOD clear.
     CLEAR gt_entry.
   ENDMETHOD.
+
 ENDCLASS.

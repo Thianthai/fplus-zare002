@@ -2,12 +2,25 @@ CLASS lhc_Item DEFINITION INHERITING FROM cl_abap_behavior_handler.
 
   PRIVATE SECTION.
 
-    CONSTANTS gc_msgid           TYPE symsgid           VALUE 'ZARE002'.
-    CONSTANTS gc_status_rejected TYPE ze_request_status VALUE 'R'.
+    CONSTANTS gc_msgid            TYPE symsgid           VALUE 'ZARE002'.
+    CONSTANTS gc_status_rejected  TYPE ze_request_status VALUE 'R'.
+    "! ตัดข้อความ error ของ SFDC ก่อนใส่ message (&2 ของ 005)
+    CONSTANTS gc_sfdc_message_max TYPE i                 VALUE 50.
 
-    TYPES tt_uuid TYPE STANDARD TABLE OF sysuuid_x16 WITH EMPTY KEY.
+    TYPES tt_uuid        TYPE STANDARD TABLE OF sysuuid_x16 WITH EMPTY KEY.
     TYPES tt_uuid_sorted TYPE SORTED TABLE OF sysuuid_x16 WITH UNIQUE KEY table_line.
-    TYPES tr_uuid TYPE RANGE OF sysuuid_x16.
+    TYPES tr_uuid        TYPE RANGE OF sysuuid_x16.
+
+    "! header ของ payment ที่เกี่ยวข้องกับ action
+    TYPES:
+      BEGIN OF ty_payment,
+        payment_uuid        TYPE sysuuid_x16,
+        payment_document_no TYPE ztar_i002_pymt-payment_document_no,
+        status              TYPE ze_request_status,
+        salesforce_id       TYPE ztar_i002_pymt-salesforce_id,
+        request_id          TYPE ztar_i002_pymt-request_id,
+      END OF ty_payment,
+      tt_payment TYPE STANDARD TABLE OF ty_payment WITH EMPTY KEY.
 
     "! สิทธิ์ระดับ BO — เปิดให้ทุกคนที่เข้า app ได้ (OQ-15 hold)
     "! การคุมว่าใครเข้า app ได้อยู่ที่ IAM App / business catalog ไม่ใช่ที่นี่
@@ -20,18 +33,20 @@ CLASS lhc_Item DEFINITION INHERITING FROM cl_abap_behavior_handler.
       IMPORTING keys REQUEST requested_features FOR Item
       RESULT result.
 
-    "! ปุ่ม Submit — ยังว่าง รอเฟส post FI
+    "! ปุ่ม Submit — ยังว่าง รอเฟส post FI (8B)
     METHODS submitItem FOR MODIFY
       IMPORTING keys FOR ACTION Item~submitItem.
 
     "! ปุ่ม Reject — item ที่ติ๊ก → ทุก item ของ payment นั้น (OQ-04)
-    "! validate ทุก item ต้องมี RejectReason (OQ-22) → จดลง buffer ให้ saver stamp status = R
+    "! 1) validate ทุก item มี RejectReason (OQ-22) — ใบใดตก ทั้งชุดตก ไม่ยิง SFDC (OQ-26 ก)
+    "! 2) PATCH ทุก item ไป SFDC ใน composite call เดียว (8A)
+    "! 3) SFDC รับแล้วเท่านั้น → จดลง buffer ให้ saver stamp status = R · พัง → ไม่มีอะไรลง DB
     METHODS rejectItem FOR MODIFY
       IMPORTING keys FOR ACTION Item~rejectItem RESULT result.
 
     "! คืน payment uuid ที่ status = R แล้ว จากรายการที่ส่งเข้ามา (ซ้ำได้)
     METHODS read_rejected_payments
-      IMPORTING it_payment_uuid       TYPE tt_uuid
+      IMPORTING it_payment_uuid        TYPE tt_uuid
       RETURNING VALUE(rt_payment_uuid) TYPE tt_uuid_sorted.
 
 ENDCLASS.
@@ -78,7 +93,7 @@ CLASS lhc_Item IMPLEMENTATION.
 
   METHOD submitItem.
     " ยังไม่มี logic — เฟสนี้เปิดแค่ปุ่มตาม requirement
-    " เฟสถัดไป: distinct PaymentUuid จาก keys → item ทั้งหมดของ payment → post FI
+    " เฟส 8B: distinct PaymentUuid จาก keys → item ทั้งหมดของ payment → post FI → แจ้ง SFDC Completed
   ENDMETHOD.
 
   METHOD rejectItem.
@@ -95,7 +110,11 @@ CLASS lhc_Item IMPLEMENTATION.
       ( sign = 'I' option = 'EQ' low = lv_uuid ) ).
 
     " 2. header ของ payment เหล่านั้น + key ของ item ทุกตัว
-    SELECT PaymentUuid, PaymentDocumentNo, Status
+    SELECT PaymentUuid        AS payment_uuid,
+           PaymentDocumentNo  AS payment_document_no,
+           Status             AS status,
+           SalesforceId       AS salesforce_id,
+           RequestId          AS request_id
       FROM zi_zare002_pymt
       WHERE PaymentUuid IN @lr_payment_uuid
       INTO TABLE @DATA(lt_payment).
@@ -108,85 +127,154 @@ CLASS lhc_Item IMPLEMENTATION.
     " ค่า RejectReason อ่านผ่าน EML เพื่อให้ได้ค่าจาก transactional buffer ไม่ใช่แค่ DB
     READ ENTITIES OF zr_zare002 IN LOCAL MODE
       ENTITY Item
-        FIELDS ( PaymentUuid BillingDocument RejectReason )
+        FIELDS ( PaymentUuid BillingDocument SalesforceItemId RejectReason )
         WITH VALUE #( FOR ls_key IN lt_item_key ( ItemUuid = ls_key-ItemUuid ) )
       RESULT DATA(lt_all_item).
 
-    " 3. ตัดสินทีละ payment
+    " 3. validate ทีละ payment — ใบใดตก ทั้งชุดตก ไม่ยิง SFDC (OQ-26 ก)
+    DATA(lv_any_failed) = abap_false.
+
     LOOP AT lt_payment INTO DATA(ls_payment).
 
       " 3a. reject ซ้ำ — ปุ่ม dim อยู่แล้ว (OQ-23) แต่กันอีกชั้นเผื่อยิงตรง
-      IF ls_payment-Status = gc_status_rejected.
+      IF ls_payment-status = gc_status_rejected.
+        lv_any_failed = abap_true.
         LOOP AT lt_selected INTO DATA(ls_selected)
-             WHERE PaymentUuid = ls_payment-PaymentUuid.
-          APPEND VALUE #( %tky               = ls_selected-%tky
-                          %action-rejectItem = if_abap_behv=>mk-on
-                          %fail-cause        = if_abap_behv=>cause-disabled ) TO failed-item.
+             WHERE PaymentUuid = ls_payment-payment_uuid.
           APPEND VALUE #( %tky = ls_selected-%tky
                           %msg = new_message( id       = gc_msgid
                                               number   = '002'
                                               severity = if_abap_behv_message=>severity-error
-                                              v1       = ls_payment-PaymentDocumentNo ) ) TO reported-item.
+                                              v1       = ls_payment-payment_document_no ) ) TO reported-item.
         ENDLOOP.
         CONTINUE.
       ENDIF.
 
       " 3b. ทุก item ของ payment ต้องมี reject reason (OQ-19 / OQ-22)
       "     1 message ต่อ item ที่ว่าง ชี้ไปที่ช่อง RejectReason ของแถวนั้น
-      DATA(lv_missing) = abap_false.
       LOOP AT lt_all_item INTO DATA(ls_item)
-           WHERE PaymentUuid = ls_payment-PaymentUuid
+           WHERE PaymentUuid = ls_payment-payment_uuid
              AND RejectReason IS INITIAL.
-        lv_missing = abap_true.
+        lv_any_failed = abap_true.
         APPEND VALUE #( %tky                  = ls_item-%tky
                         %element-RejectReason = if_abap_behv=>mk-on
                         %msg = new_message( id       = gc_msgid
                                             number   = '001'
                                             severity = if_abap_behv_message=>severity-error
-                                            v1       = ls_payment-PaymentDocumentNo
+                                            v1       = ls_payment-payment_document_no
                                             v2       = ls_item-BillingDocument ) ) TO reported-item.
       ENDLOOP.
 
-      IF lv_missing = abap_true.
-        LOOP AT lt_selected INTO ls_selected
-             WHERE PaymentUuid = ls_payment-PaymentUuid.
-          APPEND VALUE #( %tky               = ls_selected-%tky
-                          %action-rejectItem = if_abap_behv=>mk-on
-                          %fail-cause        = if_abap_behv=>cause-unspecific ) TO failed-item.
-        ENDLOOP.
-        CONTINUE.
+    ENDLOOP.
+
+    IF lv_any_failed = abap_true.
+      failed-item = VALUE #( FOR ls_fail IN lt_selected
+                             ( %tky               = ls_fail-%tky
+                               %action-rejectItem = if_abap_behv=>mk-on
+                               %fail-cause        = if_abap_behv=>cause-unspecific ) ).
+      RETURN.
+    ENDIF.
+
+    " 4. เตรียม record ให้ SFDC — ทุก item ของทุก payment ที่ผ่าน
+    "    ลำดับใน lt_record = ลำดับใน lt_record_item เพื่อ map error_index กลับมาหาแถว
+    DATA lt_record      TYPE zcl_zare002_sfdc_result=>tt_record.
+    DATA lt_record_item LIKE lt_all_item.
+    DATA(lv_response_date) = zcl_zare002_sfdc_result=>build_response_date( ).
+
+    LOOP AT lt_payment INTO ls_payment.
+      LOOP AT lt_all_item INTO ls_item WHERE PaymentUuid = ls_payment-payment_uuid.
+        APPEND VALUE #( item_sf_id    = ls_item-SalesforceItemId
+                        header_sf_id  = ls_payment-salesforce_id
+                        status        = zcl_zare002_sfdc_result=>gc_status_rejected
+                        reject_reason = ls_item-RejectReason
+                        batch_id      = ls_payment-request_id
+                        response_date = lv_response_date ) TO lt_record.
+        APPEND ls_item TO lt_record_item.
+      ENDLOOP.
+    ENDLOOP.
+
+    " 4a. เกิน limit ของ Composite API → ปฏิเสธทั้งชุด
+    IF lines( lt_record ) > zcl_zare002_sfdc_result=>gc_max_records.
+      failed-item = VALUE #( FOR ls_fail IN lt_selected
+                             ( %tky               = ls_fail-%tky
+                               %action-rejectItem = if_abap_behv=>mk-on
+                               %fail-cause        = if_abap_behv=>cause-unspecific ) ).
+      READ TABLE lt_selected INTO ls_selected INDEX 1.
+      APPEND VALUE #( %tky = ls_selected-%tky
+                      %msg = new_message( id       = gc_msgid
+                                          number   = '004'
+                                          severity = if_abap_behv_message=>severity-error
+                                          v1       = |{ lines( lt_record ) }| ) ) TO reported-item.
+      RETURN.
+    ENDIF.
+
+    " 5. ยิง SFDC ก่อนตัดสินใจ save — SFDC ไม่รับ = ไม่มีอะไรลง DB ผู้ใช้กด Reject ซ้ำได้ (ข้อ 4)
+    DATA(ls_send) = NEW zcl_zare002_sfdc_result( )->send( lt_record ).
+
+    IF ls_send-success = abap_false.
+      failed-item = VALUE #( FOR ls_fail IN lt_selected
+                             ( %tky               = ls_fail-%tky
+                               %action-rejectItem = if_abap_behv=>mk-on
+                               %fail-cause        = if_abap_behv=>cause-unspecific ) ).
+
+      " message ชี้ไปที่ item ต้นเหตุถ้ารู้ ไม่งั้นแถวแรกที่ติ๊ก
+      DATA(ls_culprit) = VALUE #( lt_record_item[ ls_send-error_index ] OPTIONAL ).
+      IF ls_culprit IS INITIAL.
+        READ TABLE lt_selected INTO ls_selected INDEX 1.
+        ls_culprit-%tky = ls_selected-%tky.
       ENDIF.
 
-      " 3c. ผ่าน → จดลง buffer ให้ saver stamp header ตอน save phase
-      zcl_zare002_status_buffer=>add( iv_payment_uuid = ls_payment-PaymentUuid
+      IF ls_send-http_status = 0
+         OR ls_send-error_code = zcl_zare002_sfdc_result=>gc_err_not_reachable
+         OR ls_send-error_code = zcl_zare002_sfdc_result=>gc_err_parse.
+        " ต่อไม่ถึง / ตอบมาอ่านไม่ออก
+        APPEND VALUE #( %tky = ls_culprit-%tky
+                        %msg = new_message( id       = gc_msgid
+                                            number   = '006'
+                                            severity = if_abap_behv_message=>severity-error
+                                            v1       = |{ ls_send-http_status }| ) ) TO reported-item.
+      ELSE.
+        " SFDC ปฏิเสธ — บอก errorCode + ข้อความ (ตัด 50)
+        APPEND VALUE #( %tky = ls_culprit-%tky
+                        %msg = new_message( id       = gc_msgid
+                                            number   = '005'
+                                            severity = if_abap_behv_message=>severity-error
+                                            v1       = ls_send-error_code
+                                            v2       = substring( val = ls_send-error_message
+                                                                  len = nmin( val1 = strlen( ls_send-error_message )
+                                                                              val2 = gc_sfdc_message_max ) ) ) ) TO reported-item.
+      ENDIF.
+      RETURN.
+    ENDIF.
+
+    " 6. SFDC รับแล้ว → จดลง buffer ให้ saver stamp header ตอน save phase
+    "    + บังคับให้ save phase เกิดแน่นอน (OQ-24): update item ทุกตัวด้วยค่าเดิม
+    LOOP AT lt_payment INTO ls_payment.
+      zcl_zare002_status_buffer=>add( iv_payment_uuid = ls_payment-payment_uuid
                                       iv_status       = gc_status_rejected ).
 
-      "     บังคับให้ save phase เกิดแน่นอน (OQ-24): update item ทุกตัวของ payment ด้วยค่าเดิม
-      "     ถ้าไม่ทำ framework อาจข้าม save เพราะ buffer ของ item ว่าง แล้ว saver ไม่ถูกเรียก
       MODIFY ENTITIES OF zr_zare002 IN LOCAL MODE
         ENTITY Item
           UPDATE FIELDS ( RejectReason )
           WITH VALUE #( FOR ls_update IN lt_all_item
-                        WHERE ( PaymentUuid = ls_payment-PaymentUuid )
+                        WHERE ( PaymentUuid = ls_payment-payment_uuid )
                         ( %tky         = ls_update-%tky
                           RejectReason = ls_update-RejectReason ) ).
 
-      "     success message ที่ item แรกที่ติ๊กของ payment นี้
       DATA(lv_item_count) = REDUCE i( INIT lv_n = 0
                                       FOR ls_count IN lt_all_item
-                                      WHERE ( PaymentUuid = ls_payment-PaymentUuid )
+                                      WHERE ( PaymentUuid = ls_payment-payment_uuid )
                                       NEXT lv_n = lv_n + 1 ).
-      READ TABLE lt_selected INTO ls_selected WITH KEY PaymentUuid = ls_payment-PaymentUuid.
+      READ TABLE lt_selected INTO ls_selected WITH KEY PaymentUuid = ls_payment-payment_uuid.
       APPEND VALUE #( %tky = ls_selected-%tky
                       %msg = new_message( id       = gc_msgid
                                           number   = '003'
                                           severity = if_abap_behv_message=>severity-success
-                                          v1       = ls_payment-PaymentDocumentNo
+                                          v1       = ls_payment-payment_document_no
                                           v2       = |{ lv_item_count }| ) ) TO reported-item.
-
     ENDLOOP.
 
-    " 4. คืน instance ที่ติ๊กกลับไปให้ FE โหลดแถวใหม่ (icon / readonly / ปุ่มเปลี่ยน)
+    " 7. คืน instance ที่ติ๊กกลับไปให้ FE โหลดแถวใหม่ (icon / readonly / ปุ่มเปลี่ยน)
     READ ENTITIES OF zr_zare002 IN LOCAL MODE
       ENTITY Item
         ALL FIELDS WITH CORRESPONDING #( keys )
@@ -220,11 +308,12 @@ CLASS lsc_Item DEFINITION INHERITING FROM cl_abap_behavior_saver.
 
   PROTECTED SECTION.
 
-    " หลัง managed runtime เขียน ztar_i002_item แล้ว → stamp status ที่ header ตามที่ action จดไว้ใน buffer
-    " เขียนเฉพาะ field ด้วย UPDATE ... SET — ห้าม MODIFY ทั้ง row
+    "! หลัง managed runtime เขียน ztar_i002_item แล้ว → stamp header ตามที่ action จดไว้ใน buffer
+    "! ถึงตรงนี้ได้แปลว่า SFDC รับแล้ว (rejectItem ยิงก่อน) → salesforce_status = S ด้วย
+    "! เขียนเฉพาะ field ด้วย UPDATE ... SET — ห้าม MODIFY ทั้ง row
     METHODS save_modified REDEFINITION.
 
-    " ล้าง buffer ทุกครั้งที่จบ LUW — ทั้ง commit และ rollback
+    "! ล้าง buffer ทุกครั้งที่จบ LUW — ทั้ง commit และ rollback
     METHODS cleanup_finalize REDEFINITION.
 
 ENDCLASS.
@@ -245,6 +334,8 @@ CLASS lsc_Item IMPLEMENTATION.
     LOOP AT lt_entry INTO DATA(ls_entry).
       UPDATE ztar_i002_pymt
         SET status                = @ls_entry-status,
+            salesforce_status     = 'S',
+            salesforce_message    = @space,
             last_changed_by       = @lv_user,
             last_changed_at       = @lv_now,
             local_last_changed_at = @lv_now
