@@ -34,7 +34,9 @@ CLASS zcl_zare002_status_buffer DEFINITION
 ENDCLASS.
 
 
-CLASS zcl_zare002_status_buffer IMPLEMENTATION.
+
+CLASS ZCL_ZARE002_STATUS_BUFFER IMPLEMENTATION.
+
 
   METHOD add.
     READ TABLE gt_entry ASSIGNING FIELD-SYMBOL(<lfs_entry>)
@@ -47,12 +49,13 @@ CLASS zcl_zare002_status_buffer IMPLEMENTATION.
     ENDIF.
   ENDMETHOD.
 
+
   METHOD get_all.
     rt_entry = gt_entry.
   ENDMETHOD.
 
+
   METHOD clear.
     CLEAR gt_entry.
   ENDMETHOD.
-
 ENDCLASS.

@@ -13,7 +13,9 @@ CLASS zcl_zare002_spike DEFINITION
 ENDCLASS.
 
 
-CLASS zcl_zare002_spike IMPLEMENTATION.
+
+CLASS ZCL_ZARE002_SPIKE IMPLEMENTATION.
+
 
   METHOD if_oo_adt_classrun~main.
 
@@ -48,5 +50,4 @@ CLASS zcl_zare002_spike IMPLEMENTATION.
                 |status { ls_payment-status } -> N, { lv_draft_count } draft(s) removed| ).
 
   ENDMETHOD.
-
 ENDCLASS.
