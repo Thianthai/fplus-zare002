@@ -1,3 +1,4 @@
+"! ทดสอบ buffer แบบ static — add / overwrite / clear
 CLASS ltc_status_buffer DEFINITION FINAL FOR TESTING
   DURATION SHORT
   RISK LEVEL HARMLESS.
@@ -8,6 +9,7 @@ CLASS ltc_status_buffer DEFINITION FINAL FOR TESTING
       lc_uuid_a TYPE sysuuid_x16 VALUE '000000000000000000000000000000A1',
       lc_uuid_b TYPE sysuuid_x16 VALUE '000000000000000000000000000000B2'.
 
+    "! ล้าง buffer ก่อนทุก test เพราะเป็น static — ไม่ให้ test ก่อนหน้ารั่วมา
     METHODS setup.
 
     "! เพิ่ม 2 payment แล้ว get_all ต้องได้ครบ 2 ตามที่ใส่

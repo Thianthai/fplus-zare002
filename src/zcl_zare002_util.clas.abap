@@ -28,9 +28,9 @@ CLASS zcl_zare002_util IMPLEMENTATION.
 
   METHOD if_oo_adt_classrun~main.
 
-    "! เปิด comment บรรทัดที่ต้องการก่อน F9 — ค่าเริ่มต้นไม่ทำอะไร กันรันพลาด
-*    spike_sfdc_api( out ).
-*    spike_eml( out ).
+    " เปิด comment บรรทัดที่ต้องการก่อน F9 — ค่าเริ่มต้นไม่ทำอะไร กันรันพลาด
+*    reset_payment( out ).
+*    describe_sfdc_object( out ).
 
   ENDMETHOD.
 
