@@ -184,8 +184,8 @@ spec จากผู้ใช้ 2026-09-17 (IN #3 Payment Result): หลัง
 - ผลข้างเคียง: `salesforce_status` มีแต่ `S` (กรณี `E` ไม่ถูก save) — ความล้มเหลวเห็นแค่บนจอ
 
 **ตกลงเพิ่ม (2026-09-17 รอบ 2)**
-- composite = **sObject Collections** `PATCH /services/data/v66.0/composite/sobjects` · `allOrNone: true`
-- เกิน 200 item ต่อคลิก → **ปฏิเสธ** ด้วย message `ZARE002 004`
+- composite = **Composite API** `POST /services/data/v66.0/composite` · `compositeRequest[]` · `allOrNone: true` (SFDC dev ยืนยัน 2026-09-20 · sObject Collections ไม่ใช้)
+- เกิน **25** item ต่อคลิก (limit ของ Composite API) → **ปฏิเสธ** ด้วย message `ZARE002 004`
 - `BST_SAP_Response_Date__c` ต้องเป็น **`+0700`** ตาม spec — UTC + 7 ชม. แล้วต่อ `+0700` คงที่ (ไทยไม่มี DST)
 - log ตอนส่งพลาด: **ยังไม่ทำ** แต่ API class คืนผลเป็น structure ไว้ให้ต่อ log table ทีหลังได้
 
@@ -198,8 +198,8 @@ spec จากผู้ใช้ 2026-09-17 (IN #3 Payment Result): หลัง
 | 8.1 | Outbound Service | SCO3 | `ZARE002_REJECT_RESULT_REST` | ✅ `b76c74c` |
 | 8.2 | Communication Scenario outbound | SCO1 | `ZCS_REJECT_RESULT` — OAuth 2.0 client credentials · published | ✅ `b76c74c` |
 | 8.3 | Communication Arrangement | Fiori | `ZCA_REJECT_RESULT` × `SFDC_DEV` · Check Connection ✓ (2026-09-20) | ✅ |
-| 8.4 | API class | CLAS | `ZCL_ZARE002_SFDC_RESULT` — `build_payload` / `parse_response` / `build_response_date` (pure) · `send` / `check_connection` | ⬜ |
-| 8.5 | Message class | MSAG | `ZARE002` + `004` (>200) `005` (SFDC success=false) `006` (unreachable) | 🟨 |
+| 8.4 | API class | CLAS | `ZCL_ZARE002_SFDC_RESULT` — Composite API · `build_payload` / `parse_response` / `build_response_date` (pure) · `send` / `check_connection` · ชื่อ field เป็น constant รอ OQ-30 | ⬜ |
+| 8.5 | Message class | MSAG | `ZARE002` + `004` (>25) `005` (SFDC subrequest error) `006` (unreachable) | 🟨 |
 | 8.6 | Behavior pool | CLAS | `lhc_Item->rejectItem` ยิง SFDC ก่อน buffer · `lsc_Item` เพิ่ม `salesforce_status = S` | ⬜ |
 | 8.7 | Unit test | | payload · parse · date — ไม่ต่อ SFDC | ⬜ |
 | 8.8 | ทดสอบ | | `check_connection` = 200 → Reject บน launchpad → ดู record ใน SFDC sandbox | ⬜ |
