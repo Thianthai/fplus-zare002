@@ -1,9 +1,11 @@
+"! ทดสอบเฉพาะส่วน pure (payload / parse / date) — ไม่ต่อ SFDC
 CLASS ltc_sfdc_result DEFINITION FINAL FOR TESTING
   DURATION SHORT
   RISK LEVEL HARMLESS.
 
   PRIVATE SECTION.
 
+    "! 2 item ของ payment เดียวกัน ค่าตามตัวอย่างใน spec IN #3
     METHODS sample_records
       RETURNING VALUE(rt_record) TYPE zcl_zare002_sfdc_result=>tt_record.
 
@@ -102,7 +104,7 @@ CLASS ltc_sfdc_result IMPLEMENTATION.
     DATA(lv_json) = '{"compositeResponse":['
                  && '{"body":[{"errorCode":"PROCESSING_HALTED","message":"The transaction was rolled back since another operation in the same transaction failed."}],'
                  && '"httpHeaders":{},"httpStatusCode":400,"referenceId":"item1"},'
-                 && '{"body":[{"message":"data value too large: 20260915_105645_1056 (max length=15)","errorCode":"STRING_TOO_LONG","fields":["BST_SAP_Batch_Id__c"]}],'
+                 && '{"body":[{"message":"data value too large: 20260915_105645_1056 (max length=15)","errorCode":"STRING_TOO_LONG","fields":["BST_SAP_BatchId__c"]}],'
                  && '"httpHeaders":{},"httpStatusCode":400,"referenceId":"item2"}]}'.
 
     DATA(ls_result) = zcl_zare002_sfdc_result=>parse_response( iv_json = lv_json iv_http_status = 200 ).

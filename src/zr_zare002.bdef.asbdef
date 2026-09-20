@@ -8,7 +8,7 @@ draft table ztar_e002_item_d
 lock master total etag LastChangedAt
 authorization master ( global )
 etag master LocalLastChangedAt
-// saver lsc_Item เขียน status ลง ztar_i002_pymt (header ไม่อยู่ใน BO นี้)
+// saver lsc_Item เขียน status + salesforce_status ลง ztar_i002_pymt (header ไม่อยู่ใน BO นี้)
 with additional save
 {
   // report นี้ไม่เคยสร้างหรือลบ item — row เกิดจาก ZARI002 เท่านั้น
@@ -54,7 +54,7 @@ with additional save
   // ปุ่มบน toolbar — dim ทั้งคู่เมื่อ payment ถูก reject แล้ว (OQ-23)
   // เลือก item ใดก็ตาม = ทำกับทุก item ของ payment นั้น (OQ-04)
   action ( features : instance ) submitItem;                    // ยังว่าง
-  action ( features : instance ) rejectItem result [1] $self;
+  action ( features : instance ) rejectItem result [1] $self;   // ยิง SFDC ก่อน stamp (8A)
 
   mapping for ztar_i002_item
     {

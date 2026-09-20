@@ -1,3 +1,6 @@
+"! กระดาษโน้ตระหว่าง action (interaction phase) กับ saver (save phase) ของ ZR_ZARE002
+"! RAP ห้าม action เขียน DB และ header ไม่อยู่ใน BO → action จดที่นี่ saver อ่านแล้ว UPDATE ztar_i002_pymt
+"! static เพราะเป็นจุดเดียวที่ทั้งสองฝั่งมองเห็นร่วมกันใน LUW เดียว
 CLASS zcl_zare002_status_buffer DEFINITION
   PUBLIC
   FINAL
@@ -23,12 +26,13 @@ CLASS zcl_zare002_status_buffer DEFINITION
     CLASS-METHODS get_all
       RETURNING VALUE(rt_entry) TYPE tt_entry.
 
-    "! ล้าง buffer — saver ต้องเรียกใน cleanup เสมอ ไม่ว่า save สำเร็จหรือ rollback
-    "! ไม่งั้นค่าค้างจะติดไปกับ LUW ถัดไปของ session เดียวกัน
+    "! ล้าง buffer — saver ต้องเรียกใน cleanup_finalize เสมอ ไม่ว่า save สำเร็จหรือ rollback
+    "! (OData request เป็น stateless อยู่แล้ว การล้างนี้กันรั่วภายใน request เดียวกัน)
     CLASS-METHODS clear.
 
   PRIVATE SECTION.
 
+    "! buffer จริง — มีชีวิตแค่ใน request เดียว
     CLASS-DATA gt_entry TYPE tt_entry.
 
 ENDCLASS.

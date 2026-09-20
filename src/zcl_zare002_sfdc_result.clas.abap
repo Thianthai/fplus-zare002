@@ -1,3 +1,7 @@
+"! ส่งผล payment (Rejected / Completed) กลับ Salesforce ราย item ด้วย Composite API
+"! ผ่าน Communication Arrangement ZCA_REJECT_RESULT — OAuth อยู่ที่ platform ไม่มี token ใน ABAP
+"! เรียกจาก interaction phase ของ RAP ได้ (HTTP ออกนอกไม่ถูกห้าม ห้ามแค่เขียน DB)
+"! ไม่โยน exception ทุก method คืนผลให้ผู้เรียกตัดสิน · build_/parse_ เป็น pure ทดสอบได้ไม่ต่อเน็ต
 CLASS zcl_zare002_sfdc_result DEFINITION
   PUBLIC
   FINAL
@@ -17,7 +21,7 @@ CLASS zcl_zare002_sfdc_result DEFINITION
       END OF ty_record,
       tt_record TYPE STANDARD TABLE OF ty_record WITH EMPTY KEY,
 
-      "! ผลของ 1 composite call — โครงนี้เอาไปเขียน log table ทีหลังได้ตรง ๆ (OQ-4)
+      "! ผลของ 1 composite call — โครงนี้เอาไปเขียน log table ทีหลังได้ตรง ๆ (log ยังเป็น optional)
       BEGIN OF ty_result,
         http_status   TYPE i,
         success       TYPE abap_bool,
@@ -40,7 +44,7 @@ CLASS zcl_zare002_sfdc_result DEFINITION
 
     "! สร้าง JSON ของ Composite API: allOrNone + 1 PATCH subrequest ต่อ record
     "! ใช้ builder เพราะ transformation อัตโนมัติจะทำชื่อ `__c` พัง และ escape ข้อความให้
-    "! ไม่ส่ง reject reason ถ้าว่าง (field เป็น conditional)
+    "! ไม่ส่ง reject reason ถ้าว่าง — SFDC รับ item ที่ไม่มี reason ได้ (OQ-32)
     CLASS-METHODS build_payload
       IMPORTING it_record      TYPE tt_record
       RETURNING VALUE(rv_json) TYPE string.
@@ -70,10 +74,14 @@ CLASS zcl_zare002_sfdc_result DEFINITION
   PRIVATE SECTION.
 
     CONSTANTS:
+      "! scenario + outbound service ของ ZARE002 เอง (แยกจาก ZCS_PAYMENT_RESULT ของ ZARI002)
       gc_comm_scenario   TYPE sxco_cds_object_name VALUE 'ZCS_REJECT_RESULT',
       gc_service_id      TYPE c LENGTH 40          VALUE 'ZARE002_REJECT_RESULT_REST',
+      "! Composite API · limit 25 subrequest/call (OQ-29)
       gc_path_composite  TYPE string VALUE '/services/data/v66.0/composite',
+      "! url ของแต่ละ subrequest — ต่อด้วย record Id ของ item
       gc_path_sobject    TYPE string VALUE '/services/data/v66.0/sobjects/cgcloud__Order_Payment__c/',
+      "! endpoint มาตรฐานสำหรับเช็ค token (check_connection)
       gc_path_ping       TYPE string VALUE '/services/data/',
       gc_sobject_type    TYPE string VALUE 'cgcloud__Order_Payment__c',
 
@@ -93,6 +101,7 @@ CLASS zcl_zare002_sfdc_result DEFINITION
       gc_tz_offset_hours TYPE i      VALUE 7,
       gc_tz_offset_text  TYPE string VALUE '+0700'.
 
+    "! error 1 ก้อนจาก compositeResponse (หรือระดับบนเมื่อ HTTP ≠ 200) · index = ลำดับ subrequest ที่พัง
     TYPES:
       BEGIN OF ty_error,
         error_code TYPE string,

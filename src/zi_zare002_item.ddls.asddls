@@ -1,5 +1,6 @@
 @AccessControl.authorizationCheck: #NOT_REQUIRED
 @EndUserText.label: 'Automatic Incoming Payments - Item'
+// 1:1 กับ ztar_i002_item — ห้ามเติม field ที่ไม่มีในตาราง เพราะ ZR_ZARE002 ผูก persistent table
 define view entity ZI_ZARE002_ITEM
   as select from ztar_i002_item
 

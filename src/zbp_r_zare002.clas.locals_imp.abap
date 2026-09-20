@@ -1,17 +1,24 @@
+"! Handler ของ root entity Item (ZR_ZARE002) — ทำงานใน interaction phase เท่านั้น
+"! ห้ามเขียน DB ที่นี่ · การเขียน header (ztar_i002_pymt) ฝากผ่าน ZCL_ZARE002_STATUS_BUFFER ไป lsc_Item
 CLASS lhc_Item DEFINITION INHERITING FROM cl_abap_behavior_handler.
 
   PRIVATE SECTION.
 
+    "! message class ของ RICEFW นี้ — 001–099 Reject · 100+ Submit
     CONSTANTS gc_msgid            TYPE symsgid           VALUE 'ZARE002'.
+    "! ค่า status ที่ header หลัง Reject (domain ZD_REQUEST_STATUS ของ ZARI002)
     CONSTANTS gc_status_rejected  TYPE ze_request_status VALUE 'R'.
     "! ตัดข้อความ error ของ SFDC ก่อนใส่ message (&2 ของ 005)
     CONSTANTS gc_sfdc_message_max TYPE i                 VALUE 50.
 
+    "! payment uuid แบบซ้ำได้ — ใช้ส่งเข้า read_rejected_payments
     TYPES tt_uuid        TYPE STANDARD TABLE OF sysuuid_x16 WITH EMPTY KEY.
+    "! payment uuid แบบไม่ซ้ำ — ผลลัพธ์ของ read_rejected_payments
     TYPES tt_uuid_sorted TYPE SORTED TABLE OF sysuuid_x16 WITH UNIQUE KEY table_line.
+    "! range สำหรับ SELECT ... IN
     TYPES tr_uuid        TYPE RANGE OF sysuuid_x16.
 
-    "! header ของ payment ที่เกี่ยวข้องกับ action
+    "! header ของ payment ที่เกี่ยวข้องกับ action — field ที่ต้องใช้ทั้ง validate และส่ง SFDC
     TYPES:
       BEGIN OF ty_payment,
         payment_uuid        TYPE sysuuid_x16,
@@ -37,10 +44,12 @@ CLASS lhc_Item DEFINITION INHERITING FROM cl_abap_behavior_handler.
     METHODS submitItem FOR MODIFY
       IMPORTING keys FOR ACTION Item~submitItem.
 
-    "! ปุ่ม Reject — item ที่ติ๊ก → ทุก item ของ payment นั้น (OQ-04)
-    "! 1) validate ทุก item มี RejectReason (OQ-22) — ใบใดตก ทั้งชุดตก ไม่ยิง SFDC (OQ-26 ก)
-    "! 2) PATCH ทุก item ไป SFDC ใน composite call เดียว (8A)
-    "! 3) SFDC รับแล้วเท่านั้น → จดลง buffer ให้ saver stamp status = R · พัง → ไม่มีอะไรลง DB
+    "! ปุ่ม Reject — item ที่ติ๊ก → ทุก item ของ payment นั้นจาก table ถึง filter บนจอจะบังไว้ (OQ-04)
+    "! 1) validate: payment ต้องมี RejectReason อย่างน้อย 1 item (OQ-31) · ยังไม่ถูก reject (002)
+    "!    ใบใดตก ทั้งชุดตก ไม่ยิง SFDC (OQ-26 ก) เพราะ change set ฝั่ง SAP ถูก rollback ทั้งก้อน
+    "! 2) PATCH ทุก item ไป SFDC ใน composite call เดียว allOrNone (8A) · เกิน 25 → 004
+    "! 3) SFDC รับแล้วเท่านั้น → จดลง buffer ให้ saver stamp status = R · พัง → failed ไม่มีอะไรลง DB
+    "!    ผู้ใช้กด Reject ซ้ำได้เสมอ (= re-send)
     METHODS rejectItem FOR MODIFY
       IMPORTING keys FOR ACTION Item~rejectItem RESULT result.
 
@@ -92,8 +101,8 @@ CLASS lhc_Item IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD submitItem.
-    " ยังไม่มี logic — เฟสนี้เปิดแค่ปุ่มตาม requirement
-    " เฟส 8B: distinct PaymentUuid จาก keys → item ทั้งหมดของ payment → post FI → แจ้ง SFDC Completed
+    " ยังไม่มี logic — Phase 8A เปิดแค่ปุ่มตาม requirement
+    " Phase 8B: distinct PaymentUuid จาก keys → item ทั้งหมดของ payment → post FI → แจ้ง SFDC Completed
   ENDMETHOD.
 
   METHOD rejectItem.
@@ -281,7 +290,7 @@ CLASS lhc_Item IMPLEMENTATION.
                                           v2       = |{ lv_item_count }| ) ) TO reported-item.
     ENDLOOP.
 
-    " 7. คืน instance ที่ติ๊กกลับไปให้ FE โหลดแถวใหม่ (icon / readonly / ปุ่มเปลี่ยน)
+    " 7. คืน instance ที่ติ๊กกลับไปให้ Fiori Element โหลดแถวใหม่ (icon / readonly / ปุ่มเปลี่ยน)
     READ ENTITIES OF zr_zare002 IN LOCAL MODE
       ENTITY Item
         ALL FIELDS WITH CORRESPONDING #( keys )
@@ -311,6 +320,9 @@ CLASS lhc_Item IMPLEMENTATION.
 ENDCLASS.
 
 
+"! Saver ของ BO (with additional save) — ทำงานหลัง managed runtime เขียน ztar_i002_item แล้ว
+"! หน้าที่เดียว: stamp header ตามที่ action จดไว้ใน ZCL_ZARE002_STATUS_BUFFER
+"! redefine ได้แค่ save_modified + cleanup_finalize (cleanup / save เป็นของ unmanaged save)
 CLASS lsc_Item DEFINITION INHERITING FROM cl_abap_behavior_saver.
 
   PROTECTED SECTION.
