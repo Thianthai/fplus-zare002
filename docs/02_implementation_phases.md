@@ -199,10 +199,10 @@ spec จากผู้ใช้ 2026-09-17 (IN #3 Payment Result): หลัง
 | 8.2 | Communication Scenario outbound | SCO1 | `ZCS_REJECT_RESULT` — OAuth 2.0 client credentials · published | ✅ `b76c74c` |
 | 8.3 | Communication Arrangement | Fiori | `ZCA_REJECT_RESULT` × `SFDC_DEV` · Check Connection ✓ (2026-09-20) | ✅ |
 | 8.4 | API class | CLAS | `ZCL_ZARE002_SFDC_RESULT` — Composite API · `build_payload` / `parse_response` (sXML) / `build_response_date` (pure) · `send` / `check_connection` · ชื่อ field เป็น constant รอ OQ-30 · `check_connection` = 200 | ✅ `907155b` |
-| 8.5 | Message class | MSAG | `ZARE002` + `004` (>25) `005` (SFDC subrequest error) `006` (unreachable) — ⚠️ **repo ยังมีแค่ 001–003** ต้องสร้าง/push | 🟨 |
-| 8.6 | Behavior pool | CLAS | `lhc_Item->rejectItem` validate ครบทุกใบ → composite → success เท่านั้นจึง buffer · `error_index` → แถวต้นเหตุ · `lsc_Item` เพิ่ม `salesforce_status = S` — ผู้ใช้ขอปรับ logic validate (2026-09-20) | ✅ `907155b` · รอปรับ |
+| 8.5 | Message class | MSAG | `ZARE002` — `001` แก้เป็นต่อ payment · `004` (>25) `005` (SFDC error) `006` (unreachable) | ✅ `9799508` |
+| 8.6 | Behavior pool | CLAS | `lhc_Item->rejectItem` validate ทุกใบ (reason ≥ 1 item/ใบ) → composite → success เท่านั้นจึง buffer · `error_index` → แถวต้นเหตุ · `lsc_Item` เพิ่ม `salesforce_status = S` | ✅ `9799508` |
 | 8.7 | Unit test | | 9 test เขียว: payload ×4 · parse ×4 (204 / root cause / 401 / garbage) · date — ไม่ต่อ SFDC | ✅ `907155b` |
-| 8.8 | ทดสอบ | | (1) ใบ request_id ≤ 15 → Rejected ใน SFDC · (2) ใบ 20 ตัว → 005 STRING_TOO_LONG ยัง N · (3) ครบ+ขาด → ไม่ยิง SFDC · (4) DB status R + salesforce_status S | ⬜ |
+| 8.8 | ทดสอบ | | (1) ใบ request_id ≤ 15 → Rejected ใน SFDC · (2) ใบ 20 ตัว → 005 STRING_TOO_LONG ยัง N · (3) A กรอก + B ไม่กรอก → ไม่ยิง SFDC · (4) DB status R + salesforce_status S · (5) filter บัง 2 item → reject ครบ 5 · (6) ไม่กรอกเลย → 001 | ⬜ |
 
 ลำดับ: 8.1 → 8.2 → 8.3 (ADT + Fiori ก่อน) → 8.5 → 8.4 + 8.7 → check_connection → 8.6 → 8.8
 

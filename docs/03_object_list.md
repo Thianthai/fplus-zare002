@@ -24,7 +24,7 @@ baseline ที่ tenant serialize มาแล้ว (commit `7936197`) — ob
 | Object | Type | ไฟล์ | Phase | Status |
 |--------|------|------|-------|--------|
 | `ZTAR_E002_ITEM_D` | Draft table ของ `ZR_ZARE002` — สร้างด้วย quick-fix จาก BDEF · include `SYCH_BDL_DRAFT_ADMIN_INC` เป็น `%ADMIN` ครบ | `src/ztar_e002_item_d.tabl.xml` | 4 | ✅ |
-| `ZARE002` | Message class — `001` reject reason missing (per item) · `002` already rejected · `003` rejected OK · `004` > 25 items · `005` SFDC success=false · `006` SFDC unreachable · `001–099` Reject · `100+` Submit | `src/zare002.msag.xml` | 7 / 8A | ⚠️ repo มีแค่ 001–003 — 004–006 ยังไม่ push |
+| `ZARE002` | Message class — `001` reject reason missing (per item) · `002` already rejected · `003` rejected OK · `004` > 25 items · `005` SFDC success=false · `006` SFDC unreachable · `001–099` Reject · `100+` Submit | `src/zare002.msag.xml` | 7 / 8A | ✅ 001–006 |
 
 **ไม่สร้าง data element / domain ใหม่** — reuse `ZE_REQUEST_STATUS` (package `ZARI002`)
 
