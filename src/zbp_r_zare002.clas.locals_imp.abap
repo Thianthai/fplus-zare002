@@ -150,20 +150,27 @@ CLASS lhc_Item IMPLEMENTATION.
         CONTINUE.
       ENDIF.
 
-      " 3b. ทุก item ของ payment ต้องมี reject reason (OQ-19 / OQ-22)
-      "     1 message ต่อ item ที่ว่าง ชี้ไปที่ช่อง RejectReason ของแถวนั้น
+      " 3b. payment ต้องมี reject reason อย่างน้อย 1 item (OQ-19 / OQ-31)
+      DATA(lv_has_reason) = abap_false.
       LOOP AT lt_all_item INTO DATA(ls_item)
            WHERE PaymentUuid = ls_payment-payment_uuid
-             AND RejectReason IS INITIAL.
-        lv_any_failed = abap_true.
-        APPEND VALUE #( %tky                  = ls_item-%tky
-                        %element-RejectReason = if_abap_behv=>mk-on
-                        %msg = new_message( id       = gc_msgid
-                                            number   = '001'
-                                            severity = if_abap_behv_message=>severity-error
-                                            v1       = ls_payment-payment_document_no
-                                            v2       = ls_item-BillingDocument ) ) TO reported-item.
+             AND RejectReason IS NOT INITIAL.
+        lv_has_reason = abap_true.
+        EXIT.
       ENDLOOP.
+
+      IF lv_has_reason = abap_false.
+        lv_any_failed = abap_true.
+        LOOP AT lt_all_item INTO ls_item
+             WHERE PaymentUuid = ls_payment-payment_uuid.
+          APPEND VALUE #( %tky                  = ls_item-%tky
+                          %element-RejectReason = if_abap_behv=>mk-on
+                          %msg = new_message( id       = gc_msgid
+                                              number   = '001'
+                                              severity = if_abap_behv_message=>severity-error
+                                              v1       = ls_payment-payment_document_no ) ) TO reported-item.
+        ENDLOOP.
+      ENDIF.
 
     ENDLOOP.
 

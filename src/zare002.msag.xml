@@ -12,7 +12,7 @@
      <SPRSL>E</SPRSL>
      <ARBGB>ZARE002</ARBGB>
      <MSGNR>001</MSGNR>
-     <TEXT>Reject reason is required for payment &amp;1, billing document &amp;2</TEXT>
+     <TEXT>Payment &amp;1: enter a reject reason on at least one item</TEXT>
     </T100>
     <T100>
      <SPRSL>E</SPRSL>
@@ -25,6 +25,24 @@
      <ARBGB>ZARE002</ARBGB>
      <MSGNR>003</MSGNR>
      <TEXT>Payment &amp;1 rejected (&amp;2 items)</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>ZARE002</ARBGB>
+     <MSGNR>004</MSGNR>
+     <TEXT>Select at most 25 items per Reject (&amp;1 selected)</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>ZARE002</ARBGB>
+     <MSGNR>005</MSGNR>
+     <TEXT>Salesforce rejected the update: &amp;1 &amp;2</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>ZARE002</ARBGB>
+     <MSGNR>006</MSGNR>
+     <TEXT>Salesforce not reachable (HTTP &amp;1)</TEXT>
     </T100>
    </T100>
   </asx:values>
