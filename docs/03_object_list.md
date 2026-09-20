@@ -30,7 +30,7 @@ baseline ที่ tenant serialize มาแล้ว (commit `7936197`) — ob
 
 | `ZCL_ZARE002_STATUS_BUFFER` | Class — static buffer `payment_uuid → status` ส่งจาก action ไป saver · `add` / `get_all` / `clear` · 3 unit test | `src/zcl_zare002_status_buffer.clas.abap` | 7 | ✅ |
 
-| `ZCL_ZARE002_UTIL` | ⚠️ **ชั่วคราว** — `if_oo_adt_classrun` รวม 2 spike: `reset_payment` (ล้าง reject_reason · status R→N · ล้างผล SFDC · ทิ้ง draft ของใบที่ระบุ) · `describe_sfdc_object` (GET describe ผ่าน arrangement print field `BST_*`) · main ปิดทั้งคู่ไว้ เปิด comment ก่อน F9 · **ลบทิ้งก่อน handover** · แทน `ZCL_ZARE002_SPIKE` + `ZCL_ZARE002_SPIKE_SFDC` ที่ลบแล้ว (2026-09-20) | `src/zcl_zare002_util.clas.abap` | 7 / 8A | 🟨 temporary |
+| `ZCL_ZARE002_UTIL` | ⚠️ **ชั่วคราว** — `if_oo_adt_classrun` รวม 2 spike: `reset_payment` (ล้าง reject_reason · status R→N · ล้างผล SFDC · ทิ้ง draft ของใบที่ระบุ) · `describe_sfdc_object` (GET describe ผ่าน arrangement print field `BST_*`) · main ปิดทั้งคู่ไว้ เปิด comment ก่อน F9 · **ลบทิ้งก่อน handover** · แทน `ZCL_ZARE002_SPIKE` + `ZCL_ZARE002_SPIKE_SFDC` ที่ลบแล้ว (2026-09-20) | `src/zcl_zare002_util.clas.abap` | 7 / 8A | ✅ temporary (`c8ab5be`) — main ยังอ้างชื่อ method เก่า 2 บรรทัด รอแก้ |
 
 ## Table ที่ใช้ — เป็นของ package `ZARI002` ไม่ใช่ของเรา
 

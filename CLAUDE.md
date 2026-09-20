@@ -152,7 +152,12 @@
 - **ชื่อ field ของ Salesforce ห้ามเชื่อ spec/ตัวอย่าง — ยิง `GET /sobjects/<Object>/describe` ผ่าน
   arrangement ดูของจริง** (เจอจริง 2026-09-20: spec ให้ตารางกับ JSON example ที่ชื่อไม่ตรงกัน เลือกผิด
   → `INVALID_FIELD` ตอน Reject จริง) · describe ใช้เวลา 2 นาที ถูกกว่าถามคนหรือเดา
-- ทุก method มี ABAP Doc comment สั้น ๆ อธิบาย purpose
+- **ABAP Doc (`"!`) ทุก class · method · constant group · type** — รวม test class และ `setup`
+  · `"!` ใช้ได้เฉพาะหน้า declaration ใน body ใช้ `"` ธรรมดา
+- **ห้ามใส่ emoji / สัญลักษณ์ (⚠️ ฯลฯ) ใน comment ของ ABAP object** (ผู้ใช้สั่ง 2026-09-20) —
+  ใช้คำแทน เช่น "utility ทดสอบ" · emoji ใช้ได้เฉพาะในเอกสาร markdown
+- utility ทดสอบทั้งหมดรวมใน `ZCL_ZARE002_UTIL` ตัวเดียว (method ต่อ 1 งาน · main ปิดไว้ค่าเริ่มต้น)
+  ไม่แตกเป็น spike หลาย class · ลบทั้ง class ก่อน handover
 - Error ทั้งหมดรวมศูนย์ที่ message class `ZARE002` (สร้างตอนเริ่มใส่ logic ปุ่ม)
 
 ## ⚠️ Cross-package — table เป็นของ ZARI002
