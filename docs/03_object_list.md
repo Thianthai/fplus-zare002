@@ -24,7 +24,7 @@ baseline ที่ tenant serialize มาแล้ว (commit `7936197`) — ob
 | Object | Type | ไฟล์ | Phase | Status |
 |--------|------|------|-------|--------|
 | `ZTAR_E002_ITEM_D` | Draft table ของ `ZR_ZARE002` — สร้างด้วย quick-fix จาก BDEF · include `SYCH_BDL_DRAFT_ADMIN_INC` เป็น `%ADMIN` ครบ | `src/ztar_e002_item_d.tabl.xml` | 4 | ✅ |
-| `ZARE002` | Message class — `001` reject reason missing (per item, ชี้ `%element-RejectReason`) · `002` already rejected · `003` rejected OK · `001–099` Reject · `100+` Submit | `src/zare002.msag.xml` | 7 | ✅ |
+| `ZARE002` | Message class — `001` reject reason missing (per item) · `002` already rejected · `003` rejected OK · `004` > 200 items · `005` SFDC success=false · `006` SFDC unreachable · `001–099` Reject · `100+` Submit | `src/zare002.msag.xml` | 7 / 8A | 🟨 004–006 |
 
 **ไม่สร้าง data element / domain ใหม่** — reuse `ZE_REQUEST_STATUS` (package `ZARI002`)
 
@@ -85,6 +85,15 @@ object type จริงบน tenant นี้ (ปิด OQ-11) และช�
 | Launchpad App Descriptor Item | `UIAD` | `ZARE002_UI5R` | UI5 app id `com.fplus.fi.ar.zare002` · semantic object `ZARE002` action `manage` · static tile "Automatic Incoming Payments" · ไฟล์เป็น `.uiad.json` | ✅ |
 | Fiori app (UI5) | — | สร้าง + deploy จาก BAS โดยผู้ใช้ | inline edit ของ Reject Reason อยู่ใน manifest ของ app นี้ · abapGit อาจไม่ serialize ตัว app | — |
 | Business Role + assign user | — (config) | ตั้งใน Maintain Business Roles | ไม่ขึ้น git | ⬜ |
+
+## Connectivity — outbound ไป Salesforce (Phase 8A)
+
+| Object | Type | ไฟล์ | Phase | Status |
+|--------|------|------|-------|--------|
+| `ZARE002_REJECT_RESULT_REST` | Outbound Service (SCO3) — HTTP | `src/zare002_reject_result_rest.sco3.xml` | 8A | ✅ |
+| `ZCS_REJECT_RESULT` | Communication Scenario outbound (SCO1) — OAuth 2.0 client credentials · one instance per client · แยกจาก `ZCS_PAYMENT_RESULT` ของ ZARI002 โดยตั้งใจ | `src/zcs_reject_result.sco1.xml` | 8A | ✅ |
+| Communication Arrangement `ZCA_REJECT_RESULT` | Fiori config — `ZCS_REJECT_RESULT` × Communication System `SFDC_DEV` (ของ ZARI002 · client id เดียวกัน · secret อยู่ใน Fiori) · Check Connection ✓ | — ไม่ขึ้น git | 8A | ✅ |
+| `ZCL_ZARE002_SFDC_RESULT` | Class — sObject Collections PATCH ผล payment ไป SFDC · `build_payload` / `parse_response` / `build_response_date` pure · `send` / `check_connection` | `src/zcl_zare002_sfdc_result.clas.abap` | 8A | ⬜ |
 
 ## Action ที่ประกาศ
 
