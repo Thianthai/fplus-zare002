@@ -30,7 +30,7 @@ baseline ที่ tenant serialize มาแล้ว (commit `7936197`) — ob
 
 | `ZCL_ZARE002_STATUS_BUFFER` | Class — static buffer `payment_uuid → status` ส่งจาก action ไป saver · `add` / `get_all` / `clear` · 3 unit test | `src/zcl_zare002_status_buffer.clas.abap` | 7 | ✅ |
 
-| `ZCL_ZARE002_SPIKE_SFDC` | ⚠️ **ชั่วคราว** — `if_oo_adt_classrun` GET `…/cgcloud__Order_Payment__c/describe` ผ่าน arrangement แล้ว print field `BST_*` · ใช้ปิด OQ-30 · **ลบทิ้งตอนจบ Phase 8A** | `src/zcl_zare002_spike_sfdc.clas.abap` | 8A | 🟨 temporary |
+| `ZCL_ZARE002_SPIKE_SFDC` | ⚠️ **ชั่วคราว** — `if_oo_adt_classrun` GET `…/cgcloud__Order_Payment__c/describe` ผ่าน arrangement แล้ว print field `BST_*` · ใช้ปิด OQ-30 · **ลบทิ้งตอนจบ Phase 8A** | `src/zcl_zare002_spike_sfdc.clas.abap` | 8A | ✅ temporary — **ลบก่อน handover** |
 | `ZCL_ZARE002_SPIKE` | ⚠️ **ชั่วคราว** — `if_oo_adt_classrun` reset `reject_reason` + `status → N` + ลบ draft ของ payment ที่ระบุ เพื่อทดสอบ Reject ซ้ำ · เขียน DB ตรงข้าม RAP · **ลบทิ้งตอนจบ Phase 7** | `src/zcl_zare002_spike.clas.abap` | 7 | ✅ temporary — **ลบก่อน handover** |
 
 ## Table ที่ใช้ — เป็นของ package `ZARI002` ไม่ใช่ของเรา
@@ -94,7 +94,7 @@ object type จริงบน tenant นี้ (ปิด OQ-11) และช�
 | `ZARE002_REJECT_RESULT_REST` | Outbound Service (SCO3) — HTTP | `src/zare002_reject_result_rest.sco3.xml` | 8A | ✅ |
 | `ZCS_REJECT_RESULT` | Communication Scenario outbound (SCO1) — OAuth 2.0 client credentials · one instance per client · แยกจาก `ZCS_PAYMENT_RESULT` ของ ZARI002 โดยตั้งใจ | `src/zcs_reject_result.sco1.xml` | 8A | ✅ |
 | Communication Arrangement `ZCA_REJECT_RESULT` | Fiori config — `ZCS_REJECT_RESULT` × Communication System `SFDC_DEV` (ของ ZARI002 · client id เดียวกัน · secret อยู่ใน Fiori) · Check Connection ✓ | — ไม่ขึ้น git | 8A | ✅ |
-| `ZCL_ZARE002_SFDC_RESULT` | Class — Composite API (25 subrequest/call) PATCH ผล payment ไป SFDC · `build_payload` / `parse_response` / `build_response_date` pure · `send` / `check_connection` | `src/zcl_zare002_sfdc_result.clas.abap` | 8A | ✅ 9 test เขียว · ping 200 |
+| `ZCL_ZARE002_SFDC_RESULT` | Class — Composite API (25 subrequest/call) PATCH ผล payment ไป SFDC · `build_payload` / `parse_response` / `build_response_date` pure · `send` / `check_connection` | `src/zcl_zare002_sfdc_result.clas.abap` | 8A | ✅ ชื่อ field จริง (`43479c6`) · 9 test เขียว · ping 200 |
 
 ## Action ที่ประกาศ
 
