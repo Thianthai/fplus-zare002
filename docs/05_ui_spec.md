@@ -80,7 +80,7 @@ Fiori elements **List Report** บน OData V4 · **ไม่มี Object Page*
 ### กติกาที่ตกลงแล้วสำหรับเฟส logic (OQ-04 — 2026-09-15)
 
 **เลือก item ใดก็ตาม = เลือกทั้ง payment** — ผู้ใช้ติ๊ก 1 ใน 3 item แล้วกด Reject
-ระบบต้อง reject ทั้ง 3 และ stamp `status` ที่ header · ทำที่ RAP ล้วน ไม่ต้องแก้ Fiori:
+ระบบต้อง reject ทั้ง 3 และ stamp `status` ที่ header · **อ่าน item จาก table** ถึง filter บนจอจะบังบาง item ไว้ก็ตาม (ยืนยันซ้ำ 2026-09-20) · reject reason **อย่างน้อย 1 item ต่อ payment** ก็พอ · ทำที่ RAP ล้วน ไม่ต้องแก้ Fiori:
 
 ```
 keys ที่ติ๊ก → distinct PaymentUuid → SELECT item ทุกตัวของ payment เหล่านั้น → ทำงานกับชุดเต็ม
