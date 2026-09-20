@@ -77,12 +77,12 @@ CLASS zcl_zare002_sfdc_result DEFINITION
       gc_path_ping       TYPE string VALUE '/services/data/',
       gc_sobject_type    TYPE string VALUE 'cgcloud__Order_Payment__c',
 
-      "! ชื่อ field API ตาม JSON example ใน spec — รอ SFDC ยืนยัน (OQ-30) แก้ที่นี่ที่เดียว
-      gc_fld_collection  TYPE string VALUE 'BST_Payment_Collection__c',
+      "! ชื่อ field API — ยืนยันจาก describe ของ SFDC sandbox 2026-09-20 (OQ-30 ปิด)
+      gc_fld_collection  TYPE string VALUE 'BST_PaymentCollection__c',
       gc_fld_status      TYPE string VALUE 'BST_SAP_Status__c',
-      gc_fld_reason      TYPE string VALUE 'BST_SAP_Reject_Reason__c',
-      gc_fld_batch       TYPE string VALUE 'BST_SAP_Batch_Id__c',
-      gc_fld_date        TYPE string VALUE 'BST_SAP_Response_Date__c',
+      gc_fld_reason      TYPE string VALUE 'BST_SAP_RejectReason__c',
+      gc_fld_batch       TYPE string VALUE 'BST_SAP_BatchId__c',
+      gc_fld_date        TYPE string VALUE 'BST_SAP_ResponseDate__c',
 
       gc_http_ok         TYPE i      VALUE 200,
       gc_http_no_content TYPE i      VALUE 204,

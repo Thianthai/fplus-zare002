@@ -58,11 +58,11 @@ CLASS ltc_sfdc_result IMPLEMENTATION.
   METHOD payload_uses_spec_fields.
     DATA(lv_json) = zcl_zare002_sfdc_result=>build_payload( sample_records( ) ).
 
-    cl_abap_unit_assert=>assert_true( xsdbool( lv_json CS '"BST_Payment_Collection__c"' ) ).
+    cl_abap_unit_assert=>assert_true( xsdbool( lv_json CS '"BST_PaymentCollection__c"' ) ).
     cl_abap_unit_assert=>assert_true( xsdbool( lv_json CS '"BST_SAP_Status__c"' ) ).
-    cl_abap_unit_assert=>assert_true( xsdbool( lv_json CS '"BST_SAP_Reject_Reason__c"' ) ).
-    cl_abap_unit_assert=>assert_true( xsdbool( lv_json CS '"BST_SAP_Batch_Id__c"' ) ).
-    cl_abap_unit_assert=>assert_true( xsdbool( lv_json CS '"BST_SAP_Response_Date__c"' ) ).
+    cl_abap_unit_assert=>assert_true( xsdbool( lv_json CS '"BST_SAP_RejectReason__c"' ) ).
+    cl_abap_unit_assert=>assert_true( xsdbool( lv_json CS '"BST_SAP_BatchId__c"' ) ).
+    cl_abap_unit_assert=>assert_true( xsdbool( lv_json CS '"BST_SAP_ResponseDate__c"' ) ).
     cl_abap_unit_assert=>assert_true( xsdbool( lv_json CS '"Rejected"' ) ).
   ENDMETHOD.
 
@@ -73,7 +73,7 @@ CLASS ltc_sfdc_result IMPLEMENTATION.
 
     DATA(lv_json) = zcl_zare002_sfdc_result=>build_payload( lt_record ).
 
-    cl_abap_unit_assert=>assert_false( xsdbool( lv_json CS 'BST_SAP_Reject_Reason__c' ) ).
+    cl_abap_unit_assert=>assert_false( xsdbool( lv_json CS 'BST_SAP_RejectReason__c' ) ).
   ENDMETHOD.
 
   METHOD payload_escapes_quotes.
