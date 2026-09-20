@@ -24,7 +24,7 @@ baseline ที่ tenant serialize มาแล้ว (commit `7936197`) — ob
 | Object | Type | ไฟล์ | Phase | Status |
 |--------|------|------|-------|--------|
 | `ZTAR_E002_ITEM_D` | Draft table ของ `ZR_ZARE002` — สร้างด้วย quick-fix จาก BDEF · include `SYCH_BDL_DRAFT_ADMIN_INC` เป็น `%ADMIN` ครบ | `src/ztar_e002_item_d.tabl.xml` | 4 | ✅ |
-| `ZARE002` | Message class — `001` reject reason missing (per item) · `002` already rejected · `003` rejected OK · `004` > 25 items · `005` SFDC success=false · `006` SFDC unreachable · `001–099` Reject · `100+` Submit | `src/zare002.msag.xml` | 7 / 8A | 🟨 004–006 |
+| `ZARE002` | Message class — `001` reject reason missing (per item) · `002` already rejected · `003` rejected OK · `004` > 25 items · `005` SFDC success=false · `006` SFDC unreachable · `001–099` Reject · `100+` Submit | `src/zare002.msag.xml` | 7 / 8A | ⚠️ repo มีแค่ 001–003 — 004–006 ยังไม่ push |
 
 **ไม่สร้าง data element / domain ใหม่** — reuse `ZE_REQUEST_STATUS` (package `ZARI002`)
 
@@ -56,7 +56,7 @@ baseline ที่ tenant serialize มาแล้ว (commit `7936197`) — ob
 | Object | Type | ไฟล์ | Phase | Status |
 |--------|------|------|-------|--------|
 | `ZR_ZARE002` | Behavior definition — managed · with draft · with additional save · update only · features : instance บน RejectReason + 2 action | `src/zr_zare002.bdef.asbdef` | 2 / 7 | ✅ |
-| `ZBP_R_ZARE002` | Behavior pool — `lhc_Item` (global auth · instance features · rejectItem) + `lsc_Item` (save_modified → `UPDATE ztar_i002_pymt` · cleanup) | `src/zbp_r_zare002.clas.abap` | 2 / 7 | ✅ |
+| `ZBP_R_ZARE002` | Behavior pool — `lhc_Item` (global auth · instance features · rejectItem: validate → composite SFDC → buffer) + `lsc_Item` (save_modified → `UPDATE ztar_i002_pymt` status R + salesforce_status S · cleanup_finalize) | `src/zbp_r_zare002.clas.abap` | 2 / 7 / 8A | ✅ |
 | `ZC_ZARE002` | Behavior projection (`use update` · `use action` · `use draft` ถ้าอัปเกรด) | `src/zc_zare002.bdef.asbdef` | 3 | ✅ |
 
 `ZBP_C_ZARE002` (behavior pool ของ projection) **ยังไม่ต้องสร้าง** — สร้างเมื่อมี logic ที่ต้องอยู่ชั้น projection เท่านั้น
@@ -93,7 +93,7 @@ object type จริงบน tenant นี้ (ปิด OQ-11) และช�
 | `ZARE002_REJECT_RESULT_REST` | Outbound Service (SCO3) — HTTP | `src/zare002_reject_result_rest.sco3.xml` | 8A | ✅ |
 | `ZCS_REJECT_RESULT` | Communication Scenario outbound (SCO1) — OAuth 2.0 client credentials · one instance per client · แยกจาก `ZCS_PAYMENT_RESULT` ของ ZARI002 โดยตั้งใจ | `src/zcs_reject_result.sco1.xml` | 8A | ✅ |
 | Communication Arrangement `ZCA_REJECT_RESULT` | Fiori config — `ZCS_REJECT_RESULT` × Communication System `SFDC_DEV` (ของ ZARI002 · client id เดียวกัน · secret อยู่ใน Fiori) · Check Connection ✓ | — ไม่ขึ้น git | 8A | ✅ |
-| `ZCL_ZARE002_SFDC_RESULT` | Class — Composite API (25 subrequest/call) PATCH ผล payment ไป SFDC · `build_payload` / `parse_response` / `build_response_date` pure · `send` / `check_connection` | `src/zcl_zare002_sfdc_result.clas.abap` | 8A | 🟦 9 test เขียว · ping 200 |
+| `ZCL_ZARE002_SFDC_RESULT` | Class — Composite API (25 subrequest/call) PATCH ผล payment ไป SFDC · `build_payload` / `parse_response` / `build_response_date` pure · `send` / `check_connection` | `src/zcl_zare002_sfdc_result.clas.abap` | 8A | ✅ 9 test เขียว · ping 200 |
 
 ## Action ที่ประกาศ
 
