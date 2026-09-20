@@ -149,6 +149,9 @@
 - **table expression `itab[ … ]` รับแค่ `=`** ไม่รับ `<>` / `>` (`Field "TABLE_LINE" is unknown`)
   → เงื่อนไขอื่นใช้ `LOOP AT … WHERE` · **`DATA(x) = 'literal'` ได้ type `c` ไม่ใช่ `string`**
   → ส่งเข้า parameter `string` ไม่ได้ ใช้ backtick `` `…` `` หรือ `&&`
+- **ชื่อ field ของ Salesforce ห้ามเชื่อ spec/ตัวอย่าง — ยิง `GET /sobjects/<Object>/describe` ผ่าน
+  arrangement ดูของจริง** (เจอจริง 2026-09-20: spec ให้ตารางกับ JSON example ที่ชื่อไม่ตรงกัน เลือกผิด
+  → `INVALID_FIELD` ตอน Reject จริง) · describe ใช้เวลา 2 นาที ถูกกว่าถามคนหรือเดา
 - ทุก method มี ABAP Doc comment สั้น ๆ อธิบาย purpose
 - Error ทั้งหมดรวมศูนย์ที่ message class `ZARE002` (สร้างตอนเริ่มใส่ logic ปุ่ม)
 

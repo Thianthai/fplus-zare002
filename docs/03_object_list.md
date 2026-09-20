@@ -30,6 +30,7 @@ baseline ที่ tenant serialize มาแล้ว (commit `7936197`) — ob
 
 | `ZCL_ZARE002_STATUS_BUFFER` | Class — static buffer `payment_uuid → status` ส่งจาก action ไป saver · `add` / `get_all` / `clear` · 3 unit test | `src/zcl_zare002_status_buffer.clas.abap` | 7 | ✅ |
 
+| `ZCL_ZARE002_SPIKE_SFDC` | ⚠️ **ชั่วคราว** — `if_oo_adt_classrun` GET `…/cgcloud__Order_Payment__c/describe` ผ่าน arrangement แล้ว print field `BST_*` · ใช้ปิด OQ-30 · **ลบทิ้งตอนจบ Phase 8A** | `src/zcl_zare002_spike_sfdc.clas.abap` | 8A | 🟨 temporary |
 | `ZCL_ZARE002_SPIKE` | ⚠️ **ชั่วคราว** — `if_oo_adt_classrun` reset `reject_reason` + `status → N` + ลบ draft ของ payment ที่ระบุ เพื่อทดสอบ Reject ซ้ำ · เขียน DB ตรงข้าม RAP · **ลบทิ้งตอนจบ Phase 7** | `src/zcl_zare002_spike.clas.abap` | 7 | ✅ temporary — **ลบก่อน handover** |
 
 ## Table ที่ใช้ — เป็นของ package `ZARI002` ไม่ใช่ของเรา
