@@ -198,10 +198,10 @@ spec จากผู้ใช้ 2026-09-17 (IN #3 Payment Result): หลัง
 | 8.1 | Outbound Service | SCO3 | `ZARE002_REJECT_RESULT_REST` | ✅ `b76c74c` |
 | 8.2 | Communication Scenario outbound | SCO1 | `ZCS_REJECT_RESULT` — OAuth 2.0 client credentials · published | ✅ `b76c74c` |
 | 8.3 | Communication Arrangement | Fiori | `ZCA_REJECT_RESULT` × `SFDC_DEV` · Check Connection ✓ (2026-09-20) | ✅ |
-| 8.4 | API class | CLAS | `ZCL_ZARE002_SFDC_RESULT` — Composite API · `build_payload` / `parse_response` (sXML) / `build_response_date` (pure) · `send` / `check_connection` · ชื่อ field เป็น constant รอ OQ-30 | 🟨 |
-| 8.5 | Message class | MSAG | `ZARE002` + `004` (>25) `005` (SFDC subrequest error) `006` (unreachable) | 🟨 |
+| 8.4 | API class | CLAS | `ZCL_ZARE002_SFDC_RESULT` — Composite API · `build_payload` / `parse_response` (sXML) / `build_response_date` (pure) · `send` / `check_connection` · ชื่อ field เป็น constant รอ OQ-30 · **`check_connection` = 200** (2026-09-20) | 🟦 |
+| 8.5 | Message class | MSAG | `ZARE002` + `004` (>25) `005` (SFDC subrequest error) `006` (unreachable) | 🟦 |
 | 8.6 | Behavior pool | CLAS | `lhc_Item->rejectItem` ยิง SFDC ก่อน buffer · `lsc_Item` เพิ่ม `salesforce_status = S` | ⬜ |
-| 8.7 | Unit test | | 9 test: payload ×4 · parse ×4 (204 / root cause / 401 / garbage) · date — ไม่ต่อ SFDC | 🟨 |
+| 8.7 | Unit test | | 9 test เขียว: payload ×4 · parse ×4 (204 / root cause / 401 / garbage) · date — ไม่ต่อ SFDC | 🟦 |
 | 8.8 | ทดสอบ | | `check_connection` = 200 → Reject บน launchpad → ดู record ใน SFDC sandbox | ⬜ |
 
 ลำดับ: 8.1 → 8.2 → 8.3 (ADT + Fiori ก่อน) → 8.5 → 8.4 + 8.7 → check_connection → 8.6 → 8.8

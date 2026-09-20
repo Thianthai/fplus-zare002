@@ -93,7 +93,7 @@ object type จริงบน tenant นี้ (ปิด OQ-11) และช�
 | `ZARE002_REJECT_RESULT_REST` | Outbound Service (SCO3) — HTTP | `src/zare002_reject_result_rest.sco3.xml` | 8A | ✅ |
 | `ZCS_REJECT_RESULT` | Communication Scenario outbound (SCO1) — OAuth 2.0 client credentials · one instance per client · แยกจาก `ZCS_PAYMENT_RESULT` ของ ZARI002 โดยตั้งใจ | `src/zcs_reject_result.sco1.xml` | 8A | ✅ |
 | Communication Arrangement `ZCA_REJECT_RESULT` | Fiori config — `ZCS_REJECT_RESULT` × Communication System `SFDC_DEV` (ของ ZARI002 · client id เดียวกัน · secret อยู่ใน Fiori) · Check Connection ✓ | — ไม่ขึ้น git | 8A | ✅ |
-| `ZCL_ZARE002_SFDC_RESULT` | Class — Composite API (25 subrequest/call) PATCH ผล payment ไป SFDC · `build_payload` / `parse_response` / `build_response_date` pure · `send` / `check_connection` | `src/zcl_zare002_sfdc_result.clas.abap` | 8A | 🟨 |
+| `ZCL_ZARE002_SFDC_RESULT` | Class — Composite API (25 subrequest/call) PATCH ผล payment ไป SFDC · `build_payload` / `parse_response` / `build_response_date` pure · `send` / `check_connection` | `src/zcl_zare002_sfdc_result.clas.abap` | 8A | 🟦 9 test เขียว · ping 200 |
 
 ## Action ที่ประกาศ
 
