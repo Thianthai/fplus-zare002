@@ -140,6 +140,9 @@
   ไม่ใช่ใน action handler — RAP ห้าม modify database ใน interaction phase
   · เขียนเฉพาะ field ด้วย `UPDATE ... SET` **ห้าม `MODIFY ... FROM TABLE`** (แทนที่ทั้ง row)
   · ดู `docs/01_architecture.md` §3
+- **`cx_sxml_error` ไม่ released ใน ABAP Cloud** (เจอจริง 2026-09-20: `The use of Class
+  CX_SXML_ERROR is not permitted`) — `cl_sxml_string_reader` ใช้ได้ แต่ exception ของมันจับด้วย
+  `CATCH cx_root` แทน
 - ทุก method มี ABAP Doc comment สั้น ๆ อธิบาย purpose
 - Error ทั้งหมดรวมศูนย์ที่ message class `ZARE002` (สร้างตอนเริ่มใส่ logic ปุ่ม)
 
