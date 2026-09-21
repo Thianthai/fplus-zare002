@@ -220,11 +220,11 @@ Salesforce ไม่ส่ง `expires_in` → arrangement ถือ token ค�
 | 8C.2 | Outbound Service SCO3 | `ZBC_SFDC_TOKEN_REST` | 🟦 (2026-09-21 · Check Connection ✓) |
 | 8C.3 | Communication Scenario SCO1 · outbound · Basic | `ZCS_SFDC_TOKEN` | 🟦 (2026-09-21 · Check Connection ✓) |
 | 8C.4 | Communication Arrangement | `ZCA_SFDC_TOKEN` × `SFDC_DEV` | 🟦 (2026-09-21 · Check Connection ✓) |
-| 8C.5 | class กลาง **`ZCL_UTILITY`** (ผู้ใช้ตั้ง 2026-09-21 · ข้ามRICEFW ไม่มี prefix APP) · `get_sfdc_token( )` → access_token · ไม่ cache · `parse_sfdc_token_response( )` pure | `ZCL_UTILITY` · package **`ZBCUTILITY`** (ตกลง 2026-09-21 · 8C.2/8C.3 ลงที่เดียวกัน) | 🟨 |
-| 8C.6 | unit test ของ 8C.5 | | 🟨 |
-| 8C.7 | spike ใน `ZCL_ZARE002_UTIL`: Bearer เองผ่าน arrangement Basic → 200 หรือ 401 | ตัดสินว่าต้อง scenario no-auth แยกไหม | ⬜ |
+| 8C.5 | class กลาง **`ZCL_UTILITY`** (ผู้ใช้ตั้ง 2026-09-21 · ข้ามRICEFW ไม่มี prefix APP) · `get_sfdc_token( )` → access_token · ไม่ cache · `parse_sfdc_token_response( )` pure | `ZCL_UTILITY` · package **`ZBCUTILITY`** (ตกลง 2026-09-21 · 8C.2/8C.3 ลงที่เดียวกัน) | 🟦 4 test เขียว · token จริง 200 |
+| 8C.6 | unit test ของ 8C.5 | | 🟦 4 test เขียว · token จริง 200 |
+| 8C.7 | spike `test_sfdc_bearer`: token HTTP 200 (length 112) · describe ผ่าน arrangement Basic + Bearer เอง = **200** (2026-09-21) → header ของเราชนะ ใช้ `ZCA_SFDC_TOKEN` ตัวเดียวทั้ง token และ data | ตัดสินแล้ว | ✅ |
 | 8C.8 | `ZCL_ZARE002_SFDC_RESULT` ใช้ token กลาง + Bearer เอง · ping → `/limits` | | ⬜ |
-| 8C.9 | scenario ขา data (เฉพาะถ้า 8C.7 = 401) | `ZARE002_SFDC_DATA_REST` · `ZCS_ZARE002_SFDC_DATA` (None) · `ZCA_ZARE002_SFDC_DATA` | ⬜ |
+| 8C.9 | ~~scenario ขา data~~ — **ไม่ต้อง** (8C.7 = 200) | — | ✅ ยกเลิก |
 | 8C.10 | เลิกใช้ `ZCS_REJECT_RESULT` | | ⬜ |
 
 object กลาง (8C.2 · 8C.3 · 8C.5 · 8C.6) อยู่ใน repo **`fplus-zbcutility`** (local `~/Claude/projects/fplus/zbcutility` · เอกสารเริ่มต้น push แล้ว 2026-09-21 `5692111` · รอ link abapGit) · ZARI002 ต้องทำแบบ 8C.8 ในรอบของตัวเอง — จดไว้ให้ฝั่งนั้น
