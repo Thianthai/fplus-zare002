@@ -202,7 +202,7 @@ spec จากผู้ใช้ 2026-09-17 (IN #3 Payment Result): หลัง
 | 8.5 | Message class | MSAG | `ZARE002` — `001` แก้เป็นต่อ payment · `004` (>25) `005` (SFDC error) `006` (unreachable) | ✅ `9799508` |
 | 8.6 | Behavior pool | CLAS | `lhc_Item->rejectItem` validate ทุกใบ (reason ≥ 1 item/ใบ) → composite → success เท่านั้นจึง buffer · `error_index` → แถวต้นเหตุ · `lsc_Item` เพิ่ม `salesforce_status = S` | ✅ `9799508` |
 | 8.7 | Unit test | | 10 test เขียว: payload ×5 (รวม truncate batch id) · parse ×4 · date — ไม่ต่อ SFDC | ✅ |
-| 8.8 | ทดสอบ | | (1) ใบ request_id ≤ 15 → Rejected ใน SFDC · (2) ใบ 20 ตัว → 005 STRING_TOO_LONG ยัง N · (3) A กรอก + B ไม่กรอก → ไม่ยิง SFDC · (4) DB status R + salesforce_status S · (5) filter บัง 2 item → reject ครบ 5 · (6) ไม่กรอกเลย → 001 — **ข้อ 1 ติด `INVALID_FIELD` (OQ-30) chain ถึง SFDC แล้ว status ไม่ stamp ตามกติกา** | 🟨 รอชื่อ field |
+| 8.8 | ทดสอบ | | (1) ใบ request_id ≤ 15 → Rejected ใน SFDC · (2) ใบ 20 ตัว → 005 STRING_TOO_LONG ยัง N · (3) A กรอก + B ไม่กรอก → ไม่ยิง SFDC · (4) DB status R + salesforce_status S · (5) filter บัง 2 item → reject ครบ 5 · (6) ไม่กรอกเลย → 001 — **2026-09-21: token ใหม่ผ่าน · composite HTTP 200 · ตกที่ `NOT_FOUND` = test data id ปลอม (OQ-35)** ต้องใช้ใบที่มี record จริงใน sandbox | 🟨 รอข้อมูลทดสอบ |
 
 ลำดับ: 8.1 → 8.2 → 8.3 (ADT + Fiori ก่อน) → 8.5 → 8.4 + 8.7 → check_connection → 8.6 → 8.8
 
