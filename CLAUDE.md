@@ -149,6 +149,11 @@
 - **table expression `itab[ … ]` รับแค่ `=`** ไม่รับ `<>` / `>` (`Field "TABLE_LINE" is unknown`)
   → เงื่อนไขอื่นใช้ `LOOP AT … WHERE` · **`DATA(x) = 'literal'` ได้ type `c` ไม่ใช่ `string`**
   → ส่งเข้า parameter `string` ไม่ได้ ใช้ backtick `` `…` `` หรือ `&&`
+- **Salesforce client credentials ไม่ส่ง `expires_in` → Communication Arrangement cache token ค้าง
+  ไม่ refresh เองแม้เจอ 401** (พิสูจน์ 2026-09-21 · SAP Community ยืนยันเป็นพฤติกรรม Public Cloud)
+  · Check Connection ที่ arrangement = ขอใหม่ (workaround มือ) · ทางถาวรดู OQ-34 (ขอ token เองผ่าน
+  Basic-auth outbound service + ใส่ Bearer เอง) · **`GET /services/data/` ไม่ต้องใช้ token —
+  ห้ามใช้เป็น ping พิสูจน์ OAuth** ใช้ `/services/data/v66.0/limits` แทน
 - **ชื่อ field ของ Salesforce ห้ามเชื่อ spec/ตัวอย่าง — ยิง `GET /sobjects/<Object>/describe` ผ่าน
   arrangement ดูของจริง** (เจอจริง 2026-09-20: spec ให้ตารางกับ JSON example ที่ชื่อไม่ตรงกัน เลือกผิด
   → `INVALID_FIELD` ตอน Reject จริง) · describe ใช้เวลา 2 นาที ถูกกว่าถามคนหรือเดา
