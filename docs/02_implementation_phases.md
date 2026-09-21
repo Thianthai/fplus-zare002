@@ -220,7 +220,7 @@ Salesforce ไม่ส่ง `expires_in` → arrangement ถือ token ค�
 | 8C.2 | Outbound Service SCO3 | `ZBC_SFDC_TOKEN_REST` | ⬜ |
 | 8C.3 | Communication Scenario SCO1 · outbound · Basic | `ZCS_SFDC_TOKEN` | ⬜ |
 | 8C.4 | Communication Arrangement | `ZCA_SFDC_TOKEN` × `SFDC_DEV` | ⬜ |
-| 8C.5 | class กลาง **`ZCL_UTILITY`** (ผู้ใช้ตั้ง 2026-09-21 · ข้ามRICEFW ไม่มี prefix APP) · `get_sfdc_token( )` → access_token · ไม่ cache · `parse_sfdc_token_response( )` pure | `ZCL_UTILITY` (package กลาง — รอชื่อ) | ⬜ |
+| 8C.5 | class กลาง **`ZCL_UTILITY`** (ผู้ใช้ตั้ง 2026-09-21 · ข้ามRICEFW ไม่มี prefix APP) · `get_sfdc_token( )` → access_token · ไม่ cache · `parse_sfdc_token_response( )` pure | `ZCL_UTILITY` · package **`ZBCUTILITY`** (ตกลง 2026-09-21 · 8C.2/8C.3 ลงที่เดียวกัน) | ⬜ |
 | 8C.6 | unit test ของ 8C.5 | | ⬜ |
 | 8C.7 | spike ใน `ZCL_ZARE002_UTIL`: Bearer เองผ่าน arrangement Basic → 200 หรือ 401 | ตัดสินว่าต้อง scenario no-auth แยกไหม | ⬜ |
 | 8C.8 | `ZCL_ZARE002_SFDC_RESULT` ใช้ token กลาง + Bearer เอง · ping → `/limits` | | ⬜ |
