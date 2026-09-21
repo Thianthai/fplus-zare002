@@ -206,6 +206,29 @@ spec จากผู้ใช้ 2026-09-17 (IN #3 Payment Result): หลัง
 
 ลำดับ: 8.1 → 8.2 → 8.3 (ADT + Fiori ก่อน) → 8.5 → 8.4 + 8.7 → check_connection → 8.6 → 8.8
 
+## Phase 8C — Token กลาง: เลิกพึ่ง cache ของ Communication Arrangement (เปิด 2026-09-21 · OQ-34)
+
+Salesforce ไม่ส่ง `expires_in` → arrangement ถือ token ค้าง ไม่ refresh แม้เจอ 401 (SAP Community ยืนยัน)
+→ class กลางขอ token ใหม่ทุกครั้งผ่าน scenario **Basic auth** ไป `/services/oauth2/token`
+(secret อยู่ใน Communication System — class ไม่เห็น) แล้ว RICEFW ใส่ `Authorization: Bearer` เอง
+· ตก (User Name < 85 / SFDC ไม่รับ Basic จาก SAP) → `ZTBC_PARAM` ตามที่ผู้ใช้ตัดสิน
+
+| # | Object | ชื่อ (เสนอ · รอ confirm) | Status |
+|---|---|---|---|
+| 8C.0 | เช็ค Fiori: User Name รับ 85 ตัว · scenario มี auth None | — | ⬜ |
+| 8C.1 | outbound user Basic ใน `SFDC_DEV` (user = client id · pw = secret) | Fiori | ⬜ |
+| 8C.2 | Outbound Service SCO3 | `ZBC_SFDC_TOKEN_REST` | ⬜ |
+| 8C.3 | Communication Scenario SCO1 · outbound · Basic | `ZCS_SFDC_TOKEN` | ⬜ |
+| 8C.4 | Communication Arrangement | `ZCA_SFDC_TOKEN` × `SFDC_DEV` | ⬜ |
+| 8C.5 | class กลาง `get( )` → access_token · ไม่ cache · sXML parse | `ZCL_ZBC_SFDC_TOKEN` (package กลาง — รอชื่อ) | ⬜ |
+| 8C.6 | unit test ของ 8C.5 | | ⬜ |
+| 8C.7 | spike ใน `ZCL_ZARE002_UTIL`: Bearer เองผ่าน arrangement Basic → 200 หรือ 401 | ตัดสินว่าต้อง scenario no-auth แยกไหม | ⬜ |
+| 8C.8 | `ZCL_ZARE002_SFDC_RESULT` ใช้ token กลาง + Bearer เอง · ping → `/limits` | | ⬜ |
+| 8C.9 | scenario ขา data (เฉพาะถ้า 8C.7 = 401) | `ZARE002_SFDC_DATA_REST` · `ZCS_ZARE002_SFDC_DATA` (None) · `ZCA_ZARE002_SFDC_DATA` | ⬜ |
+| 8C.10 | เลิกใช้ `ZCS_REJECT_RESULT` | | ⬜ |
+
+ZARI002 ต้องทำแบบ 8C.8 ในรอบของตัวเอง — จดไว้ให้ฝั่งนั้น
+
 ## Phase 8B — Submit → post FI document (รอ spec)
 
 ทั้ง Submit และ Reject ต้องเกี่ยวกับ FI document (ผู้ใช้แจ้ง 2026-09-16) — Reject ทำ SFDC ก่อน (8A)
