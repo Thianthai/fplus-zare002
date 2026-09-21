@@ -56,7 +56,7 @@ baseline ที่ tenant serialize มาแล้ว (commit `7936197`) — ob
 | Object | Type | ไฟล์ | Phase | Status |
 |--------|------|------|-------|--------|
 | `ZR_ZARE002` | Behavior definition — managed · with draft · with additional save · update only · features : instance บน RejectReason + 2 action | `src/zr_zare002.bdef.asbdef` | 2 / 7 | ✅ |
-| `ZBP_R_ZARE002` · **SFDC call ใน `rejectItem` ปิดชั่วคราว (stub success) — เปิดกลับก่อน handover** | Behavior pool — `lhc_Item` (global auth · instance features · rejectItem: validate → composite SFDC → buffer) + `lsc_Item` (save_modified → `UPDATE ztar_i002_pymt` status R + salesforce_status S · cleanup_finalize) | `src/zbp_r_zare002.clas.abap` | 2 / 7 / 8A | ✅ |
+| `ZBP_R_ZARE002` | Behavior pool — **SFDC call ใน `rejectItem` ปิดชั่วคราว (stub success) เปิดกลับก่อน handover** · `lhc_Item` (global auth · instance features · rejectItem: validate → composite SFDC → buffer) + `lsc_Item` (save_modified → `UPDATE ztar_i002_pymt` status R + salesforce_status S · cleanup_finalize) | `src/zbp_r_zare002.clas.abap` | 2 / 7 / 8A | ✅ |
 | `ZC_ZARE002` | Behavior projection (`use update` · `use action` · `use draft` ถ้าอัปเกรด) | `src/zc_zare002.bdef.asbdef` | 3 | ✅ |
 
 `ZBP_C_ZARE002` (behavior pool ของ projection) **ยังไม่ต้องสร้าง** — สร้างเมื่อมี logic ที่ต้องอยู่ชั้น projection เท่านั้น
