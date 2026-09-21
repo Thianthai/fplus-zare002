@@ -225,6 +225,7 @@ Salesforce ไม่ส่ง `expires_in` → arrangement ถือ token ค�
 | 8C.7 | spike `test_sfdc_bearer`: token HTTP 200 (length 112) · describe ผ่าน arrangement Basic + Bearer เอง = **200** (2026-09-21) → header ของเราชนะ ใช้ `ZCA_SFDC_TOKEN` ตัวเดียวทั้ง token และ data | ตัดสินแล้ว | ✅ |
 | 8C.8 | `ZCL_ZARE002_SFDC_RESULT` ใช้ token กลาง + Bearer เอง ผ่าน `ZCA_SFDC_TOKEN` · ping → `/limits` · token fail → `TOKEN_<code>` เข้า message 005/006 เดิม | | ✅ `46aba51` |
 | 8C.8b | ย้ายการสร้าง client ไป **`ZCL_UTILITY=>create_sfdc_client`** (token + Bearer + arrangement อยู่ที่เดียว) · `ZCL_ZARE002_SFDC_RESULT` ไม่รู้จักชื่อ arrangement อีกต่อไป · RICEFW อื่นเรียกตัวเดียวกัน | `ZCL_UTILITY` `9d3da87` · `ZCL_ZARE002_SFDC_RESULT` | ✅ `11b4185` (2026-09-21) |
+| 8C.8c | ping ย้ายไป **`ZCL_UTILITY=>check_sfdc_connection`** · ลบ `check_connection` / `gc_path_ping` / `gc_sobject_type` (ไม่มีผู้เรียก) ออกจาก `ZCL_ZARE002_SFDC_RESULT` | `ZCL_UTILITY` `d56f201` · `ZCL_ZARE002_SFDC_RESULT` | ✅ `c20f7b2` (2026-09-21) |
 | 8C.9 | ~~scenario ขา data~~ — **ไม่ต้อง** (8C.7 = 200) | — | ✅ ยกเลิก |
 | 8C.10 | เลิกใช้ `ZCS_REJECT_RESULT` | | ⬜ |
 
