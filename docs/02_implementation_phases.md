@@ -201,7 +201,7 @@ spec จากผู้ใช้ 2026-09-17 (IN #3 Payment Result): หลัง
 | 8.4 | API class | CLAS | `ZCL_ZARE002_SFDC_RESULT` — Composite API · `build_payload` / `parse_response` (sXML) / `build_response_date` (pure) · `send` / `check_connection` · ชื่อ field เป็น constant รอ OQ-30 · `check_connection` = 200 | ✅ `907155b` |
 | 8.5 | Message class | MSAG | `ZARE002` — `001` แก้เป็นต่อ payment · `004` (>25) `005` (SFDC error) `006` (unreachable) | ✅ `9799508` |
 | 8.6 | Behavior pool | CLAS | `lhc_Item->rejectItem` validate ทุกใบ (reason ≥ 1 item/ใบ) → composite → success เท่านั้นจึง buffer · `error_index` → แถวต้นเหตุ · `lsc_Item` เพิ่ม `salesforce_status = S` | ✅ `9799508` |
-| 8.7 | Unit test | | 9 test เขียว: payload ×4 · parse ×4 (204 / root cause / 401 / garbage) · date — ไม่ต่อ SFDC | ✅ `907155b` |
+| 8.7 | Unit test | | 10 test เขียว: payload ×5 (รวม truncate batch id) · parse ×4 · date — ไม่ต่อ SFDC | ✅ |
 | 8.8 | ทดสอบ | | (1) ใบ request_id ≤ 15 → Rejected ใน SFDC · (2) ใบ 20 ตัว → 005 STRING_TOO_LONG ยัง N · (3) A กรอก + B ไม่กรอก → ไม่ยิง SFDC · (4) DB status R + salesforce_status S · (5) filter บัง 2 item → reject ครบ 5 · (6) ไม่กรอกเลย → 001 — **ข้อ 1 ติด `INVALID_FIELD` (OQ-30) chain ถึง SFDC แล้ว status ไม่ stamp ตามกติกา** | 🟨 รอชื่อ field |
 
 ลำดับ: 8.1 → 8.2 → 8.3 (ADT + Fiori ก่อน) → 8.5 → 8.4 + 8.7 → check_connection → 8.6 → 8.8
