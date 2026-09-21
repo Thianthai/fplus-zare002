@@ -1,7 +1,8 @@
-"! ส่งผล payment (Rejected / Completed) กลับ Salesforce ราย item ด้วย Composite API
-"! ผ่าน Communication Arrangement ZCA_REJECT_RESULT — OAuth อยู่ที่ platform ไม่มี token ใน ABAP
-"! เรียกจาก interaction phase ของ RAP ได้ (HTTP ออกนอกไม่ถูกห้าม ห้ามแค่เขียน DB)
-"! ไม่โยน exception ทุก method คืนผลให้ผู้เรียกตัดสิน · build_/parse_ เป็น pure ทดสอบได้ไม่ต่อเน็ต
+"! ส่งผล Rejected/Completed กลับ Salesforce ราย item ด้วย Composite API
+"! ทุก call ขอ token ใหม่จาก ZCL_UTILITY แล้วยิงผ่าน Communication Arrangement กลาง ZCA_SFDC_TOKEN พร้อม Authorization: Bearer ที่ใส่เอง
+"! Client Secret อยู่ใน Communication System — ABAP จะมองเห็นแค่ access token
+"! เรียกจาก interaction phase ของ RAP
+"! ไม่โยน exception ทุก method คืนผลให้ caller ตรงๆ
 CLASS zcl_zare002_sfdc_result DEFINITION
   PUBLIC
   FINAL
@@ -21,7 +22,8 @@ CLASS zcl_zare002_sfdc_result DEFINITION
       END OF ty_record,
       tt_record TYPE STANDARD TABLE OF ty_record WITH EMPTY KEY,
 
-      "! ผลของ 1 composite call — โครงนี้เอาไปเขียน log table ทีหลังได้ตรง ๆ (log ยังเป็น optional)
+      "! ผลของ 1 composite call — เอาไปเขียน log table ทีหลังได้ตรงๆ (log ยังเป็น optional)
+      "! error_code จาก Salesforce (เช่น STRING_TOO_LONG) หรือจาก class (เช่น NOT_REACHABLE / PARSE_ERROR / TOO_MANY_RECORDS / TOKEN_[code])
       BEGIN OF ty_result,
         http_status   TYPE i,
         success       TYPE abap_bool,
@@ -37,7 +39,7 @@ CLASS zcl_zare002_sfdc_result DEFINITION
       gc_status_completed  TYPE string VALUE 'Completed',
       "! limit ของ Composite API — subrequest ต่อ call
       gc_max_records       TYPE i      VALUE 25,
-      "! error_code ที่ class นี้สร้างเอง (ไม่ได้มาจาก SFDC)
+      "! error_code ของ class
       gc_err_not_reachable TYPE string VALUE 'NOT_REACHABLE',
       gc_err_too_many      TYPE string VALUE 'TOO_MANY_RECORDS',
       gc_err_parse         TYPE string VALUE 'PARSE_ERROR'.
@@ -49,63 +51,66 @@ CLASS zcl_zare002_sfdc_result DEFINITION
       IMPORTING it_record      TYPE tt_record
       RETURNING VALUE(rv_json) TYPE string.
 
-    "! อ่าน compositeResponse — สำเร็จเมื่อ HTTP 200 และทุก subrequest เป็น 204
-    "! ถ้าพัง หา error ต้นเหตุตัวแรกโดยข้าม PROCESSING_HALTED (ผลพวงของ allOrNone rollback)
-    "! HTTP ≠ 200 (เช่น 401) body เป็น array ของ error ระดับบน อ่านได้เหมือนกัน
+    "! อ่าน compositeResponse
+    "! สำเร็จเมื่อ HTTP 200 และทุก subrequest เป็น 204
     CLASS-METHODS parse_response
       IMPORTING iv_json          TYPE string
                 iv_http_status   TYPE i
       RETURNING VALUE(rs_result) TYPE ty_result.
 
-    "! เวลาปัจจุบันในรูปแบบที่ SFDC ต้องการ `YYYY-MM-DDThh:mm:ss+0700` (spec IN #3)
+    "! เวลาปัจจุบันในรูปแบบที่ SFDC ต้องการ `YYYY-MM-DDThh:mm:ss+0700`
     CLASS-METHODS build_response_date
       RETURNING VALUE(rv_date) TYPE string.
 
-    "! POST composite 1 ครั้งผ่าน Communication Arrangement แล้วอ่านผล
-    "! ไม่โยน exception — ต่อไม่ถึงคืน http_status 0 + NOT_REACHABLE ให้ผู้เรียกตัดสินเอง
+    "! ขอ token สำเร็จ ยิง POST composite 1 ครั้ง และอ่านผล
+    "! ขอ token ไม่สำเร็จ คืน error_code TOKEN_[code] โดยไม่ยิง POST composite
+    "! ต่อไม่ถึงคืน HTTP 0 + NOT_REACHABLE ให้ caller โดยตรง
     METHODS send
       IMPORTING it_record        TYPE tt_record
       RETURNING VALUE(rs_result) TYPE ty_result.
 
-    "! GET /services/data/ — 200 = arrangement + OAuth ใช้ได้ · 401 = id/secret ผิด · 0 = ต่อไม่ถึง
+    "! ขอ token แล้ว GET /services/data/v66.0/limits (endpoint ที่ต้องใช้ token)
+    "! คืน 200 = arrangement + token ใช้ได้จริง
+    "! คืน 401 = token ไม่รับ
+    "! คืน 0 = ต่อไม่ถึง หรือขอ token ไม่ได้
     METHODS check_connection
       RETURNING VALUE(rv_status) TYPE i.
 
   PRIVATE SECTION.
 
     CONSTANTS:
-      "! scenario + outbound service ของ ZARE002 เอง (แยกจาก ZCS_PAYMENT_RESULT ของ ZARI002)
-      gc_comm_scenario   TYPE sxco_cds_object_name VALUE 'ZCS_REJECT_RESULT',
-      gc_service_id      TYPE c LENGTH 40          VALUE 'ZARE002_REJECT_RESULT_REST',
-      "! Composite API · limit 25 subrequest/call (OQ-29)
+      "! ยิงทุก call ผ่าน Communication Arrangement กลาง ZCA_SFDC_TOKEN (Basic Auth.) แล้วใส่ Authorization: Bearer เอง
+      gc_comm_scenario   TYPE sxco_cds_object_name VALUE 'ZCS_SFDC_TOKEN',
+      gc_service_id      TYPE c LENGTH 40          VALUE 'ZBC_SFDC_TOKEN_REST',
+      "! Composite API — limit 25 subrequest/call (OQ-29)
       gc_path_composite  TYPE string VALUE '/services/data/v66.0/composite',
-      "! url ของแต่ละ subrequest — ต่อด้วย record Id ของ item
+      "! url ของแต่ละ subrequest — ต่อด้วย record id ของ item
       gc_path_sobject    TYPE string VALUE '/services/data/v66.0/sobjects/cgcloud__Order_Payment__c/',
-      "! endpoint มาตรฐานสำหรับเช็ค token (check_connection)
-      gc_path_ping       TYPE string VALUE '/services/data/',
+      "! endpoint ที่ต้องใช้ token จริง
+      gc_path_ping       TYPE string VALUE '/services/data/v66.0/limits',
       gc_sobject_type    TYPE string VALUE 'cgcloud__Order_Payment__c',
 
-      "! ชื่อ field API — ยืนยันจาก describe ของ SFDC sandbox 2026-09-20 (OQ-30 ปิด)
+      "! ชื่อ field API
       gc_fld_collection  TYPE string VALUE 'BST_PaymentCollection__c',
       gc_fld_status      TYPE string VALUE 'BST_SAP_Status__c',
       gc_fld_reason      TYPE string VALUE 'BST_SAP_RejectReason__c',
       gc_fld_batch       TYPE string VALUE 'BST_SAP_BatchId__c',
       gc_fld_date        TYPE string VALUE 'BST_SAP_ResponseDate__c',
-      "! ความยาว BST_SAP_BatchId__c ฝั่ง SFDC ตอนนี้ — request_id จริงยาว 20 ตัดชั่วคราวจนกว่า SFDC ขยายเป็น 25 (OQ-28)
-      "! ตัดแล้วเสีย suffix ที่แยก request ในวินาทีเดียวกัน — ลบการตัดทันทีที่ SFDC ขยาย
+      "! ความยาว BST_SAP_BatchId__c ฝั่ง SFDC ตอนนี้ — request_id จริงยาว 20 รอ SFDC ขยายเป็น 25 (OQ-28)
       gc_batch_id_max    TYPE i      VALUE 15,
 
       gc_http_ok         TYPE i      VALUE 200,
       gc_http_no_content TYPE i      VALUE 204,
-      "! subrequest ที่ไม่ได้ผิดเองแต่โดน rollback เพราะ allOrNone — ไม่ใช่ต้นเหตุ
+      "! subrequest ที่ไม่ได้ผิดแต่โดน rollback เพราะ subrequest อื่น
       gc_halted          TYPE string VALUE 'PROCESSING_HALTED',
 
-      "! ประเทศไทย UTC+7 ไม่มี DST — ถ้า tenant / ธุรกิจย้าย time zone แก้ 2 ค่านี้พร้อมกัน
+      "! เวลาประเทศไทย UTC+7 ไม่มี DST — ถ้าเปลี่ยน time zone ต้องแก้ทั้ง 2 ค่าพร้อมกัน
       gc_tz_offset_hours TYPE i      VALUE 7,
       gc_tz_offset_text  TYPE string VALUE '+0700'.
 
-    "! error 1 ก้อนจาก compositeResponse (หรือระดับบนเมื่อ HTTP ≠ 200) · index = ลำดับ subrequest ที่พัง
     TYPES:
+      "! error 1 ก้อนจาก compositeResponse
+      "! index = ลำดับ subrequest ที่พัง
       BEGIN OF ty_error,
         error_code TYPE string,
         message    TYPE string,
@@ -113,9 +118,11 @@ CLASS zcl_zare002_sfdc_result DEFINITION
       END OF ty_error,
       tt_error TYPE STANDARD TABLE OF ty_error WITH EMPTY KEY.
 
-    "! สร้าง HTTP client ผ่าน Communication Arrangement (OAuth อยู่ที่ platform)
-    METHODS create_client
-      RETURNING VALUE(ro_client) TYPE REF TO if_web_http_client
+    "! ขอ token จาก ZCL_UTILITY แล้วสร้าง HTTP client ผ่าน Communication Arrangement กลาง พร้อม Authorization: Bearer
+    "! ขอ token ไม่ได้ = eo_client ว่าง และ es_token_error มีค่า ฝั่ง caller ต้องเช็ค IS BOUND ก่อนใช้
+    METHODS create_authorized_client
+      EXPORTING eo_client      TYPE REF TO if_web_http_client
+                es_token_error TYPE ty_result
       RAISING   cx_http_dest_provider_error
                 cx_web_http_client_error.
 
@@ -140,7 +147,7 @@ CLASS zcl_zare002_sfdc_result IMPLEMENTATION.
         )->add_member( 'url'         )->add_string( |{ gc_path_sobject }{ ls_record-item_sf_id }|
         )->add_member( 'referenceId' )->add_string( |item{ lv_index }|
         )->add_member( 'body'        )->begin_object(
-          )->add_member( gc_fld_collection )->add_string( CONV #( ls_record-header_sf_id )
+          )->add_member( gc_fld_collection )->add_string( ls_record-header_sf_id
           )->add_member( gc_fld_status     )->add_string( ls_record-status
           )->add_member( gc_fld_batch      )->add_string( substring( val = CONV string( ls_record-batch_id )
                                                                      len = nmin( val1 = strlen( CONV string( ls_record-batch_id ) )
@@ -148,7 +155,7 @@ CLASS zcl_zare002_sfdc_result IMPLEMENTATION.
           )->add_member( gc_fld_date       )->add_string( ls_record-response_date ).
 
       IF ls_record-reject_reason IS NOT INITIAL.
-        lo_builder->add_member( gc_fld_reason )->add_string( CONV #( ls_record-reject_reason ) ).
+        lo_builder->add_member( gc_fld_reason )->add_string( ls_record-reject_reason ).
       ENDIF.
 
       lo_builder->end_object( )->end_object( ).
@@ -163,16 +170,14 @@ CLASS zcl_zare002_sfdc_result IMPLEMENTATION.
 
     rs_result-http_status = iv_http_status.
 
-    " เดิน JSON ด้วย sXML เพราะ body ของ subrequest เป็น null ตอนสำเร็จ / array ตอนพัง
-    " (polymorphic) ซึ่ง write_to โครงสร้างคงที่รับไม่ได้
     DATA lt_status TYPE STANDARD TABLE OF i WITH EMPTY KEY.
     DATA lt_error  TYPE tt_error.
     DATA lv_member TYPE string.
+
     FIELD-SYMBOLS <lfs_error> TYPE ty_error.
 
     TRY.
-        DATA(lo_reader) = cl_sxml_string_reader=>create(
-                            cl_abap_conv_codepage=>create_out( )->convert( iv_json ) ).
+        DATA(lo_reader) = cl_sxml_string_reader=>create( cl_abap_conv_codepage=>create_out( )->convert( iv_json ) ).
 
         DO.
           DATA(lo_node) = lo_reader->read_next_node( ).
@@ -184,12 +189,14 @@ CLASS zcl_zare002_sfdc_result IMPLEMENTATION.
 
             WHEN if_sxml_node=>co_nt_element_open.
               DATA(lo_open) = CAST if_sxml_open_element( lo_node ).
+
               CLEAR lv_member.
               LOOP AT lo_open->get_attributes( ) INTO DATA(lo_attribute).
                 IF lo_attribute->qname-name = 'name'.
                   lv_member = lo_attribute->get_value( ).
                 ENDIF.
               ENDLOOP.
+
               " ทุก object เป็น error ที่เป็นไปได้ — ตัวที่ไม่มี errorCode จะถูกทิ้งตอนท้าย
               IF lo_open->qname-name = 'object'.
                 APPEND INITIAL LINE TO lt_error ASSIGNING <lfs_error>.
@@ -198,6 +205,7 @@ CLASS zcl_zare002_sfdc_result IMPLEMENTATION.
 
             WHEN if_sxml_node=>co_nt_value.
               DATA(lv_value) = CAST if_sxml_value_node( lo_node )->get_value( ).
+
               CASE lv_member.
                 WHEN 'httpStatusCode'.
                   APPEND CONV i( lv_value ) TO lt_status.
@@ -224,7 +232,7 @@ CLASS zcl_zare002_sfdc_result IMPLEMENTATION.
     DELETE lt_error WHERE error_code IS INITIAL.
     rs_result-record_count = lines( lt_status ).
 
-    " ไม่มีทั้ง subrequest status และ error = body ไม่ใช่รูปแบบที่รู้จัก (เช่น HTML จาก gateway)
+    " Body ไม่ใช่รูปแบบที่รู้จัก
     IF lt_status IS INITIAL AND lt_error IS INITIAL.
       rs_result-success       = abap_false.
       rs_result-error_code    = gc_err_parse.
@@ -233,7 +241,7 @@ CLASS zcl_zare002_sfdc_result IMPLEMENTATION.
       RETURN.
     ENDIF.
 
-    " สำเร็จ = call 200 และทุก subrequest 204
+    " สำเร็จ = call 200 และทุก subrequest = 204
     DATA(lv_all_no_content) = abap_true.
     LOOP AT lt_status INTO DATA(lv_status) WHERE table_line <> gc_http_no_content.
       lv_all_no_content = abap_false.
@@ -249,11 +257,12 @@ CLASS zcl_zare002_sfdc_result IMPLEMENTATION.
 
     rs_result-success = abap_false.
 
-    " error ต้นเหตุ = ตัวแรกที่ไม่ใช่ PROCESSING_HALTED · ถ้าไม่มีเลยเอาตัวแรก
-    READ TABLE lt_error INTO DATA(ls_error) WITH KEY error_code = gc_halted.
+    " error ต้นเหตุ = ตัวแรกที่ไม่ใช่ PROCESSING_HALTED (ถ้าไม่มีเลยเอาตัวแรก)
+    DATA ls_error TYPE ty_error.
     LOOP AT lt_error INTO ls_error WHERE error_code <> gc_halted.
       EXIT.
     ENDLOOP.
+
     IF sy-subrc <> 0.
       READ TABLE lt_error INTO ls_error INDEX 1.
     ENDIF.
@@ -267,13 +276,15 @@ CLASS zcl_zare002_sfdc_result IMPLEMENTATION.
 
   METHOD build_response_date.
 
-    DATA lv_timestamp TYPE timestamp.
+    DATA lv_timestamp TYPE timestampl.
     DATA lv_date      TYPE d.
     DATA lv_time      TYPE t.
 
-    GET TIME STAMP FIELD lv_timestamp.                                     " UTC
+    GET TIME STAMP FIELD lv_timestamp. " UTC
+
     lv_timestamp = cl_abap_tstmp=>add( tstmp = lv_timestamp
                                        secs  = gc_tz_offset_hours * 3600 ).
+
     CONVERT TIME STAMP lv_timestamp TIME ZONE 'UTC' INTO DATE lv_date TIME lv_time.
 
     rv_date = |{ lv_date(4) }-{ lv_date+4(2) }-{ lv_date+6(2) }T| &&
@@ -298,18 +309,28 @@ CLASS zcl_zare002_sfdc_result IMPLEMENTATION.
     ENDIF.
 
     TRY.
-        DATA(lo_client)  = create_client( ).
+        create_authorized_client( IMPORTING eo_client      = DATA(lo_client)
+                                            es_token_error = DATA(ls_token_error) ).
+        IF lo_client IS NOT BOUND.
+          rs_result = ls_token_error.
+          rs_result-record_count = lines( it_record ).
+          RETURN.
+        ENDIF.
+
         DATA(lo_request) = lo_client->get_http_request( ).
 
         lo_request->set_uri_path( gc_path_composite ).
+
         lo_request->set_header_field( i_name  = 'Content-Type'
                                       i_value = 'application/json' ).
+
         lo_request->set_text( build_payload( it_record ) ).
 
         DATA(lo_response) = lo_client->execute( if_web_http_client=>post ).
 
         rs_result = parse_response( iv_json        = lo_response->get_text( )
                                     iv_http_status = lo_response->get_status( )-code ).
+
         rs_result-record_count = lines( it_record ).
 
         lo_client->close( ).
@@ -327,10 +348,18 @@ CLASS zcl_zare002_sfdc_result IMPLEMENTATION.
   METHOD check_connection.
 
     TRY.
-        DATA(lo_client) = create_client( ).
+        create_authorized_client( IMPORTING eo_client      = DATA(lo_client)
+                                            es_token_error = DATA(ls_token_error) ).
+
+        IF lo_client IS NOT BOUND.
+          rv_status = ls_token_error-http_status.
+          RETURN.
+        ENDIF.
+
         lo_client->get_http_request( )->set_uri_path( gc_path_ping ).
 
         DATA(lo_response) = lo_client->execute( if_web_http_client=>get ).
+
         rv_status = lo_response->get_status( )-code.
 
         lo_client->close( ).
@@ -342,13 +371,27 @@ CLASS zcl_zare002_sfdc_result IMPLEMENTATION.
   ENDMETHOD.
 
 
-  METHOD create_client.
+  METHOD create_authorized_client.
+
+    CLEAR: eo_client, es_token_error.
+
+    DATA(ls_token) = zcl_utility=>get_sfdc_token( ).
+    IF ls_token-success = abap_false.
+      es_token_error-http_status   = ls_token-http_status.
+      es_token_error-success       = abap_false.
+      es_token_error-error_code    = |TOKEN_{ ls_token-error_code }|.
+      es_token_error-error_message = ls_token-error_message.
+      RETURN.
+    ENDIF.
 
     DATA(lo_destination) = cl_http_destination_provider=>create_by_comm_arrangement(
                              comm_scenario = gc_comm_scenario
                              service_id    = gc_service_id ).
 
-    ro_client = cl_web_http_client_manager=>create_by_http_destination( lo_destination ).
+    eo_client = cl_web_http_client_manager=>create_by_http_destination( lo_destination ).
+
+    eo_client->get_http_request( )->set_header_field( i_name  = 'Authorization'
+                                                      i_value = |Bearer { ls_token-access_token }| ).
 
   ENDMETHOD.
 
