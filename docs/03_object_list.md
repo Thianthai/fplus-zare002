@@ -30,7 +30,7 @@ baseline ที่ tenant serialize มาแล้ว (commit `7936197`) — ob
 
 | `ZCL_ZARE002_STATUS_BUFFER` | Class — static buffer `payment_uuid → status` ส่งจาก action ไป saver · `add` / `get_all` / `clear` · 3 unit test | `src/zcl_zare002_status_buffer.clas.abap` | 7 | ✅ |
 
-| `ZCL_ZARE002_UTIL` | ⚠️ **ชั่วคราว** — `if_oo_adt_classrun` รวม spike: `test_sfdc_bearer` (8C.7) · `reset_payment` (ล้าง reject_reason · status R→N · ล้างผล SFDC · ทิ้ง draft ของใบที่ระบุ) · `describe_sfdc_object` (GET describe ผ่าน arrangement print field `BST_*`) · main ปิดทั้งคู่ไว้ เปิด comment ก่อน F9 · **ลบทิ้งก่อน handover** · แทน `ZCL_ZARE002_SPIKE` + `ZCL_ZARE002_SPIKE_SFDC` ที่ลบแล้ว (2026-09-20) | `src/zcl_zare002_util.clas.abap` | 7 / 8A | ✅ temporary — **ลบก่อน handover** |
+| `ZCL_ZARE002_UTIL` | ⚠️ **ชั่วคราว** — `if_oo_adt_classrun` รวม spike: `test_sfdc_bearer` (8C.7) · `reset_payment` (ล้าง reject_reason · status R→N · ล้างผล SFDC · ทิ้ง draft ของใบที่ระบุ) · (`describe_sfdc_object` ลบแล้ว `651ec78` — อ้าง scenario เก่า · `test_sfdc_bearer` ทำแทน) · main ปิดทั้งคู่ไว้ เปิด comment ก่อน F9 · **ลบทิ้งก่อน handover** · แทน `ZCL_ZARE002_SPIKE` + `ZCL_ZARE002_SPIKE_SFDC` ที่ลบแล้ว (2026-09-20) | `src/zcl_zare002_util.clas.abap` | 7 / 8A | ✅ temporary — **ลบก่อน handover** |
 
 ## Table ที่ใช้ — เป็นของ package `ZARI002` ไม่ใช่ของเรา
 
@@ -90,9 +90,9 @@ object type จริงบน tenant นี้ (ปิด OQ-11) และช�
 
 | Object | Type | ไฟล์ | Phase | Status |
 |--------|------|------|-------|--------|
-| `ZARE002_REJECT_RESULT_REST` | Outbound Service (SCO3) — HTTP · **เลิกใช้ตั้งแต่ 8C.8** ลบใน 8C.10 | `src/zare002_reject_result_rest.sco3.xml` | 8A | ⚠️ unused |
-| `ZCS_REJECT_RESULT` | Communication Scenario outbound (SCO1) — OAuth 2.0 · **เลิกใช้ตั้งแต่ 8C.8** (token cache ค้าง OQ-34) · ลบพร้อม arrangement + outbound service หลัง Reject ผ่านจริง (8C.10) | `src/zcs_reject_result.sco1.xml` | 8A | ⚠️ unused |
-| Communication Arrangement `ZCA_REJECT_RESULT` | Fiori config — `ZCS_REJECT_RESULT` × Communication System `SFDC_DEV` (ของ ZARI002 · client id เดียวกัน · secret อยู่ใน Fiori) · Check Connection ✓ | — ไม่ขึ้น git | 8A | ✅ |
+| ~~`ZARE002_REJECT_RESULT_REST`~~ | Outbound Service (SCO3) — เลิกใช้ 8C.8 · **ลบแล้ว 8C.10** | — | 8A | 🗑️ `651ec78` (2026-09-21) |
+| ~~`ZCS_REJECT_RESULT`~~ | Communication Scenario outbound (SCO1) — OAuth 2.0 · เลิกใช้ 8C.8 (token cache ค้าง OQ-34) · **ลบแล้ว 8C.10** | — | 8A | 🗑️ `651ec78` (2026-09-21) |
+| ~~Communication Arrangement `ZCA_REJECT_RESULT`~~ | Fiori config — OAuth 2.0 × `SFDC_DEV` · **ลบแล้ว 8C.10** · ทางออกไป SFDC ทั้งหมดตอนนี้คือ `ZCA_SFDC_TOKEN` (package `ZBCUTILITY`) | — ไม่ขึ้น git | 8A | 🗑️ 2026-09-21 |
 | `ZCL_ZARE002_SFDC_RESULT` | Class — Composite API (25 subrequest/call) PATCH ผล payment ไป SFDC · `build_payload` / `parse_response` / `build_response_date` pure · `send` (client จาก `ZCL_UTILITY=>create_sfdc_client` · ping ย้ายไป `ZCL_UTILITY=>check_sfdc_connection`) | `src/zcl_zare002_sfdc_result.clas.abap` | 8A / 8C | ✅ token จาก `ZCL_UTILITY` ทุก call ผ่าน `ZCA_SFDC_TOKEN` + Bearer เอง · ping `/limits` · ชื่อ field จริง · batch id ตัด 15 (OQ-28) · 10 test เขียว |
 
 ## Action ที่ประกาศ

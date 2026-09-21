@@ -174,7 +174,7 @@ spec จากผู้ใช้ 2026-09-17 (IN #3 Payment Result): หลัง
 **ตกลงแล้ว (2026-09-17)**
 - ชื่อ field API ยึดตาม JSON example (มี `_` คั่น): `BST_Payment_Collection__c` `BST_SAP_Status__c`
   `BST_SAP_Reject_Reason__c` `BST_SAP_Batch_Id__c` `BST_SAP_Response_Date__c`
-- Communication Scenario **สร้างเอง** `ZCS_REJECT_RESULT` · ใช้ Communication System `SFDC_DEV`
+- Communication Scenario **สร้างเอง** `ZCS_REJECT_RESULT` · ใช้ Communication System `SFDC_DEV` — *(ถูกแทนด้วย `ZCA_SFDC_TOKEN` กลางใน 8C · ลบแล้ว 8C.10)*
   ของ ZARI002 (client id เดียวกัน · secret ผู้ใช้ถือ ใส่ใน Fiori)
 - `BST_SAP_Batch_Id__c` = `ztar_i002_pymt.request_id`
 - ยิงแบบ **composite** (SFDC dev แนะนำ) — 1 คลิก = 1 call · `allOrNone`
@@ -195,9 +195,9 @@ spec จากผู้ใช้ 2026-09-17 (IN #3 Payment Result): หลัง
 
 | # | Object | Type | ชื่อ | Status |
 |---|---|---|---|---|
-| 8.1 | Outbound Service | SCO3 | `ZARE002_REJECT_RESULT_REST` | ✅ `b76c74c` |
-| 8.2 | Communication Scenario outbound | SCO1 | `ZCS_REJECT_RESULT` — OAuth 2.0 client credentials · published | ✅ `b76c74c` |
-| 8.3 | Communication Arrangement | Fiori | `ZCA_REJECT_RESULT` × `SFDC_DEV` · Check Connection ✓ (2026-09-20) | ✅ |
+| 8.1 | Outbound Service | SCO3 | ~~`ZARE002_REJECT_RESULT_REST`~~ | ✅ `b76c74c` → 🗑️ 8C.10 |
+| 8.2 | Communication Scenario outbound | SCO1 | ~~`ZCS_REJECT_RESULT`~~ — OAuth 2.0 client credentials | ✅ `b76c74c` → 🗑️ 8C.10 |
+| 8.3 | Communication Arrangement | Fiori | ~~`ZCA_REJECT_RESULT`~~ × `SFDC_DEV` | ✅ → 🗑️ 8C.10 |
 | 8.4 | API class | CLAS | `ZCL_ZARE002_SFDC_RESULT` — Composite API · `build_payload` / `parse_response` (sXML) / `build_response_date` (pure) · `send` / `check_connection` · ชื่อ field เป็น constant รอ OQ-30 · `check_connection` = 200 | ✅ `907155b` |
 | 8.5 | Message class | MSAG | `ZARE002` — `001` แก้เป็นต่อ payment · `004` (>25) `005` (SFDC error) `006` (unreachable) | ✅ `9799508` |
 | 8.6 | Behavior pool | CLAS | `lhc_Item->rejectItem` validate ทุกใบ (reason ≥ 1 item/ใบ) → composite → success เท่านั้นจึง buffer · `error_index` → แถวต้นเหตุ · `lsc_Item` เพิ่ม `salesforce_status = S` | ✅ `9799508` |
@@ -227,7 +227,7 @@ Salesforce ไม่ส่ง `expires_in` → arrangement ถือ token ค�
 | 8C.8b | ย้ายการสร้าง client ไป **`ZCL_UTILITY=>create_sfdc_client`** (token + Bearer + arrangement อยู่ที่เดียว) · `ZCL_ZARE002_SFDC_RESULT` ไม่รู้จักชื่อ arrangement อีกต่อไป · RICEFW อื่นเรียกตัวเดียวกัน | `ZCL_UTILITY` `9d3da87` · `ZCL_ZARE002_SFDC_RESULT` | ✅ `11b4185` (2026-09-21) |
 | 8C.8c | ping ย้ายไป **`ZCL_UTILITY=>check_sfdc_connection`** · ลบ `check_connection` / `gc_path_ping` / `gc_sobject_type` (ไม่มีผู้เรียก) ออกจาก `ZCL_ZARE002_SFDC_RESULT` | `ZCL_UTILITY` `d56f201` · `ZCL_ZARE002_SFDC_RESULT` | ✅ `c20f7b2` (2026-09-21) |
 | 8C.9 | ~~scenario ขา data~~ — **ไม่ต้อง** (8C.7 = 200) | — | ✅ ยกเลิก |
-| 8C.10 | เลิกใช้ `ZCS_REJECT_RESULT` | | ⬜ |
+| 8C.10 | ลบชุด OAuth เดิม `ZCA_REJECT_RESULT` (Fiori) → `ZCS_REJECT_RESULT` → `ZARE002_REJECT_RESULT_REST` · ลบ `describe_sfdc_object` ใน `ZCL_ZARE002_UTIL` (ผู้อ้างคนสุดท้าย) · แถว OAuth 2.0 บน `SFDC_DEV` ยังอยู่ — ARI001 / ARI002 ใช้ | | ✅ `651ec78` (2026-09-21) |
 
 object กลาง (8C.2 · 8C.3 · 8C.5 · 8C.6) อยู่ใน repo **`fplus-zbcutility`** (local `~/Claude/projects/fplus/zbcutility` · code ทั้งหมดอยู่ใน repo แล้ว `9d3da87`) · ZARI002 ต้องทำแบบ 8C.8 ในรอบของตัวเอง — จดไว้ให้ฝั่งนั้น
 
