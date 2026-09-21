@@ -157,6 +157,10 @@
   · Check Connection ที่ arrangement = ขอใหม่ (workaround มือ) · ทางถาวรดู OQ-34 (ขอ token เองผ่าน
   Basic-auth outbound service + ใส่ Bearer เอง) · **`GET /services/data/` ไม่ต้องใช้ token —
   ห้ามใช้เป็น ping พิสูจน์ OAuth** ใช้ `/services/data/v66.0/limits` แทน
+- **Path ใน Communication Arrangement เป็น prefix — `set_uri_path( )` ต่อท้าย ไม่ได้แทนที่**
+  (เจอจริง 2026-09-21: prefix `/services/oauth2/token` + `set_uri_path` path เดียวกัน → 404)
+  → ตั้ง Default Path / Path ของ outbound service เป็น **`/`** แล้วให้ class ใส่ path เต็มเองเสมอ
+  (pattern ของ ZARI002) — โดยเฉพาะ scenario ที่ต้องยิงหลาย path
 - **ชื่อ field ของ Salesforce ห้ามเชื่อ spec/ตัวอย่าง — ยิง `GET /sobjects/<Object>/describe` ผ่าน
   arrangement ดูของจริง** (เจอจริง 2026-09-20: spec ให้ตารางกับ JSON example ที่ชื่อไม่ตรงกัน เลือกผิด
   → `INVALID_FIELD` ตอน Reject จริง) · describe ใช้เวลา 2 นาที ถูกกว่าถามคนหรือเดา
