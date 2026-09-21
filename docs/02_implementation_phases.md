@@ -189,7 +189,7 @@ spec จากผู้ใช้ 2026-09-17 (IN #3 Payment Result): หลัง
 - `BST_SAP_Response_Date__c` ต้องเป็น **`+0700`** ตาม spec — UTC + 7 ชม. แล้วต่อ `+0700` คงที่ (ไทยไม่มี DST)
 - log ตอนส่งพลาด: **ยังไม่ทำ** แต่ API class คืนผลเป็น structure ไว้ให้ต่อ log table ทีหลังได้
 
-- OQ-26 = **(ก) all-or-nothing** · Batch Id ส่ง `request_id` เต็ม ไม่ตัด — SFDC ขยาย field (OQ-28)
+- OQ-26 = **(ก) all-or-nothing** · Batch Id ~~ส่งเต็ม~~ **ตัด 15 ชั่วคราว** (2026-09-21) จนกว่า SFDC ขยาย field (OQ-28)
 
 **Object (เสนอ 2026-09-17 · รอ confirm ชื่อ)**
 
