@@ -1,5 +1,5 @@
 "! ส่งผล Rejected/Completed กลับ Salesforce ราย item ด้วย Composite API
-"! ทุก call ขอ token ใหม่จาก ZCL_UTILITY แล้วยิงผ่าน Communication Arrangement กลาง ZCA_SFDC_TOKEN พร้อม Authorization: Bearer ที่ใส่เอง
+"! ทุก call ขอ HTTP client จาก ZCL_UTILITY=>create_sfdc_client ซึ่งขอ token ใหม่และผูก Authorization: Bearer มาให้ใน HTTP header แล้ว
 "! Client Secret อยู่ใน Communication System — ABAP จะมองเห็นแค่ access token
 "! เรียกจาก interaction phase ของ RAP
 "! ไม่โยน exception ทุก method คืนผลให้ caller ตรงๆ
@@ -37,8 +37,10 @@ CLASS zcl_zare002_sfdc_result DEFINITION
       "! ค่า picklist BST_SAP_Status__c — case-sensitive
       gc_status_rejected   TYPE string VALUE 'Rejected',
       gc_status_completed  TYPE string VALUE 'Completed',
+
       "! limit ของ Composite API — subrequest ต่อ call
       gc_max_records       TYPE i      VALUE 25,
+
       "! error_code ของ class
       gc_err_not_reachable TYPE string VALUE 'NOT_REACHABLE',
       gc_err_too_many      TYPE string VALUE 'TOO_MANY_RECORDS',
@@ -46,7 +48,7 @@ CLASS zcl_zare002_sfdc_result DEFINITION
 
     "! สร้าง JSON ของ Composite API: allOrNone + 1 PATCH subrequest ต่อ record
     "! ใช้ builder เพราะ transformation อัตโนมัติจะทำชื่อ `__c` พัง และ escape ข้อความให้
-    "! ไม่ส่ง reject reason ถ้าว่าง — SFDC รับ item ที่ไม่มี reason ได้ (OQ-32)
+    "! ไม่ส่ง reject reason ถ้าว่าง — SFDC รับ item ที่ไม่มี reason ได้
     CLASS-METHODS build_payload
       IMPORTING it_record      TYPE tt_record
       RETURNING VALUE(rv_json) TYPE string.
@@ -79,13 +81,12 @@ CLASS zcl_zare002_sfdc_result DEFINITION
   PRIVATE SECTION.
 
     CONSTANTS:
-      "! ยิงทุก call ผ่าน Communication Arrangement กลาง ZCA_SFDC_TOKEN (Basic Auth.) แล้วใส่ Authorization: Bearer เอง
-      gc_comm_scenario   TYPE sxco_cds_object_name VALUE 'ZCS_SFDC_TOKEN',
-      gc_service_id      TYPE c LENGTH 40          VALUE 'ZBC_SFDC_TOKEN_REST',
-      "! Composite API — limit 25 subrequest/call (OQ-29)
+      "! Composite API — limit 25 subrequest/call
       gc_path_composite  TYPE string VALUE '/services/data/v66.0/composite',
+
       "! url ของแต่ละ subrequest — ต่อด้วย record id ของ item
       gc_path_sobject    TYPE string VALUE '/services/data/v66.0/sobjects/cgcloud__Order_Payment__c/',
+
       "! endpoint ที่ต้องใช้ token จริง
       gc_path_ping       TYPE string VALUE '/services/data/v66.0/limits',
       gc_sobject_type    TYPE string VALUE 'cgcloud__Order_Payment__c',
@@ -96,11 +97,13 @@ CLASS zcl_zare002_sfdc_result DEFINITION
       gc_fld_reason      TYPE string VALUE 'BST_SAP_RejectReason__c',
       gc_fld_batch       TYPE string VALUE 'BST_SAP_BatchId__c',
       gc_fld_date        TYPE string VALUE 'BST_SAP_ResponseDate__c',
-      "! ความยาว BST_SAP_BatchId__c ฝั่ง SFDC ตอนนี้ — request_id จริงยาว 20 รอ SFDC ขยายเป็น 25 (OQ-28)
+
+      "! ความยาว BST_SAP_BatchId__c ฝั่ง SFDC ตอนนี้ — request_id จริงยาว 20 รอ SFDC ขยายเป็น 25
       gc_batch_id_max    TYPE i      VALUE 15,
 
       gc_http_ok         TYPE i      VALUE 200,
       gc_http_no_content TYPE i      VALUE 204,
+
       "! subrequest ที่ไม่ได้ผิดแต่โดน rollback เพราะ subrequest อื่น
       gc_halted          TYPE string VALUE 'PROCESSING_HALTED',
 
@@ -117,14 +120,6 @@ CLASS zcl_zare002_sfdc_result DEFINITION
         index      TYPE i,
       END OF ty_error,
       tt_error TYPE STANDARD TABLE OF ty_error WITH EMPTY KEY.
-
-    "! ขอ token จาก ZCL_UTILITY แล้วสร้าง HTTP client ผ่าน Communication Arrangement กลาง พร้อม Authorization: Bearer
-    "! ขอ token ไม่ได้ = eo_client ว่าง และ es_token_error มีค่า ฝั่ง caller ต้องเช็ค IS BOUND ก่อนใช้
-    METHODS create_authorized_client
-      EXPORTING eo_client      TYPE REF TO if_web_http_client
-                es_token_error TYPE ty_result
-      RAISING   cx_http_dest_provider_error
-                cx_web_http_client_error.
 
 ENDCLASS.
 
@@ -309,11 +304,15 @@ CLASS zcl_zare002_sfdc_result IMPLEMENTATION.
     ENDIF.
 
     TRY.
-        create_authorized_client( IMPORTING eo_client      = DATA(lo_client)
-                                            es_token_error = DATA(ls_token_error) ).
+        zcl_utility=>create_sfdc_client( IMPORTING eo_client = DATA(lo_client)
+                                                   es_error  = DATA(ls_token_error) ).
+
         IF lo_client IS NOT BOUND.
-          rs_result = ls_token_error.
-          rs_result-record_count = lines( it_record ).
+          " ขอ token ไม่ได้
+          rs_result-http_status   = ls_token_error-http_status.
+          rs_result-success       = abap_false.
+          rs_result-error_code    = |TOKEN_{ ls_token_error-error_code }|.
+          rs_result-error_message = ls_token_error-error_message.
           RETURN.
         ENDIF.
 
@@ -348,8 +347,8 @@ CLASS zcl_zare002_sfdc_result IMPLEMENTATION.
   METHOD check_connection.
 
     TRY.
-        create_authorized_client( IMPORTING eo_client      = DATA(lo_client)
-                                            es_token_error = DATA(ls_token_error) ).
+        zcl_utility=>create_sfdc_client( IMPORTING eo_client = DATA(lo_client)
+                                                   es_error  = DATA(ls_token_error) ).
 
         IF lo_client IS NOT BOUND.
           rv_status = ls_token_error-http_status.
@@ -367,31 +366,6 @@ CLASS zcl_zare002_sfdc_result IMPLEMENTATION.
       CATCH cx_root.
         rv_status = 0.
     ENDTRY.
-
-  ENDMETHOD.
-
-
-  METHOD create_authorized_client.
-
-    CLEAR: eo_client, es_token_error.
-
-    DATA(ls_token) = zcl_utility=>get_sfdc_token( ).
-    IF ls_token-success = abap_false.
-      es_token_error-http_status   = ls_token-http_status.
-      es_token_error-success       = abap_false.
-      es_token_error-error_code    = |TOKEN_{ ls_token-error_code }|.
-      es_token_error-error_message = ls_token-error_message.
-      RETURN.
-    ENDIF.
-
-    DATA(lo_destination) = cl_http_destination_provider=>create_by_comm_arrangement(
-                             comm_scenario = gc_comm_scenario
-                             service_id    = gc_service_id ).
-
-    eo_client = cl_web_http_client_manager=>create_by_http_destination( lo_destination ).
-
-    eo_client->get_http_request( )->set_header_field( i_name  = 'Authorization'
-                                                      i_value = |Bearer { ls_token-access_token }| ).
 
   ENDMETHOD.
 
