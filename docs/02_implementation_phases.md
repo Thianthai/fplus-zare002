@@ -227,7 +227,7 @@ Salesforce ไม่ส่ง `expires_in` → arrangement ถือ token ค�
 | 8C.9 | scenario ขา data (เฉพาะถ้า 8C.7 = 401) | `ZARE002_SFDC_DATA_REST` · `ZCS_ZARE002_SFDC_DATA` (None) · `ZCA_ZARE002_SFDC_DATA` | ⬜ |
 | 8C.10 | เลิกใช้ `ZCS_REJECT_RESULT` | | ⬜ |
 
-ZARI002 ต้องทำแบบ 8C.8 ในรอบของตัวเอง — จดไว้ให้ฝั่งนั้น
+object กลาง (8C.2 · 8C.3 · 8C.5 · 8C.6) อยู่ใน repo **`fplus-zbcutility`** (local `~/Claude/projects/fplus/zbcutility` · เอกสารเริ่มต้น push แล้ว 2026-09-21 `5692111` · รอ link abapGit) · ZARI002 ต้องทำแบบ 8C.8 ในรอบของตัวเอง — จดไว้ให้ฝั่งนั้น
 
 ## Phase 8B — Submit → post FI document (รอ spec)
 

@@ -202,6 +202,8 @@
 - Claude คอยเช็ค `git log` / `git status` ว่าผู้ใช้ push object อะไรขึ้นมาแล้วบ้าง
   แล้วอัปเดต status ใน `docs/03_object_list.md` ให้ตรง
 - Remote: https://github.com/Thianthai/fplus-zare002.git
+- ของกลาง (`ZCL_UTILITY` / token scenario) อยู่ repo แยก https://github.com/Thianthai/fplus-zbcutility.git
+  (local `~/Claude/projects/fplus/zbcutility`) — เอกสารของมัน Claude ดูแลเหมือนกัน
 
 ## ADT ขึ้น HTTP 500 — ลองใหม่ก่อนไล่หาสาเหตุ
 
