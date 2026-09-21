@@ -8,20 +8,27 @@
 
 | # | เรื่อง | เจ้าของคำตอบ | ยกมาจาก | บล็อกอะไร | สถานะ |
 |---|--------|-------------|---------|-----------|--------|
-| OQ-02 | **Payment Document No. ใน mockup เป็น link** แต่ไม่มี Object Page → จะให้ link ไปไหน หรือเป็น text ธรรมดา | ผู้ใช้ | Phase 0 | ไม่บล็อก — ทำเป็น text ไปก่อน | 🟨 |
-| OQ-03 | mockup ทำปุ่ม Submit เขียว / Reject แดง — Fiori elements ไม่ให้กำหนดสีปุ่ม action เอง รับได้ไหม | ผู้ใช้ | Phase 0 | ไม่บล็อก | 🟨 |
-| OQ-04 | **`status` อยู่ระดับ header แต่ผู้ใช้ติ๊กระดับ item** — **ตอบแล้ว 2026-09-15**: เลือก item ใดก็ตาม = เลือกทั้ง payment · handler ต้อง distinct `PaymentUuid` จาก keys แล้วทำงานกับ item ทุกตัวของ payment เหล่านั้น · **ทำที่ RAP ล้วน ไม่ต้องแก้ Fiori** · ปุ่มตั้ง `invocationGrouping: #CHANGE_SET` ไว้แล้วตั้งแต่ Phase 5 เพื่อให้ keys ทั้งหมดมาถึง handler รอบเดียว ไม่ post ใบเดิมซ้ำ | — | Phase 0 | ไม่บล็อก — เป็น spec ของเฟส logic แล้ว | 🟨 |
-| OQ-05 | `ZD_REQUEST_STATUS` มี 4 ค่า (`N` `C` `R` `E`) แต่ mockup มี 3 icon — `R` กับ `E` ใช้สีแดงเหมือนกันได้ไหม หรือต้องแยก | ผู้ใช้ | Phase 3 | ไม่บล็อก — ใช้สีแดงทั้งคู่ไปก่อน | 🟨 |
-| OQ-12 | รายงานควร filter เฉพาะ `status = 'N'` โดย default ไหม หรือแสดงทุกสถานะ · mockup แสดงทั้ง 🕐 ✅ ❌ = แสดงทุกสถานะ | ผู้ใช้ | Phase 3 | ไม่บล็อก — แสดงทุกสถานะตาม mockup ไปก่อน | 🟨 |
-| OQ-13 | **`reject_reason` แก้ได้ทุกสถานะหรือเฉพาะ `N`** — **ตอบแล้ว 2026-09-16**: หลังกด Reject (header `status = 'R'`) **ห้ามแก้อีก** → `field ( features : instance ) RejectReason` readonly เมื่อ `_Payment.Status = 'R'` | ผู้ใช้ | Phase 3 | spec ของ Phase 7 | 🟨 |
-| OQ-19 | **กติกา: กด Reject ต้องมี `reject_reason`** — **ยืนยันซ้ำ 2026-09-16** validate เสมอ · ยังต้องตกลง scope: ทุก item ของ payment หรือเฉพาะ item ที่ติ๊ก (OQ-22) | ผู้ใช้ | Phase 6 | spec ของ Phase 7 | 🟨 |
-| OQ-21 | **ตอน Reject ต้องเขียน `salesforce_status` / `salesforce_message` ด้วยไหม** — **ตอบแล้ว 2026-09-16: เขียนแค่ `status = 'R'` ไปก่อน** · เพิ่ม 2 field ทีหลังในจุดเดียวกัน (saver) | ผู้ใช้ | Phase 7 | spec ของ 7.6 | 🟨 |
-| OQ-23 | **ปุ่ม Submit ปิดด้วยไหมเมื่อ `status = 'R'`** — **ตอบแล้ว 2026-09-16: ปิดทั้ง Submit และ Reject** → `action ( features : instance )` ทั้งสองตัว | ผู้ใช้ | Phase 7 | spec ของ 7.5 / 7.6 | 🟨 |
 | OQ-15 | **สิทธิ์ระดับ company code** — **hold (2026-09-16)** หลังตกลงว่าจะแยกตาม CC คุมด้วย business role · **ข้อเท็จจริงที่ต้องจำ: ตอนนี้ยังไม่มีอะไรกรองแถวเลย** — role ให้แค่สิทธิ์เข้า app · `#NOT_REQUIRED` · `( global )` · ไม่มี auth object · ข้อมูลเป็น 2000 ล้วนจึงยังไม่เห็นปัญหา · วันที่ CC 1000 เข้ามา ทุกคนจะเห็นทั้งสองบริษัท · เมื่อกลับมาทำ: auth object `Z_ARE002` + DCL `ZC_ZARE002` + `#CHECK` + IAM App restriction + role · **ไม่ต้องมี `get_instance_authorizations`** เพราะ DCL กันการอ่านแล้ว modify ล้มเอง | ผู้ใช้ | Phase 0 | ไม่บล็อก Reject logic — แต่เป็นความเสี่ยงทันทีที่มีข้อมูล CC 1000 | ⏸ hold |
 | OQ-28 | **`BST_SAP_Batch_Id__c` ฝั่ง SFDC ยาว 15 แต่ `request_id` จริงยาว 20** — spec SFDC ให้ตัวอย่าง `20260815_090039` (รูปแบบที่ SAP สร้างเองตอน SBPA ไม่ส่ง) แต่ตั้งแต่ 2026-09-16 SBPA ส่ง `RequestId` เองเป็น `20260915_105645_1056` (zari002 OQ-26 · field ขยายเป็น 25 แล้ว) → ส่งค่าจริงเข้า SFDC จะ `STRING_TOO_LONG` composite ล้มทั้ง call | ผู้ใช้ + SFDC dev | Phase 8A | **ตัดสินแล้ว 2026-09-17: ส่ง `request_id` เต็มไม่ตัด** · **เจอจริง 2026-09-21**: Reject ใบ `request_id` 20 ตัว → `STRING_TOO_LONG SAP Batch ID: data value too large: 20260918_16075…` · status ไม่ถูก stamp (ถูกต้อง) · = chain ผ่านถึง validation ของ SFDC แล้ว · **ผู้ใช้ตัดสิน 2026-09-21: ตัดเหลือ 15 ตัวชั่วคราว** (`gc_batch_id_max` ใน `build_payload` + test) จนกว่า SFDC ขยายเป็น 25 · เสีย suffix `_hhmm` ที่แยก request ในวินาทีเดียวกัน — **ต้องเอาการตัดออกทันทีที่ SFDC ขยาย** | 🟨 stopgap |
-| OQ-33 | **401 `INVALID_SESSION_ID` จาก SFDC วันถัดจาก token ใช้ได้** (8.8 ข้อ 1 · 2026-09-21) — Communication Arrangement cache token แล้วใช้ซ้ำ · Salesforce client credentials **ไม่ส่ง `expires_in`** SAP จึงไม่รู้ว่าหมดอายุ (session timeout org default 2 ชม.) → ส่ง token ค้าง · `check_connection` ที่ได้ 200 **ไม่พิสูจน์ token** เพราะ `GET /services/data/` ไม่ต้อง auth (ยกมาจาก ZARI002 โดยไม่ตรวจ — ZARI002 มีจุดอ่อนเดียวกัน) | ผู้ใช้ + Claude | Phase 8A | **บล็อก 8.8** · พิสูจน์: รัน `describe_sfdc_object` 2 ครั้งติด → 401→200 = retry 1 ครั้งพอ · 401→401 = cache ค้าง ต้องหาวิธี reset · แก้ code 2 จุด: ping ไป `/services/data/v66.0/limits` (ต้อง auth) + `send` retry เมื่อ 401 | ⬜ |
 | OQ-34 | **token cache ค้าง — ยืนยันแล้ว** (2026-09-21): describe 401→401 · **Check Connection ที่ arrangement → 200** = SAP ขอใหม่เฉพาะตอนแก้/เช็ค arrangement · เป็นปัญหาที่ SAP รู้ (Community: *Token Refreshes on Outbound OAuth 2.0 Client Settings — SAP Public Cloud*) ไม่มี setting แก้ · Salesforce รับ client credentials ผ่าน `Authorization: Basic` ที่ token endpoint (เอกสาร SFDC) → **ทาง C ทำได้** · **ยืนยัน 2026-09-21 ด้วย curl จากเครื่องผู้ใช้: token response มี key `access_token id instance_url issued_at scope signature token_type` — ไม่มี `expires_in`** ตัดทาง "ให้ provider ส่ง expires_in" ทิ้ง | ผู้ใช้ + Claude | Phase 8A | **บล็อก production ไม่บล็อกทดสอบ** (workaround: Check Connection ก่อนทุกรอบ) · แนะนำ **C** (token service Basic + data service no-auth + Bearer เอง) + ยื่น incident SAP คู่กัน · ก่อน C เช็ค: ช่อง User Name ของ outbound user รับ 85 ตัวไหม · scenario มี auth "None" ไหม · **กระทบ ZARI002** · **2026-09-21 ผู้ใช้ขอถาม SFDC ก่อนว่าส่ง `expires_in` ได้ไหม** (Claude คาดว่าไม่ได้ — เป็นพฤติกรรม platform ไม่ใช่ setting) · ระหว่างรอ: Check Connection ก่อนทดสอบทุกรอบ · **ผู้ใช้เสนอ (2026-09-21): ถ้า SFDC ทำไม่ได้ → class กลางขอ token ทุกครั้ง + เก็บ client id/secret ใน `ZTBC_PARAM`** · Claude เห็นด้วยกับ class กลาง **ค้านการเก็บ secret ใน Z table** (Data Preview อ่านได้ทุกคน ไม่เข้ารหัส) → เสนอ class กลางตัวเดียวกันแต่ secret อยู่ใน Communication System ผ่าน scenario Basic-auth ไป token endpoint (= ทาง C แบบ shared) · **ตกลง 2026-09-21**: ถ้า class กลางผ่าน arrangement Basic ทำได้จริง (platform ใส่ Basic header เอง class ไม่เห็น secret) → เดินทางนี้ · ถ้าตก (User Name ไม่รับ 85 ตัว / ไม่มี auth None / SFDC ไม่รับ Basic จาก SAP) → ใช้ `ZTBC_PARAM` ตามที่ผู้ใช้ตัดสิน + มาตรการปิดสิทธิ์อ่าน | 🟨 **เดินทาง arrangement — พิสูจน์แล้ว 2026-09-21**: `zcl_utility=>get_sfdc_token` ได้ token จริงผ่าน Basic (SFDC รับ) · Bearer ที่ใส่เองชนะ Basic ของ SAP → arrangement เดียวพอ · เหลือ 8C.8 ต่อเข้า `ZCL_ZARE002_SFDC_RESULT` |
 | OQ-14 | ต้อง log ไหมว่าใครแก้ `reject_reason` เป็นอะไรเมื่อไหร่ — ตอนนี้มีแค่ `last_changed_by` ที่เก็บค่าล่าสุด ไม่มีประวัติ | ผู้ใช้ / audit | Phase 3 | ไม่บล็อก — ถ้าต้องการให้ทำเป็น append-only log table แยก **ไม่ใช่** ย้ายที่เก็บค่าปัจจุบัน (ดู `01_architecture.md` §2) | ⬜ |
+
+## OQ ที่เคยอ้างอิงใน code — ถอดออกจาก comment ตอนส่งมอบ (2026-09-21) แต่ยังตามได้จากตารางนี้
+
+| จุดใน code | เรื่อง | OQ |
+|---|---|---|
+| `lhc_Item->get_global_authorizations` — `authorization master ( global )` | สิทธิ์ตาม company code ยัง hold | **OQ-15 (hold)** |
+| `lhc_Item->get_instance_features` | readonly + ปุ่ม dim เมื่อ `R` | OQ-13 · OQ-23 (ปิด) |
+| `lhc_Item->rejectItem` ขั้น 1–3 อ่านทุก item จาก table | ติ๊กใด = ทั้ง payment | OQ-04 (ปิด) |
+| `rejectItem` ขั้น 5 all-or-nothing | ใบใดตกทั้งชุดตก | OQ-26 (ปิด · ก) |
+| `rejectItem` ขั้น 5.2 reason ≥ 1 item | | OQ-19 · OQ-22 · OQ-31 (ปิด) |
+| `rejectItem` ขั้น 8 `MODIFY ENTITIES` ค่าเดิม | บังคับ save phase ให้ saver ถูกเรียก | OQ-24 (ปิด) |
+| `lsc_Item->save_modified` `salesforce_status = 'S'` | | OQ-21 (ปิด) |
+| `ZCL_ZARE002_SFDC_RESULT` `gc_batch_id_max = 15` | ตัด batch id ชั่วคราว | **OQ-28 (stopgap — ลบเมื่อ SFDC ขยาย)** |
+| `ZCL_ZARE002_SFDC_RESULT` `gc_fld_*` | ชื่อ field จาก describe | OQ-30 (ปิด) |
+| `ZCL_ZARE002_SFDC_RESULT` composite 25 | | OQ-29 (ปิด) |
+| `ZCL_ZARE002_SFDC_RESULT` `create_authorized_client` → `ZCL_UTILITY` | token cache ค้าง | **OQ-34 (กำลังปิด)** |
+| `build_payload` ไม่ส่ง reason ว่าง | | OQ-32 (ปิด) |
 
 ## ที่ปิดไปแล้ว
 
@@ -47,6 +54,16 @@
 | OQ-32 | **item ที่ไม่มี reject reason ส่งไป SFDC ยังไง** | **SFDC รับทุก item ได้** (ผู้ใช้ยืนยัน 2026-09-20) → ส่งเฉพาะที่กรอก item ว่างไม่ส่ง field — code ทำอยู่แล้ว | 2026-09-20 |
 | OQ-22 | **scope ของ validation reject reason** | ~~ทุก item~~ → **อย่างน้อย 1 item ต่อ payment** (เปลี่ยน 2026-09-20 ดู OQ-31) | 2026-09-20 |
 | OQ-30 | **API name ของ 5 field บน `cgcloud__Order_Payment__c` ตัวจริง** | **ปิด 2026-09-20 ด้วย describe จาก sandbox**: `BST_PaymentCollection__c` `BST_SAP_Status__c` `BST_SAP_RejectReason__c` `BST_SAP_BatchId__c` `BST_SAP_ResponseDate__c` — ตรง**ตาราง**ใน spec · JSON example ผิด 4 ตัว (มี `_` เกิน) · Reject จริงเคยได้ `INVALID_FIELD` ก่อนแก้ · แก้ constant 5 ตัว + test | 2026-09-20 |
+| OQ-02 | **Payment Document No. ใน mockup เป็น link** | ทำเป็น text ธรรมดา — เห็นบน launchpad แล้วผู้ใช้ไม่ทักท้วง (default ยืน) | 2026-09-21 |
+| OQ-03 | **สีปุ่ม Submit / Reject** | สีตาม theme — เห็นบน launchpad แล้วผู้ใช้ไม่ทักท้วง | 2026-09-21 |
+| OQ-04 | **`status` header vs `reject_reason` item** | **ติ๊ก item ใด = reject ทุก item ของ payment จาก table** (ยืนยันซ้ำ 2026-09-20 ถึง filter จะบัง) — implement ใน `rejectItem` ขั้น 1–3 · `#CHANGE_SET` ให้ keys มาถึงรอบเดียว | 2026-09-21 |
+| OQ-05 | **R / E สีเดียวกัน** | แดงทั้งคู่ — เห็นบน launchpad แล้วผู้ใช้ไม่ทักท้วง | 2026-09-21 |
+| OQ-12 | **default filter** | ไม่มี — แสดงทุกสถานะ · ผู้ใช้ไม่ทักท้วง | 2026-09-21 |
+| OQ-13 | **`reject_reason` แก้ได้ทุกสถานะ?** | หลัง `R` ห้ามแก้ — implement ใน `get_instance_features` (`%field-RejectReason` read_only) ทดสอบผ่าน 7.7 | 2026-09-21 |
+| OQ-19 | **Reject ต้องมี reject reason** | อย่างน้อย 1 item ต่อ payment (OQ-31) — implement ใน `rejectItem` ขั้น 5.2 · message `001` | 2026-09-21 |
+| OQ-21 | **Reject เขียน `salesforce_status` ไหม** | เขียน `S` เมื่อ SFDC รับ (saver) · `salesforce_message` ว่าง · ไม่มี `E` เพราะกรณีพังไม่ save | 2026-09-21 |
+| OQ-23 | **ปิด Submit ด้วยเมื่อ `R`** | ปิดทั้งคู่ — implement ใน `get_instance_features` ทดสอบผ่าน 7.7 | 2026-09-21 |
+| OQ-33 | **401 INVALID_SESSION_ID วันถัดมา** | รวมเข้า OQ-34 (สาเหตุ = token cache ค้าง) · `check_connection` ย้ายไป `/limits` แล้ว | 2026-09-21 |
 | OQ-07 | **ชื่อลูกค้าดึงจาก view ไหน** — mockup มี Customer Name แต่ไม่มีใน table | **`I_BusinessPartner`** · `BusinessPartner = customer_code` เทียบตรง ๆ ได้เพราะ ZARI002 แปลง `ALPHA = IN` ก่อน insert อยู่แล้ว · ชื่อลูกค้า **ต่อเอง** จาก `OrganizationBPName1..4` คั่นด้วยช่องว่าง ผ่าน view `ZI_ZARE002_BP` ไม่ใช้ `BusinessPartnerFullName` | 2026-09-07 |
 
 ## วิธีใช้
