@@ -166,6 +166,8 @@
   → `INVALID_FIELD` ตอน Reject จริง) · describe ใช้เวลา 2 นาที ถูกกว่าถามคนหรือเดา
 - **ABAP Doc (`"!`) ทุก class · method · constant group · type** — รวม test class และ `setup`
   · `"!` ใช้ได้เฉพาะหน้า declaration ใน body ใช้ `"` ธรรมดา
+  · **`METHODS … REDEFINITION` (เช่น `save_modified` / `cleanup_finalize` ใน `lsc_Item`) ใส่ `"!` ไม่ได้**
+  — warning `ABAP Doc comment is in the wrong position` · ใช้ `"` ธรรมดา
 - **ห้ามใส่ emoji / สัญลักษณ์ (⚠️ ฯลฯ) ใน comment ของ ABAP object** (ผู้ใช้สั่ง 2026-09-20) —
   ใช้คำแทน เช่น "utility ทดสอบ" · emoji ใช้ได้เฉพาะในเอกสาร markdown
 - utility ทดสอบทั้งหมดรวมใน `ZCL_ZARE002_UTIL` ตัวเดียว (method ต่อ 1 งาน · main ปิดไว้ค่าเริ่มต้น)
