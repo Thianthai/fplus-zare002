@@ -215,11 +215,11 @@ Salesforce ไม่ส่ง `expires_in` → arrangement ถือ token ค�
 
 | # | Object | ชื่อ (เสนอ · รอ confirm) | Status |
 |---|---|---|---|
-| 8C.0 | เช็ค Fiori: User Name รับ 85 ตัว · scenario มี auth None | — | ⬜ |
-| 8C.1 | outbound user Basic ใน `SFDC_DEV` (user = client id · pw = secret) | Fiori | ⬜ |
-| 8C.2 | Outbound Service SCO3 | `ZBC_SFDC_TOKEN_REST` | ⬜ |
-| 8C.3 | Communication Scenario SCO1 · outbound · Basic | `ZCS_SFDC_TOKEN` | ⬜ |
-| 8C.4 | Communication Arrangement | `ZCA_SFDC_TOKEN` × `SFDC_DEV` | ⬜ |
+| 8C.0 | เช็ค Fiori: User Name รับ 85 ตัว ✓ · scenario มี Basic + Unauthenticated ✓ (2026-09-21) — **ทาง arrangement เดินได้ ไม่ต้อง `ZTBC_PARAM`** | — | ✅ |
+| 8C.1 | outbound user Basic ใน `SFDC_DEV` (user = client id · pw = secret) | Fiori | 🟨 ค่าส่งแล้ว |
+| 8C.2 | Outbound Service SCO3 | `ZBC_SFDC_TOKEN_REST` | 🟨 ค่าส่งแล้ว |
+| 8C.3 | Communication Scenario SCO1 · outbound · Basic | `ZCS_SFDC_TOKEN` | 🟨 ค่าส่งแล้ว |
+| 8C.4 | Communication Arrangement | `ZCA_SFDC_TOKEN` × `SFDC_DEV` | 🟨 ค่าส่งแล้ว |
 | 8C.5 | class กลาง **`ZCL_UTILITY`** (ผู้ใช้ตั้ง 2026-09-21 · ข้ามRICEFW ไม่มี prefix APP) · `get_sfdc_token( )` → access_token · ไม่ cache · `parse_sfdc_token_response( )` pure | `ZCL_UTILITY` · package **`ZBCUTILITY`** (ตกลง 2026-09-21 · 8C.2/8C.3 ลงที่เดียวกัน) | ⬜ |
 | 8C.6 | unit test ของ 8C.5 | | ⬜ |
 | 8C.7 | spike ใน `ZCL_ZARE002_UTIL`: Bearer เองผ่าน arrangement Basic → 200 หรือ 401 | ตัดสินว่าต้อง scenario no-auth แยกไหม | ⬜ |
