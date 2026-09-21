@@ -223,7 +223,7 @@ Salesforce ไม่ส่ง `expires_in` → arrangement ถือ token ค�
 | 8C.5 | class กลาง **`ZCL_UTILITY`** (ผู้ใช้ตั้ง 2026-09-21 · ข้ามRICEFW ไม่มี prefix APP) · `get_sfdc_token( )` → access_token · ไม่ cache · `parse_sfdc_token_response( )` pure | `ZCL_UTILITY` · package **`ZBCUTILITY`** (ตกลง 2026-09-21 · 8C.2/8C.3 ลงที่เดียวกัน) | 🟦 4 test เขียว · token จริง 200 |
 | 8C.6 | unit test ของ 8C.5 | | 🟦 4 test เขียว · token จริง 200 |
 | 8C.7 | spike `test_sfdc_bearer`: token HTTP 200 (length 112) · describe ผ่าน arrangement Basic + Bearer เอง = **200** (2026-09-21) → header ของเราชนะ ใช้ `ZCA_SFDC_TOKEN` ตัวเดียวทั้ง token และ data | ตัดสินแล้ว | ✅ |
-| 8C.8 | `ZCL_ZARE002_SFDC_RESULT` ใช้ token กลาง + Bearer เอง ผ่าน `ZCA_SFDC_TOKEN` · `create_authorized_client` · ping → `/limits` · token fail → `TOKEN_<code>` เข้า message 005/006 เดิม | | 🟨 |
+| 8C.8 | `ZCL_ZARE002_SFDC_RESULT` ใช้ token กลาง + Bearer เอง ผ่าน `ZCA_SFDC_TOKEN` · `create_authorized_client` · ping → `/limits` · token fail → `TOKEN_<code>` เข้า message 005/006 เดิม | | ✅ `46aba51` |
 | 8C.9 | ~~scenario ขา data~~ — **ไม่ต้อง** (8C.7 = 200) | — | ✅ ยกเลิก |
 | 8C.10 | เลิกใช้ `ZCS_REJECT_RESULT` | | ⬜ |
 
