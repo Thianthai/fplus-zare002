@@ -44,6 +44,9 @@
   draft table = `<table>_D` แต่ active table ตัวจริงเป็นของ package `ZARI002`
   draft table เป็นของ **ZARE002** จึงใช้ namespace ของตัวเองให้ชัด (BDEF ระบุชื่อได้อิสระอยู่แล้ว)
 - **ไม่สร้าง data element / domain ใหม่** — reuse `ZE_REQUEST_STATUS` ของ ZARI002
+- **class กลางข้าม RICEFW ชื่อ `ZCL_UTILITY`** (ผู้ใช้ตั้ง 2026-09-21) — ไม่มี prefix `<APP>` โดยตั้งใจ
+  · method ตั้งชื่อบอกระบบปลายทาง (`get_sfdc_token` ไม่ใช่ `get_token`) · คนละบทบาทกับ
+  `ZCL_ZARE002_UTIL` (ชั่วคราว ลบก่อน handover)
 
 ### Variable / parameter prefix
 
