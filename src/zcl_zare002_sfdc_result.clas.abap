@@ -80,9 +80,6 @@ CLASS zcl_zare002_sfdc_result DEFINITION
       "! url ของแต่ละ subrequest — ต่อด้วย record id ของ item
       gc_path_sobject    TYPE string VALUE '/services/data/v66.0/sobjects/cgcloud__Order_Payment__c/',
 
-      "! url ของแต่ละ subrequest — ต่อด้วย record id ของ item
-      gc_sobject_type    TYPE string VALUE 'cgcloud__Order_Payment__c',
-
       "! ชื่อ field จาก API
       gc_fld_collection  TYPE string VALUE 'BST_PaymentCollection__c',
       gc_fld_status      TYPE string VALUE 'BST_SAP_Status__c',
