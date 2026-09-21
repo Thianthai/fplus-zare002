@@ -91,6 +91,9 @@ CLASS zcl_zare002_sfdc_result DEFINITION
       gc_fld_reason      TYPE string VALUE 'BST_SAP_RejectReason__c',
       gc_fld_batch       TYPE string VALUE 'BST_SAP_BatchId__c',
       gc_fld_date        TYPE string VALUE 'BST_SAP_ResponseDate__c',
+      "! ความยาว BST_SAP_BatchId__c ฝั่ง SFDC ตอนนี้ — request_id จริงยาว 20 ตัดชั่วคราวจนกว่า SFDC ขยายเป็น 25 (OQ-28)
+      "! ตัดแล้วเสีย suffix ที่แยก request ในวินาทีเดียวกัน — ลบการตัดทันทีที่ SFDC ขยาย
+      gc_batch_id_max    TYPE i      VALUE 15,
 
       gc_http_ok         TYPE i      VALUE 200,
       gc_http_no_content TYPE i      VALUE 204,
@@ -139,7 +142,9 @@ CLASS zcl_zare002_sfdc_result IMPLEMENTATION.
         )->add_member( 'body'        )->begin_object(
           )->add_member( gc_fld_collection )->add_string( CONV #( ls_record-header_sf_id )
           )->add_member( gc_fld_status     )->add_string( ls_record-status
-          )->add_member( gc_fld_batch      )->add_string( CONV #( ls_record-batch_id )
+          )->add_member( gc_fld_batch      )->add_string( substring( val = CONV string( ls_record-batch_id )
+                                                                     len = nmin( val1 = strlen( CONV string( ls_record-batch_id ) )
+                                                                                 val2 = gc_batch_id_max ) )
           )->add_member( gc_fld_date       )->add_string( ls_record-response_date ).
 
       IF ls_record-reject_reason IS NOT INITIAL.

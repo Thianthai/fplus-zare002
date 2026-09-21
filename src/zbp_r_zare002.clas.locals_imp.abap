@@ -1,25 +1,26 @@
-"! Handler ของ root entity Item (ZR_ZARE002) — ทำงานใน interaction phase เท่านั้น
-"! ห้ามเขียน DB ที่นี่ · การเขียน header (ztar_i002_pymt) ฝากผ่าน ZCL_ZARE002_STATUS_BUFFER ไป lsc_Item
+"! Handler ของ Root Entity (ZR_ZARE002) — ทำงานใน interaction phase เท่านั้น
+"! ห้าม write DB ที่นี่ — การ write ztar_i002_pymt ทำผ่าน ZCL_ZARE002_STATUS_BUFFER จาก lsc_Item
 CLASS lhc_Item DEFINITION INHERITING FROM cl_abap_behavior_handler.
 
   PRIVATE SECTION.
 
-    "! message class ของ RICEFW นี้ — 001–099 Reject · 100+ Submit
+    "! Message Class ของ RICEFW นี้
+    "! 001–099 = Reject, 100+ = Submit
     CONSTANTS gc_msgid            TYPE symsgid           VALUE 'ZARE002'.
-    "! ค่า status ที่ header หลัง Reject (domain ZD_REQUEST_STATUS ของ ZARI002)
+    "! ค่า Status ที่ header หลัง Reject (domain ZD_REQUEST_STATUS ของ ZARI002)
     CONSTANTS gc_status_rejected  TYPE ze_request_status VALUE 'R'.
-    "! ตัดข้อความ error ของ SFDC ก่อนใส่ message (&2 ของ 005)
+    "! ตัดข้อความ Error ของ SFDC ก่อนใส่ message (&2 ของ Message Number 005)
     CONSTANTS gc_sfdc_message_max TYPE i                 VALUE 50.
 
-    "! payment uuid แบบซ้ำได้ — ใช้ส่งเข้า read_rejected_payments
+    "! payment_uuid แบบซ้ำได้ — ใช้ส่งเข้า read_rejected_payments
     TYPES tt_uuid        TYPE STANDARD TABLE OF sysuuid_x16 WITH EMPTY KEY.
-    "! payment uuid แบบไม่ซ้ำ — ผลลัพธ์ของ read_rejected_payments
+    "! payment_uuid แบบไม่ซ้ำ — ผลลัพธ์ของ read_rejected_payments
     TYPES tt_uuid_sorted TYPE SORTED TABLE OF sysuuid_x16 WITH UNIQUE KEY table_line.
     "! range สำหรับ SELECT ... IN
     TYPES tr_uuid        TYPE RANGE OF sysuuid_x16.
 
-    "! header ของ payment ที่เกี่ยวข้องกับ action — field ที่ต้องใช้ทั้ง validate และส่ง SFDC
     TYPES:
+      "! header ของ payment ที่เกี่ยวข้องกับ action — field ที่ต้องใช้ทั้ง validate และส่ง SFDC
       BEGIN OF ty_payment,
         payment_uuid        TYPE sysuuid_x16,
         payment_document_no TYPE ztar_i002_pymt-payment_document_no,
@@ -29,13 +30,13 @@ CLASS lhc_Item DEFINITION INHERITING FROM cl_abap_behavior_handler.
       END OF ty_payment,
       tt_payment TYPE STANDARD TABLE OF ty_payment WITH EMPTY KEY.
 
-    "! สิทธิ์ระดับ BO — เปิดให้ทุกคนที่เข้า app ได้ (OQ-15 hold)
-    "! การคุมว่าใครเข้า app ได้อยู่ที่ IAM App / business catalog ไม่ใช่ที่นี่
+    "! สิทธิ์ระดับ BO — เปิดให้ทุกคนที่เข้า App ได้ (OQ-15 hold)
+    "! การคุมสิทธิ์ว่าใครเข้า App ได้อยู่ที่ IAM App / Business Catalog ไม่ใช่ที่นี่
     METHODS get_global_authorizations FOR GLOBAL AUTHORIZATION
       IMPORTING REQUEST requested_authorizations FOR Item
       RESULT result.
 
-    "! payment ที่ status = R แล้ว: RejectReason อ่านอย่างเดียว + ปุ่มทั้งคู่ dim (OQ-13 / OQ-23)
+    "! Payment ที่Sstatus = R แล้ว: RejectReason ห้ามแก้ไข + ปุ่มทั้งหมด dim (OQ-13 / OQ-23)
     METHODS get_instance_features FOR INSTANCE FEATURES
       IMPORTING keys REQUEST requested_features FOR Item
       RESULT result.

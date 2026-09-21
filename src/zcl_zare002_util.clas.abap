@@ -30,7 +30,7 @@ CLASS zcl_zare002_util IMPLEMENTATION.
 
     " เปิด comment บรรทัดที่ต้องการก่อน F9 — ค่าเริ่มต้นไม่ทำอะไร กันรันพลาด
 *    reset_payment( out ).
-*    describe_sfdc_object( out ).
+    describe_sfdc_object( out ).
 
   ENDMETHOD.
 

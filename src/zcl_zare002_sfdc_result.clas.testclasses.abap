@@ -27,6 +27,8 @@ CLASS ltc_sfdc_result DEFINITION FINAL FOR TESTING
     METHODS parse_garbage_is_parse_err  FOR TESTING.
     "! วันที่ตรงรูปแบบ YYYY-MM-DDThh:mm:ss+0700
     METHODS response_date_has_format    FOR TESTING.
+    "! batch id ยาว 20 ถูกตัดเหลือ 15 (ชั่วคราว OQ-28)
+    METHODS payload_truncates_batch_id  FOR TESTING.
 
 ENDCLASS.
 
@@ -141,6 +143,17 @@ CLASS ltc_sfdc_result IMPLEMENTATION.
     cl_abap_unit_assert=>assert_true(
       xsdbool( matches( val  = lv_date
                         pcre = '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\+0700$' ) ) ).
+  ENDMETHOD.
+
+  METHOD payload_truncates_batch_id.
+    DATA(lt_record) = sample_records( ).
+    DELETE lt_record INDEX 2.
+    lt_record[ 1 ]-batch_id = '20260918_160750_1607'.
+
+    DATA(lv_json) = zcl_zare002_sfdc_result=>build_payload( lt_record ).
+
+    cl_abap_unit_assert=>assert_true(  xsdbool( lv_json CS '"20260918_160750"' ) ).
+    cl_abap_unit_assert=>assert_false( xsdbool( lv_json CS '20260918_160750_1607' ) ).
   ENDMETHOD.
 
 ENDCLASS.
