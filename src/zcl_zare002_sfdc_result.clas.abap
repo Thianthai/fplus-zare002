@@ -71,13 +71,6 @@ CLASS zcl_zare002_sfdc_result DEFINITION
       IMPORTING it_record        TYPE tt_record
       RETURNING VALUE(rs_result) TYPE ty_result.
 
-    "! ขอ token แล้ว GET /services/data/v66.0/limits (endpoint ที่ต้องใช้ token)
-    "! คืน 200 = arrangement + token ใช้ได้จริง
-    "! คืน 401 = token ไม่รับ
-    "! คืน 0 = ต่อไม่ถึง หรือขอ token ไม่ได้
-    METHODS check_connection
-      RETURNING VALUE(rv_status) TYPE i.
-
   PRIVATE SECTION.
 
     CONSTANTS:
@@ -87,11 +80,10 @@ CLASS zcl_zare002_sfdc_result DEFINITION
       "! url ของแต่ละ subrequest — ต่อด้วย record id ของ item
       gc_path_sobject    TYPE string VALUE '/services/data/v66.0/sobjects/cgcloud__Order_Payment__c/',
 
-      "! endpoint ที่ต้องใช้ token จริง
-      gc_path_ping       TYPE string VALUE '/services/data/v66.0/limits',
+      "! url ของแต่ละ subrequest — ต่อด้วย record id ของ item
       gc_sobject_type    TYPE string VALUE 'cgcloud__Order_Payment__c',
 
-      "! ชื่อ field API
+      "! ชื่อ field จาก API
       gc_fld_collection  TYPE string VALUE 'BST_PaymentCollection__c',
       gc_fld_status      TYPE string VALUE 'BST_SAP_Status__c',
       gc_fld_reason      TYPE string VALUE 'BST_SAP_RejectReason__c',
@@ -101,6 +93,7 @@ CLASS zcl_zare002_sfdc_result DEFINITION
       "! ความยาว BST_SAP_BatchId__c ฝั่ง SFDC ตอนนี้ — request_id จริงยาว 20 รอ SFDC ขยายเป็น 25
       gc_batch_id_max    TYPE i      VALUE 15,
 
+      "! HTTP status
       gc_http_ok         TYPE i      VALUE 200,
       gc_http_no_content TYPE i      VALUE 204,
 
@@ -339,32 +332,6 @@ CLASS zcl_zare002_sfdc_result IMPLEMENTATION.
         rs_result-http_status = 0.
         rs_result-success     = abap_false.
         rs_result-error_code  = gc_err_not_reachable.
-    ENDTRY.
-
-  ENDMETHOD.
-
-
-  METHOD check_connection.
-
-    TRY.
-        zcl_utility=>create_sfdc_client( IMPORTING eo_client = DATA(lo_client)
-                                                   es_error  = DATA(ls_token_error) ).
-
-        IF lo_client IS NOT BOUND.
-          rv_status = ls_token_error-http_status.
-          RETURN.
-        ENDIF.
-
-        lo_client->get_http_request( )->set_uri_path( gc_path_ping ).
-
-        DATA(lo_response) = lo_client->execute( if_web_http_client=>get ).
-
-        rv_status = lo_response->get_status( )-code.
-
-        lo_client->close( ).
-
-      CATCH cx_root.
-        rv_status = 0.
     ENDTRY.
 
   ENDMETHOD.
