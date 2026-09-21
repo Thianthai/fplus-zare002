@@ -28,7 +28,7 @@
 | `ZCL_ZARE002_SFDC_RESULT` `gc_batch_id_max = 15` | ตัด batch id ชั่วคราว | **OQ-28 (stopgap — ลบเมื่อ SFDC ขยาย)** |
 | `ZCL_ZARE002_SFDC_RESULT` `gc_fld_*` | ชื่อ field จาก describe | OQ-30 (ปิด) |
 | `ZCL_ZARE002_SFDC_RESULT` composite 25 | | OQ-29 (ปิด) |
-| `ZCL_ZARE002_SFDC_RESULT` `create_authorized_client` → `ZCL_UTILITY` | token cache ค้าง | OQ-34 (ปิด) |
+| `ZCL_ZARE002_SFDC_RESULT` `send` / `check_connection` → `ZCL_UTILITY=>create_sfdc_client` | token cache ค้าง | OQ-34 (ปิด) |
 | `build_payload` ไม่ส่ง reason ว่าง | | OQ-32 (ปิด) |
 
 ## ที่ปิดไปแล้ว

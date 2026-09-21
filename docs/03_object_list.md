@@ -93,7 +93,7 @@ object type จริงบน tenant นี้ (ปิด OQ-11) และช�
 | `ZARE002_REJECT_RESULT_REST` | Outbound Service (SCO3) — HTTP · **เลิกใช้ตั้งแต่ 8C.8** ลบใน 8C.10 | `src/zare002_reject_result_rest.sco3.xml` | 8A | ⚠️ unused |
 | `ZCS_REJECT_RESULT` | Communication Scenario outbound (SCO1) — OAuth 2.0 · **เลิกใช้ตั้งแต่ 8C.8** (token cache ค้าง OQ-34) · ลบพร้อม arrangement + outbound service หลัง Reject ผ่านจริง (8C.10) | `src/zcs_reject_result.sco1.xml` | 8A | ⚠️ unused |
 | Communication Arrangement `ZCA_REJECT_RESULT` | Fiori config — `ZCS_REJECT_RESULT` × Communication System `SFDC_DEV` (ของ ZARI002 · client id เดียวกัน · secret อยู่ใน Fiori) · Check Connection ✓ | — ไม่ขึ้น git | 8A | ✅ |
-| `ZCL_ZARE002_SFDC_RESULT` | Class — Composite API (25 subrequest/call) PATCH ผล payment ไป SFDC · `build_payload` / `parse_response` / `build_response_date` pure · `send` / `check_connection` | `src/zcl_zare002_sfdc_result.clas.abap` | 8A / 8C | ✅ token จาก `ZCL_UTILITY` ทุก call ผ่าน `ZCA_SFDC_TOKEN` + Bearer เอง · ping `/limits` · ชื่อ field จริง · batch id ตัด 15 (OQ-28) · 10 test เขียว |
+| `ZCL_ZARE002_SFDC_RESULT` | Class — Composite API (25 subrequest/call) PATCH ผล payment ไป SFDC · `build_payload` / `parse_response` / `build_response_date` pure · `send` / `check_connection` (client จาก `ZCL_UTILITY=>create_sfdc_client`) | `src/zcl_zare002_sfdc_result.clas.abap` | 8A / 8C | ✅ token จาก `ZCL_UTILITY` ทุก call ผ่าน `ZCA_SFDC_TOKEN` + Bearer เอง · ping `/limits` · ชื่อ field จริง · batch id ตัด 15 (OQ-28) · 10 test เขียว |
 
 ## Action ที่ประกาศ
 
