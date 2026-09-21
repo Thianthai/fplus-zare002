@@ -1,0 +1,152 @@
+# 09 — Submit: วิเคราะห์ spec ก่อน implement (Phase 8B)
+
+ที่มา: `Submit Logic.docx` (ผู้ใช้ส่ง 2026-09-21) + วิธีทำจาก POC
+[`poc-payment`](https://github.com/Thianthai/poc-payment) (`I_JournalEntryTP~Post` ผ่าน EML) และ
+[`poc-clearing`](https://github.com/Thianthai/poc-clearing) (SOAP `JournalEntryBulkClearingRequest_In`)
+— **เอาแค่วิธีทำ ไม่เอา logic ของ POC**
+
+สถานะ: 🟨 รอรีวิว / ตอบคำถาม §5 ก่อนสรุปชื่อ object
+
+---
+
+## 1. Flow ตาม spec (ย่อ)
+
+```
+เลือกหลายใบ → กด Submit → popup ยืนยัน (UI)
+  ต่อ 1 payment:
+    R1  status ต้องเป็น N หรือ E               (E = submit ซ้ำได้)
+    R2  payment_method = Cheque → error ไม่ post  (ข้อความตาม 5.2.6 ข้อ 4 — ยังไม่มี)
+    R3  post JE (I_JournalEntryTP)  doc type DS · branch 0000 · doc date = posting date
+          001 Dr  G/L bank         = header.gl_account        amount = payment_amount (net)
+          002 Dr  G/L 54030012     cost center 2002010000     amount = fees            (ถ้ามี)
+          003 Cr/Dr customer       1 บรรทัด / item            amount = amount_paid  (+ = Cr · − CN = Dr)
+          004 Dr/Cr G/L 59090001   cost center 2002010000     amount = rounding_diff (− = Dr · + = Cr)
+          005 Cr/Dr customer SpGL Z  baseline = posting+30    amount = advance_payment
+                (− = ต้องมี SpGL Z open item รวม = ยอด ไม่งั้น error "Special G/L open item balance is not enough.")
+    R4  clearing (SOAP)  เฉพาะ item ที่ partial_amount ว่าง · doc type DS
+          001 AR line ของ JE ที่เพิ่ง post + payment เก่าที่เคยจ่ายบางส่วน (หาโดย InvoiceReference = accounting_document)
+          002 AR line ของ invoice/CN  (accounting_document + FY จาก invoice_posting_date · FinancialAccountType D)
+          003 SpGL Z open item ทั้งหมดของ customer
+    R5  สำเร็จ → status C → popup Success: n / Error: m
+    R6  C → แจ้ง Salesforce (Completed)
+    R7  fail → status E + เก็บ error message ลง table · ไม่แจ้ง Salesforce
+```
+
+เครื่องหมายฝั่ง API (`JournalEntryItemAmount`: เดบิต = บวก · เครดิต = ลบ) เมื่อแปลงจาก table:
+
+| บรรทัด | amount ที่ส่ง | ที่มา |
+|---|---|---|
+| bank | `+payment_amount` | Dr |
+| fees | `+fees` | Dr |
+| customer (ต่อ item) | `−amount_paid` | invoice + → Cr · CN − → Dr — สูตรเดียวครอบทั้งคู่ |
+| rounding | `−rounding_diff` | − → Dr · + → Cr — สูตรเดียวครอบทั้งคู่ |
+| advance SpGL Z | `−advance_payment` | + → Cr · − → Dr |
+
+**สมดุลที่ต้องเป็นจริงก่อน post**: `payment_amount + fees − Σamount_paid − rounding_diff − advance_payment = 0`
+— ZARI002 มี `check_payment_total` เป็นที่ว่างไว้ (OQ-05 ของฝั่งนั้น) ยังไม่เคยเช็ค · ZARE002 ต้องเช็คเองก่อน post
+
+## 2. วิธีทำที่เอามาจาก POC ได้เลย
+
+| เรื่อง | จาก POC | ใช้กับ ZARE002 |
+|---|---|---|
+| post JE | `MODIFY ENTITIES OF i_journalentrytp ENTITY journalentry EXECUTE post` + `COMMIT ENTITIES` · type `TABLE FOR ACTION IMPORT i_journalentrytp~post` | เหมือนกัน · `_GLItems` (bank/fees/rounding — มี `CostCenter`) · `_ARItems` (customer · มี `SpecialGLCode` สำหรับ 005) · `_CurrencyAmount` role `00` |
+| header ที่ POC พบว่าบังคับ | `TaxDeterminationDate` = posting date (time-dependent tax) · `BusinessPlace 0000` ทุกบรรทัด G/L + AR (Thai) | spec ไม่ได้เขียนแต่ต้องใส่ |
+| เลขเอกสารหลัง post | late numbering — `MAPPED` ให้แค่ `%pid` · POC query `I_JournalEntry` ด้วย `DocumentReferenceID` ที่ generate เอง | ใช้ `DocumentReferenceID` = `payment_document_no` (10 ตัว ≤ 16) หรือ `CONVERT KEY` ถ้าอยู่ใน save phase ของ RAP |
+| WHT | ลูกหนี้ต้องมี `_WithHoldingTaxItems` ครบทุก type ตาม customer master (amount 0) **ไม่งั้น clearing ปฏิเสธ F5 787** | spec ไม่พูดถึง — ต้องอ่าน WHT type ของ customer จาก released CDS แล้วใส่ให้ |
+| clearing | SOAP envelope เป็น string · `SOAPAction` + `Content-Type text/xml` · ยิงกลับ `-api` host ของ tenant ผ่าน arrangement (Basic) · `SAP_COM_0002` inbound · response **202 body ว่าง = แค่รับเรื่อง** ผลจริงอยู่ Message Dashboard (AIF) | โครงเดียวกัน · `APARItems` หลาย doc ในคำขอเดียวได้ · `TestDataIndicator` ไว้ simulate |
+| ตรวจ open item | `I_OperationalAcctgDocItem` (released) — `ClearingAccountingDocument` ว่าง = ยัง open | ใช้หา AR line ของ invoice / payment เก่า / SpGL |
+
+## 3. จุดที่ spec ชนกับความจริงของ API (ต้องตัดสินก่อนเขียน code)
+
+### 3.1 🔴 Clearing API ไม่รองรับ Special G/L — R4 บรรทัด 003 ทำไม่ได้
+
+POC clearing บันทึกไว้ชัด: `JournalEntryBulkClearingRequest_In` **ไม่รองรับ `SpecialGLCode`** · บรรทัด 003
+"clear SpGL Z open item ทั้งหมดของ customer" จึงส่งผ่าน API นี้ไม่ได้ · ทางเลือก:
+(ก) ตัด 003 ออก — advance ค้างเป็น SpGL open item ให้บัญชี clear มือ (F-32) ·
+(ข) เปลี่ยนวิธี: ตอน advance ติดลบ ไม่ post บรรทัด SpGL ใหม่ แต่ post บรรทัด customer ธรรมดาแล้วให้ clearing
+จับกับ SpGL ไม่ได้อยู่ดี · (ค) ถามฟังก์ชันนอลว่า SpGL Z จำเป็นไหม หรือใช้ G/L "เงินรับล่วงหน้า" ธรรมดา (OIM) แทน
+→ clear ได้ผ่าน `GLItems`
+
+### 3.2 🔴 Post กับ Clearing อยู่คนละ LUW และ clearing เป็น async — "สำเร็จ" ของ Submit นิยามว่าอะไร
+
+- JE post สำเร็จ = commit แล้วได้เลขเอกสาร (sync)
+- clearing = HTTP 202 แปลว่า "รับคำขอ" ยังไม่ clear · ผล (สำเร็จ/ตก) ไปโผล่ที่ AIF ทีหลัง ไม่กลับมาหาเรา
+- ถ้า status `C` = "JE post แล้ว + ส่ง clearing แล้ว" → clearing ตกทีหลังจะไม่มีใครรู้ นอกจากไปดู Message Dashboard
+- ทางเลือก: (ก) ยอมรับ `C` = post + ส่งคำขอ clearing · (ข) เพิ่ม job ตามผล — query `I_OperationalAcctgDocItem`
+  ว่า invoice ถูก clear แล้วจริง (`ClearingAccountingDocument` ไม่ว่าง) ค่อยขึ้น `C` · (ค) เปิด outbound
+  *Journal Entry – Clearing Confirmation* ให้ SAP ยิงผลกลับ (ต้องมี inbound รับ)
+
+### 3.3 🔴 RAP action post FI ไม่ได้ — ต้องเลือกที่รัน
+
+SAP ระบุ (POC docs/01): `I_JournalEntryTP~Post` เรียกจาก RAP BO ได้เฉพาะใน **save sequence**
+(`save_modified` / determination on save) — ใน action handler (interaction phase) ไม่ได้ · และ `COMMIT ENTITIES`
+ห้ามใน RAP ทุกที่ · ผลคือ **1 ครั้งที่กด Submit = 1 LUW** ถ้าอยู่ใน RAP:
+
+| ทาง | ทำยังไง | ได้ | เสีย |
+|---|---|---|---|
+| **A. ใน saver ของ BO** (`with additional save` ที่มีอยู่) | `rejectItem`-style: action validate + buffer → `save_modified` EXECUTE post ทุกใบ → outer commit | ไม่มี object ใหม่ · pattern เดิม | **all-or-nothing** ใบใดใบหนึ่ง post ตก = rollback ทั้งหมด · เขียน `E` ให้ใบที่ตกไม่ได้ (rollback ไปด้วย) · Success 9 / Error 1 ตาม spec **ทำไม่ได้** · เลขเอกสาร (late numbering) อาจยังไม่รู้ตอน saver → ส่ง clearing ใน LUW เดียวกันไม่ได้ ต้องเป็นรอบถัดไป |
+| **B. HTTP Service** (`if_http_service_extension` — ZARI002 ใช้อยู่แล้วขา inbound) | UI extension เรียก `POST /sap/bc/http/sap/zare002_submit` ส่ง list uuid · handler นอก RAP: loop ทีละใบ → post → `COMMIT ENTITIES` → query เลข → SOAP clearing → UPDATE status → SFDC → คืน JSON `{success, error, messages}` | **ต่อใบ 1 LUW** ตรง spec R5/R7 เป๊ะ · sync ได้ popup ทันที · code ไม่ผูก RAP | object ใหม่: HTTP service + handler class + IAM ผูก service · UI extension ต้องเรียก endpoint นี้แทน action (ทีม Fiori extend อยู่แล้ว) · ต้องกัน double-submit เอง |
+| **C. Background Processing (bgPF)** | action ตั้ง status `P` → bgPF process ต่อใบ | ต่อใบ 1 LUW · ทนใบเยอะ | **async** — popup บอกได้แค่ "ส่งแล้ว n ใบ" ผลมาทีหลัง · ต้อง refresh ดู · ขัด R5 |
+
+**เสนอ B** — เป็นทางเดียวที่ให้ผลต่อใบแบบ sync ตาม spec · ZARE002 มีทั้ง Reject (RAP action) และ Submit (HTTP
+service) ได้ ไม่ขัดกัน · ถ้าฟังก์ชันนอลยอมรับ all-or-nothing สำหรับ Submit (เหมือน Reject) ค่อยกลับไป A
+
+### 3.4 🟠 หา "payment เก่าที่จ่ายบางส่วน" ด้วย `InvoiceReference` — API ตั้งค่านั้นให้ไม่ได้
+
+R4 บรรทัด 001 ให้หา payment เก่าจาก `I_OperationalAcctgDocItem.InvoiceReference = accounting_document` ·
+แต่ `_ARItems` ของ `I_JournalEntryTP` **ไม่มี field InvoiceReference** (POC docs/01) — เอกสารที่เราเอง post ไว้
+รอบก่อนจะไม่มีค่านี้ → หาไม่เจอ · ทางแก้: เราใส่ **`AssignmentReference` = `accounting_document` ของ invoice**
+ที่ทุกบรรทัด customer ตอน post แล้วหาด้วย `AssignmentReference` แทน (ค่าเป็นของเราเอง คุมได้) — ต้องให้ฟังก์ชันนอลยืนยัน
+
+### 3.5 🟠 Deferred output tax — spec ไม่พูดถึงเลย
+
+POC ทั้ง 2 ตัวหมดเวลาไปกับเรื่องนี้: invoice ที่มี deferred tax (DM) ตอนรับเงินต้องโอน DM→O1 เป็นใบ SA แยก
+และ clearing ต้องรวม `GLItems` ของ `0021082005` ด้วย · ถ้า invoice ของ SBPA มี deferred tax ทั้งหมดที่เขียนใน spec
+จะ clear ไม่ครบ · ต้องถาม: **invoice ที่ผ่าน flow นี้มี deferred tax ไหม** ถ้ามี spec ต้องเพิ่มใบ SA + GL clearing
+
+### 3.6 🟠 Error message เก็บที่ไหน — table ไม่มีที่
+
+R7 "จัดเก็บ Error Message ลง ZTABLE" · header มี `salesforce_message` (ผล SFDC · 200 ตัว) แต่ **`error_message`
+ถูก ZARI002 ถอดออกไปแล้ว** (zari002 docs/04 ข้อ 3) · ต้องขอ ZARI002 เพิ่ม field (เช่น `submit_message` char 200 +
+`accounting_document` ของ payment ที่ post ได้ + `clearing_message_id` ไว้ตามผลที่ AIF) — cross-package ต้องคุยก่อน
+
+### 3.7 🟡 ค่าคงที่ใน spec
+
+`54030012` · `59090001` · cost center `2002010000` · `+30 วัน` · SpGL `Z` · doc type `DS` · branch `0000`
+— hardcode ใน class ได้แต่เปลี่ยนต้อง transport · ผู้ใช้เคยเอ่ยถึง constant table `ZTBC_PARAM` (ZBCUTILITY?)
+→ ถ้ามีอยู่แล้ว ใช้ที่นั่น
+
+### 3.8 🟡 อื่น ๆ ที่ต้องรู้
+
+- `AccountingDocumentType` `DS` — POC ใช้ `DZ` (payment) / `DA` (clearing) · `DS` ต้องมีใน config + number range
+- `BusinessTransactionType` — POC ใส่ `RFPI` · spec ไม่ระบุ · ปล่อยว่างให้ derive หรือใส่ `RFPI`
+- 005 advance ติดลบ: "SpGL open item รวม = advance" เท่ากันเป๊ะถึงจะ post — ถ้ามากกว่าก็ error (ตาม spec)
+- customer ต่อ payment: 003 ต่อ item รองรับหลาย customer · แต่ 005 ใช้ "Customer Code" เดียว — ถ้าใบมีหลาย customer ใช้ตัวไหน
+- Cheque: ตาม ZARI002 `payment_method` เก็บเป็นคำ `Cheque` / `Cash` / `Transfer` — เทียบ string ตรง ๆ
+- SFDC Completed (R6): reuse `ZCL_ZARE002_SFDC_RESULT` (`gc_status_completed` มีแล้ว) · ถ้า SFDC ตกหลัง post
+  แล้ว: FI ย้อนไม่ได้ → status `C` แต่ `salesforce_status` = `E` + message ให้ re-send ทีหลัง (ต่างจาก Reject)
+- double-submit: ใบเดียวกันถูกกดจาก 2 หน้าจอพร้อมกัน → ต้อง lock (`cl_abap_lock_object` ผ่าน lock object ของ table
+  — table เป็นของ ZARI002 · หรือ optimistic: อ่าน status ซ้ำก่อน post + UPDATE ... WHERE status IN (N,E) แล้วดู sy-dbcnt)
+- popup ยืนยัน + popup ผล Success/Error = งาน UI extension · backend คืน message ต่อใบ + สรุปนับ
+
+## 4. ที่ต้องเช็คบน tenant ก่อนตัดสิน
+
+| เช็ค | ทำไม |
+|---|---|
+| `I_JournalEntryTP` มี function `Validate` ไหม (Released Objects) | ถ้ามี ใช้ตรวจก่อน post ลดโอกาส dump |
+| released CDS สำหรับ WHT type ของ customer (`I_CustomerWithholdingTax`?) | ใส่ `_WithHoldingTaxItems` ให้ครบ (3.x WHT) |
+| doc type `DS` มีใน tenant | R3/R4 |
+| `SAP_COM_0002` arrangement + communication system ชี้ `-api` host ของ tenant (`ABAP_DEV` มีอยู่แล้ว — เห็นใน list arrangement) | clearing |
+| `ZTBC_PARAM` มีจริงไหม | 3.7 |
+
+## 5. คำถามที่ต้องตอบก่อนสรุปชื่อ object
+
+1. **3.3** — เลือกทาง B (HTTP service · ผลต่อใบ sync) หรือ A (RAP saver · all-or-nothing)?
+2. **3.1** — SpGL Z clear ผ่าน API ไม่ได้ จะเอายังไง (ตัด / เปลี่ยนเป็น G/L OIM / clear มือ)?
+3. **3.2** — `C` = post + ส่ง clearing แล้ว พอไหม หรือต้องรอ clearing สำเร็จจริง?
+4. **3.5** — invoice มี deferred tax ไหม?
+5. **3.6** — ขอ ZARI002 เพิ่ม field เก็บ error/เลขเอกสาร ได้ไหม (ชื่ออะไร)?
+6. **3.4** — ใช้ `AssignmentReference` = invoice no. เป็นตัวหา partial payment เก่า โอเคไหม?
+7. ข้อความ error ของ Cheque (5.2.6 ข้อ 4) และรูปแบบ popup ผล — ทีม Fiori ต้องการ message แบบไหนจาก backend?
+8. หลาย customer ในใบเดียว: 005 ใช้ customer ไหน?
+9. ค่าคงที่ (3.7) ไว้ที่ไหน?
