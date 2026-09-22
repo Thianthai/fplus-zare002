@@ -3,9 +3,9 @@
  <asx:abap xmlns:asx="http://www.sap.com/abapxml" version="1.0">
   <asx:values>
    <VSEOCLASS>
-    <CLSNAME>ZCL_ZARE002_SFDC_RESULT</CLSNAME>
+    <CLSNAME>ZCL_ZARE002_SUBMIT_HTTP</CLSNAME>
     <LANGU>E</LANGU>
-    <DESCRIPT>Automatic Incoming Payments - Payment Result to Salesforce</DESCRIPT>
+    <DESCRIPT>Handlerclass for HTTP Service ZARE002_SUBMIT</DESCRIPT>
     <STATE>1</STATE>
     <CLSCCINCL>X</CLSCCINCL>
     <FIXPT>X</FIXPT>

@@ -16,12 +16,19 @@ CLASS zcl_zare002_util DEFINITION
 
     CLASS-DATA gt_payment_document_no TYPE tt_payment_document_no.
 
+    "! abap_true = สร้าง payload แล้วพิมพ์ ไม่ post · abap_false = post จริง (ได้เอกสารใหม่ทุกครั้งที่ F9)
+    CONSTANTS gc_submit_simulate TYPE abap_bool VALUE abap_false.
+
     "! reset ทุกใบใน gt_payment_document_no ให้ Reject ซ้ำได้ — ล้าง reject_reason ทุก item · status → N · ล้างผล SFDC · ทิ้ง draft
     METHODS reset_payment
       IMPORTING out TYPE REF TO if_oo_adt_classrun_out.
 
     "! ขอ token จาก ZCL_UTILITY แล้วยิง describe ผ่าน arrangement Basic ตัวเดียวกัน โดยใส่ Authorization: Bearer เอง
     METHODS test_sfdc_bearer
+      IMPORTING out TYPE REF TO if_oo_adt_classrun_out.
+
+    "! Submit ทุกใบใน gt_payment_document_no ผ่าน ZCL_ZARE002_SUBMIT — แทน POC post JE
+    METHODS submit_poc
       IMPORTING out TYPE REF TO if_oo_adt_classrun_out.
 
 ENDCLASS.
@@ -33,15 +40,16 @@ CLASS zcl_zare002_util IMPLEMENTATION.
   METHOD if_oo_adt_classrun~main.
 
     " เปิด comment บรรทัดที่ต้องการก่อน F9 — ค่าเริ่มต้นไม่ทำอะไร กันรันพลาด
-    reset_payment( out ).
+*    reset_payment( out ).
 *    test_sfdc_bearer( out ).
+    submit_poc( out ).
 
   ENDMETHOD.
 
   METHOD class_constructor.
     " list ใบที่จะ reset — เพิ่ม/ลดบรรทัดตรงนี้
-    gt_payment_document_no = VALUE #( ( '1000000002' )
-                                      ( '1000000102' ) ).
+    gt_payment_document_no = VALUE #( ( '1000000002' ) ).
+*                                      ( '1000000102' ) ).
   ENDMETHOD.
 
   METHOD reset_payment.
@@ -121,6 +129,38 @@ CLASS zcl_zare002_util IMPLEMENTATION.
       CATCH cx_root INTO DATA(lx_error).
         out->write( |describe failed: { lx_error->get_text( ) }| ).
     ENDTRY.
+
+  ENDMETHOD.
+
+  METHOD submit_poc.
+
+    out->write( |submit_poc: simulate = { gc_submit_simulate }| ).
+
+    LOOP AT gt_payment_document_no INTO DATA(lv_payment_document_no).
+
+      SELECT SINGLE payment_uuid
+        FROM ztar_i002_pymt
+        WHERE payment_document_no = @lv_payment_document_no
+        INTO @DATA(lv_payment_uuid).
+      IF sy-subrc <> 0.
+        out->write( |Payment { lv_payment_document_no }: not found| ).
+        CONTINUE.
+      ENDIF.
+
+      DATA lt_entry TYPE zcl_zare002_journal_entry=>tt_entry.
+
+      DATA(ls_result) = NEW zcl_zare002_submit( )->process( EXPORTING iv_payment_uuid = lv_payment_uuid
+                                                                       iv_simulate     = gc_submit_simulate
+                                                             IMPORTING et_entry        = lt_entry ).
+
+      LOOP AT zcl_zare002_journal_entry=>describe( lt_entry ) INTO DATA(lv_line).
+        out->write( lv_line ).
+      ENDLOOP.
+
+      out->write( |Payment { lv_payment_document_no }: outcome { ls_result-outcome } | &&
+                  |doc { ls_result-accounting_document } - { ls_result-message }| ).
+
+    ENDLOOP.
 
   ENDMETHOD.
 

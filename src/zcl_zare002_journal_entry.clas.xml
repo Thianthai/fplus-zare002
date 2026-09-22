@@ -3,9 +3,9 @@
  <asx:abap xmlns:asx="http://www.sap.com/abapxml" version="1.0">
   <asx:values>
    <VSEOCLASS>
-    <CLSNAME>ZCL_ZARE002_SFDC_RESULT</CLSNAME>
+    <CLSNAME>ZCL_ZARE002_JOURNAL_ENTRY</CLSNAME>
     <LANGU>E</LANGU>
-    <DESCRIPT>Automatic Incoming Payments - Payment Result to Salesforce</DESCRIPT>
+    <DESCRIPT>Automatic Incoming Payments - Journal Entry Builder</DESCRIPT>
     <STATE>1</STATE>
     <CLSCCINCL>X</CLSCCINCL>
     <FIXPT>X</FIXPT>

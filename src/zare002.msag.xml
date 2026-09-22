@@ -50,6 +50,60 @@
      <MSGNR>007</MSGNR>
      <TEXT>Payment &amp;1 is already posted (document &amp;2) and cannot be rejected</TEXT>
     </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>ZARE002</ARBGB>
+     <MSGNR>101</MSGNR>
+     <TEXT>Payment &amp;1 not found</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>ZARE002</ARBGB>
+     <MSGNR>102</MSGNR>
+     <TEXT>Payment &amp;1 already processed (status &amp;2)</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>ZARE002</ARBGB>
+     <MSGNR>103</MSGNR>
+     <TEXT>Payment &amp;1 already posted (document &amp;2), clearing pending</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>ZARE002</ARBGB>
+     <MSGNR>104</MSGNR>
+     <TEXT>Payment &amp;1: cheque must be posted manually</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>ZARE002</ARBGB>
+     <MSGNR>105</MSGNR>
+     <TEXT>Payment &amp;1: missing &amp;2</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>ZARE002</ARBGB>
+     <MSGNR>106</MSGNR>
+     <TEXT>Payment &amp;1 does not balance (difference &amp;2)</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>ZARE002</ARBGB>
+     <MSGNR>107</MSGNR>
+     <TEXT>Special G/L open item balance is not enough</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>ZARE002</ARBGB>
+     <MSGNR>108</MSGNR>
+     <TEXT>Payment &amp;1: &amp;2&amp;3&amp;4</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>ZARE002</ARBGB>
+     <MSGNR>109</MSGNR>
+     <TEXT>Payment &amp;1 posted: document &amp;2</TEXT>
+    </T100>
    </T100>
   </asx:values>
  </asx:abap>
