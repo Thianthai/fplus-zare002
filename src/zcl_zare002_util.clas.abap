@@ -20,7 +20,7 @@ CLASS zcl_zare002_util DEFINITION
     CONSTANTS gc_template_document_no TYPE ztar_i002_pymt-payment_document_no VALUE '1000000002'.
 
     CONSTANTS:
-      "! ค่าของใบทดสอบ ตั้งให้ตรงกับเอกสารตัวอย่าง 3500000001 ที่ฟังก์ชันนอล post จากหน้าจอ
+      "! ค่าของใบทดสอบ ตั้งให้ครบทั้ง 5 ขาบัญชี bank / bank charge / rounding / advance / ลูกหนี้
       "! ดู docs/09_submit_analysis.md หัวข้อเอกสารตัวอย่าง 5 ขา
       gc_test_company_code    TYPE ztar_i002_pymt-company_code        VALUE '2000',
       gc_test_posting_date    TYPE ztar_i002_pymt-posting_date        VALUE '20260922',
@@ -38,7 +38,7 @@ CLASS zcl_zare002_util DEFINITION
       gc_test_amount_paid     TYPE ztar_i002_item-amount_paid         VALUE '10700.00'.
 
     "! abap_true = สร้าง payload แล้วพิมพ์ ไม่ post · abap_false = post จริง (ได้เอกสารใหม่ทุกครั้งที่ F9)
-    CONSTANTS gc_submit_simulate TYPE abap_bool VALUE abap_false.
+    CONSTANTS gc_submit_simulate TYPE abap_bool VALUE abap_true.
 
     "! สร้างใบทดสอบใหม่ 1 ใบสำหรับลอง Submit
     "! clone โครงสร้างจากใบต้นแบบ แล้วทับด้วยค่าของเอกสารตัวอย่าง 5 ขา
@@ -72,7 +72,7 @@ CLASS zcl_zare002_util IMPLEMENTATION.
 *    reset_payment( out ).
 *    test_sfdc_bearer( out ).
 *    set_test_data( out ).
-    submit_poc( out ).
+*    submit_poc( out ).
 
   ENDMETHOD.
 

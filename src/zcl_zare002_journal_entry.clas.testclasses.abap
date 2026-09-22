@@ -65,7 +65,7 @@ CLASS ltc_journal_entry IMPLEMENTATION.
     cl_abap_unit_assert=>assert_equals( act = ls_param-accountingdocumenttype exp = 'DS' ).
     cl_abap_unit_assert=>assert_equals( act = ls_param-documentreferenceid    exp = '1000000002' ).
 
-    " เอกสารตัวอย่าง 3500000001 เรียง G/L 3 บรรทัดก่อน แล้วจึง AR 2 บรรทัด
+    " เอกสารเรียงบรรทัด G/L ให้จบก่อนแล้วจึงต่อด้วยบรรทัดลูกหนี้
     cl_abap_unit_assert=>assert_equals( act = lines( ls_param-_glitems ) exp = 3 ).
     cl_abap_unit_assert=>assert_equals( act = lines( ls_param-_aritems ) exp = 2 ).
 
