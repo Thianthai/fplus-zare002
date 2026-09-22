@@ -47,6 +47,7 @@ define view entity ZI_ZARE002_PYMT
       @EndUserText.label: 'Payment Amount'
       payment_amount              as PaymentAmount,
 
+      // Status ของรายการ
       status                      as Status,
 
       // สีของ icon สถานะบนหน้าจอ — 1 แดง · 2 เหลือง · 3 เขียว · 0 เทา
@@ -64,11 +65,20 @@ define view entity ZI_ZARE002_PYMT
       // ค่าจริงของสถานะยังอยู่ที่ Status ใช้ filter ได้ตามปกติ
       @EndUserText.label: 'Status'
       ''                          as StatusIcon,
-        
+
+      // field สำหรับเก็บ Status ของการส่งไปให้ SFDC
       salesforce_status           as SalesforceStatus,
       @EndUserText.label: 'Salesforce Message'
       salesforce_message          as SalesforceMessage,
 
+      // field สำหรับ Submit
+      @EndUserText.label: 'Payment Doc'
+      payment_accounting_document  as PaymentAccountingDocument,
+      @EndUserText.label: 'Clearing Doc'
+      clearing_accounting_document as ClearingAccountingDocument,
+      @EndUserText.label: 'Submit Message'
+      submit_message               as SubmitMessage,
+      
       @Semantics.user.createdBy: true
       created_by                  as CreatedBy,
       @Semantics.systemDateTime.createdAt: true

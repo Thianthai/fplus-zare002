@@ -60,5 +60,11 @@ annotate entity ZC_ZARE002 with
   StatusCriticality;
 
   @UI.lineItem: [ { position: 120, importance: #HIGH } ]
+  PaymentAccountingDocument;
+
+  @UI.lineItem: [ { position: 130, importance: #HIGH } ]
+  ClearingAccountingDocument;
+  
+  @UI.lineItem: [ { position: 140, importance: #HIGH } ]
   RejectReason;
 }

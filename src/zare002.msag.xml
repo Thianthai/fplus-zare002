@@ -44,6 +44,12 @@
      <MSGNR>006</MSGNR>
      <TEXT>Salesforce not reachable (HTTP &amp;1)</TEXT>
     </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>ZARE002</ARBGB>
+     <MSGNR>007</MSGNR>
+     <TEXT>Payment &amp;1 is already posted (document &amp;2) and cannot be rejected</TEXT>
+    </T100>
    </T100>
   </asx:values>
  </asx:abap>

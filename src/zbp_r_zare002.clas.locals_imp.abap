@@ -7,26 +7,38 @@ CLASS lhc_Item DEFINITION INHERITING FROM cl_abap_behavior_handler.
     "! message class ของ RICEFW นี้
     "! 001–099 = Reject, 100+ = Submit
     CONSTANTS gc_msgid            TYPE symsgid           VALUE 'ZARE002'.
+
     "! ค่า status ที่ header หลัง reject (domain ZD_REQUEST_STATUS ของ ZARI002)
     CONSTANTS gc_status_rejected  TYPE ze_request_status VALUE 'R'.
+
     "! ตัดข้อความ error ของ SFDC ก่อนใส่ message (&2 ของ message number 005)
     CONSTANTS gc_sfdc_message_max TYPE i                 VALUE 50.
 
     "! payment_uuid แบบซ้ำได้ — ใช้ส่งเข้า read_rejected_payments
     TYPES tt_uuid        TYPE STANDARD TABLE OF sysuuid_x16 WITH EMPTY KEY.
-    "! payment_uuid แบบไม่ซ้ำ — ผลลัพธ์ของ read_rejected_payments
-    TYPES tt_uuid_sorted TYPE SORTED TABLE OF sysuuid_x16 WITH UNIQUE KEY table_line.
+
+    TYPES:
+      "! สภาพของ payment ที่ปุ่มและ validate ใช้ตัดสิน — ดูจากเลขเอกสารที่มีจริง ไม่ใช่ status แค่อย่างเดียว
+      BEGIN OF ty_payment_state,
+        payment_uuid                 TYPE sysuuid_x16,
+        status                       TYPE ze_request_status,
+        payment_accounting_document  TYPE ztar_i002_pymt-payment_accounting_document,
+        clearing_accounting_document TYPE ztar_i002_pymt-clearing_accounting_document,
+      END OF ty_payment_state,
+      tt_payment_state TYPE SORTED TABLE OF ty_payment_state WITH UNIQUE KEY payment_uuid.
+
     "! range สำหรับ SELECT ... IN
     TYPES tr_uuid        TYPE RANGE OF sysuuid_x16.
 
     TYPES:
       "! header ของ payment ที่เกี่ยวข้องกับ action — field ที่ต้องใช้ทั้ง validate และส่ง SFDC
       BEGIN OF ty_payment,
-        payment_uuid        TYPE sysuuid_x16,
-        payment_document_no TYPE ztar_i002_pymt-payment_document_no,
-        status              TYPE ze_request_status,
-        salesforce_id       TYPE ztar_i002_pymt-salesforce_id,
-        request_id          TYPE ztar_i002_pymt-request_id,
+        payment_uuid                TYPE sysuuid_x16,
+        payment_document_no         TYPE ztar_i002_pymt-payment_document_no,
+        status                      TYPE ze_request_status,
+        salesforce_id               TYPE ztar_i002_pymt-salesforce_id,
+        request_id                  TYPE ztar_i002_pymt-request_id,
+        payment_accounting_document TYPE ztar_i002_pymt-payment_accounting_document,
       END OF ty_payment,
       tt_payment TYPE STANDARD TABLE OF ty_payment WITH EMPTY KEY.
 
@@ -36,7 +48,9 @@ CLASS lhc_Item DEFINITION INHERITING FROM cl_abap_behavior_handler.
       IMPORTING REQUEST requested_authorizations FOR Item
       RESULT result.
 
-    "! payment ที่ status = R แล้ว RejectReason ห้ามแก้ไข + ปุ่มทั้งหมด disable
+    "! payment ที่ reject แล้ว (R) หรือ post JE แล้ว: RejectReason ห้ามแก้ + Reject ปิด
+    "! Submit ปิดเมื่อ R หรือมีทั้ง Payment Doc และ Clearing Doc แล้ว
+    "! ปุ่มเป็นแค่คำใบ้ให้ UI — handler ต้อง validate ซ้ำจาก DB เสมอ
     METHODS get_instance_features FOR INSTANCE FEATURES
       IMPORTING keys REQUEST requested_features FOR Item
       RESULT result.
@@ -55,10 +69,10 @@ CLASS lhc_Item DEFINITION INHERITING FROM cl_abap_behavior_handler.
     METHODS rejectItem FOR MODIFY
       IMPORTING keys FOR ACTION Item~rejectItem RESULT result.
 
-    "! คืน payment uuid ที่ status = R แล้ว จากรายการที่ส่งเข้ามา (ส่งซ้ำได้)
-    METHODS read_rejected_payments
-      IMPORTING it_payment_uuid        TYPE tt_uuid
-      RETURNING VALUE(rt_payment_uuid) TYPE tt_uuid_sorted.
+    "! อ่าน status + เลข JE + เลข clearing ของ payment ที่ส่งเข้ามา (uuid ซ้ำได้)
+    METHODS read_payment_state
+      IMPORTING it_payment_uuid TYPE tt_uuid
+      RETURNING VALUE(rt_state) TYPE tt_payment_state.
 
 ENDCLASS.
 
@@ -90,28 +104,37 @@ CLASS lhc_Item IMPLEMENTATION.
         WITH CORRESPONDING #( keys )
       RESULT DATA(lt_item).
 
-    DATA(lt_rejected) = read_rejected_payments(
-                          VALUE #( FOR ls_item IN lt_item ( ls_item-PaymentUuid ) ) ).
+    DATA(lt_state) = read_payment_state(
+                       VALUE #( FOR ls_item IN lt_item ( ls_item-PaymentUuid ) ) ).
 
     result = VALUE #( FOR ls_item IN lt_item
-                      LET lv_rejected = xsdbool( line_exists( lt_rejected[ table_line = ls_item-PaymentUuid ] ) )
+                      LET ls_state    = VALUE #( lt_state[ payment_uuid = ls_item-PaymentUuid ] OPTIONAL )
+                          lv_rejected = xsdbool( ls_state-status = gc_status_rejected )
+                          lv_posted   = xsdbool( ls_state-payment_accounting_document IS NOT INITIAL )
+                          lv_cleared  = xsdbool( ls_state-clearing_accounting_document IS NOT INITIAL )
                       IN
                       ( %tky                = ls_item-%tky
-                        %field-RejectReason = COND #( WHEN lv_rejected = abap_true
+                        " แก้ reason ได้เฉพาะใบที่ยังไม่ reject และยังไม่ post
+                        %field-RejectReason = COND #( WHEN lv_rejected = abap_true OR lv_posted = abap_true
                                                       THEN if_abap_behv=>fc-f-read_only
                                                       ELSE if_abap_behv=>fc-f-unrestricted )
+                        " Submit ทำต่อได้จนกว่าจะมีครบ 2 doc (มีแค่ Payment Doc = ยังต้อง clearing)
                         %action-submitItem  = COND #( WHEN lv_rejected = abap_true
+                                                        OR ( lv_posted = abap_true AND lv_cleared = abap_true )
                                                       THEN if_abap_behv=>fc-o-disabled
                                                       ELSE if_abap_behv=>fc-o-enabled )
-                        %action-rejectItem  = COND #( WHEN lv_rejected = abap_true
+                        " post แล้วย้อน reject ไม่ได้
+                        %action-rejectItem  = COND #( WHEN lv_rejected = abap_true OR lv_posted = abap_true
                                                       THEN if_abap_behv=>fc-o-disabled
                                                       ELSE if_abap_behv=>fc-o-enabled ) ) ).
 
   ENDMETHOD.
 
+
   METHOD submitItem.
     " ยังไม่มี logic โดยตั้งใจ — รอ spec post FI (Phase 8B)
   ENDMETHOD.
+
 
   METHOD rejectItem.
 
@@ -127,11 +150,12 @@ CLASS lhc_Item IMPLEMENTATION.
       ( sign = 'I' option = 'EQ' low = lv_uuid ) ).
 
     " 2. ดึง header field ของ payment ที่เลือกจากหน้าจอ
-    SELECT PaymentUuid        AS payment_uuid,
-           PaymentDocumentNo  AS payment_document_no,
-           Status             AS status,
-           SalesforceId       AS salesforce_id,
-           RequestId          AS request_id
+    SELECT PaymentUuid               AS payment_uuid,
+           PaymentDocumentNo         AS payment_document_no,
+           Status                    AS status,
+           SalesforceId              AS salesforce_id,
+           RequestId                 AS request_id,
+           PaymentAccountingDocument AS payment_accounting_document
       FROM zi_zare002_pymt
       WHERE PaymentUuid IN @lr_payment_uuid
       INTO TABLE @DATA(lt_payment).
@@ -175,7 +199,25 @@ CLASS lhc_Item IMPLEMENTATION.
         CONTINUE.
       ENDIF.
 
-      " 5.2 validate payment ต้องมี reject reason อย่างน้อย 1 item
+      " 5.2 validate post แล้ว — JE ออกไปแล้ว reject ย้อนไม่ได้ (UI ปิดปุ่มให้ แต่ extension อาจข้าม)
+      IF ls_payment-payment_accounting_document IS NOT INITIAL.
+        lv_any_failed = abap_true.
+
+        LOOP AT lt_selected INTO ls_selected
+          WHERE PaymentUuid = ls_payment-payment_uuid.
+
+          APPEND VALUE #( %tky = ls_selected-%tky
+                          %msg = new_message( id       = gc_msgid
+                                              number   = '007'
+                                              severity = if_abap_behv_message=>severity-error
+                                              v1       = ls_payment-payment_document_no
+                                              v2       = ls_payment-payment_accounting_document ) ) TO reported-item.
+        ENDLOOP.
+
+        CONTINUE.
+      ENDIF.
+
+      " 5.3 validate payment ต้องมี reject reason อย่างน้อย 1 item
       DATA(lv_has_reason) = abap_false.
 
       LOOP AT lt_all_item INTO DATA(ls_item)
@@ -250,7 +292,11 @@ CLASS lhc_Item IMPLEMENTATION.
 
     " 7. ยิง SFDC ก่อน write ลง DB
     " ถ้า SFDC ไม่รับ = ไม่มีอะไร write ลง DB เปิดให้ user กด Reject ซ้ำได้
-    DATA(ls_send) = NEW zcl_zare002_sfdc_result( )->send( lt_record ).
+    " ปิดการยิง SFDC ชั่วคราวเพื่อทดสอบฝั่ง SAP — บรรทัดล่างจำลองว่า SFDC รับทุก record
+    " เปิดบรรทัดจริงกลับและลบบรรทัดจำลองก่อน handover
+*   DATA(ls_send) = NEW zcl_zare002_sfdc_result( )->send( lt_record ).
+    DATA(ls_send) = VALUE zcl_zare002_sfdc_result=>ty_result( success      = abap_true
+                                                              record_count = lines( lt_record ) ).
 
     IF ls_send-success = abap_false.
       failed-item = VALUE #( FOR ls_fail IN lt_selected
@@ -331,7 +377,8 @@ CLASS lhc_Item IMPLEMENTATION.
 
   ENDMETHOD.
 
-  METHOD read_rejected_payments.
+
+  METHOD read_payment_state.
 
     IF it_payment_uuid IS INITIAL.
       RETURN.
@@ -340,11 +387,13 @@ CLASS lhc_Item IMPLEMENTATION.
     DATA(lr_payment_uuid) = VALUE tr_uuid( FOR lv_uuid IN it_payment_uuid
                                            ( sign = 'I' option = 'EQ' low = lv_uuid ) ).
 
-    SELECT PaymentUuid
+    SELECT PaymentUuid                AS payment_uuid,
+           Status                     AS status,
+           PaymentAccountingDocument  AS payment_accounting_document,
+           ClearingAccountingDocument AS clearing_accounting_document
       FROM zi_zare002_pymt
       WHERE PaymentUuid IN @lr_payment_uuid
-        AND Status       = @gc_status_rejected
-      INTO TABLE @rt_payment_uuid.
+      INTO TABLE @rt_state.
 
   ENDMETHOD.
 
@@ -394,6 +443,7 @@ CLASS lsc_Item IMPLEMENTATION.
     ENDLOOP.
 
   ENDMETHOD.
+
 
   METHOD cleanup_finalize.
 

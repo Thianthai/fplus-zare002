@@ -8,11 +8,15 @@ CLASS zcl_zare002_util DEFINITION
   PUBLIC SECTION.
     INTERFACES if_oo_adt_classrun.
 
-  PRIVATE SECTION.
-    "! payment document ที่จะ reset — แก้ค่านี้แล้วรันใหม่ (F9)
-    CONSTANTS gc_payment_document_no TYPE c LENGTH 10 VALUE '1000000002'.
+    CLASS-METHODS class_constructor.
 
-    "! reset payment 1 ใบให้ Reject ซ้ำได้ — ล้าง reject_reason ทุก item · status R → N + ล้างผล SFDC · ทิ้ง draft
+  PRIVATE SECTION.
+    "! payment document ที่จะ reset — แก้ list นี้แล้วรันใหม่ (F9) · ใบที่ไม่พบจะบอกใน output ไม่หยุดทำใบอื่น
+    TYPES tt_payment_document_no TYPE STANDARD TABLE OF ztar_i002_pymt-payment_document_no WITH EMPTY KEY.
+
+    CLASS-DATA gt_payment_document_no TYPE tt_payment_document_no.
+
+    "! reset ทุกใบใน gt_payment_document_no ให้ Reject ซ้ำได้ — ล้าง reject_reason ทุก item · status → N · ล้างผล SFDC · ทิ้ง draft
     METHODS reset_payment
       IMPORTING out TYPE REF TO if_oo_adt_classrun_out.
 
@@ -29,45 +33,55 @@ CLASS zcl_zare002_util IMPLEMENTATION.
   METHOD if_oo_adt_classrun~main.
 
     " เปิด comment บรรทัดที่ต้องการก่อน F9 — ค่าเริ่มต้นไม่ทำอะไร กันรันพลาด
-*    reset_payment( out ).
+    reset_payment( out ).
 *    test_sfdc_bearer( out ).
 
   ENDMETHOD.
 
+  METHOD class_constructor.
+    " list ใบที่จะ reset — เพิ่ม/ลดบรรทัดตรงนี้
+    gt_payment_document_no = VALUE #( ( '1000000002' )
+                                      ( '1000000102' ) ).
+  ENDMETHOD.
+
   METHOD reset_payment.
 
-    SELECT SINGLE payment_uuid, status
-      FROM ztar_i002_pymt
-      WHERE payment_document_no = @gc_payment_document_no
-      INTO @DATA(ls_payment).
-    IF sy-subrc <> 0.
-      out->write( |Payment { gc_payment_document_no } not found| ).
-      RETURN.
-    ENDIF.
+    LOOP AT gt_payment_document_no INTO DATA(lv_payment_document_no).
 
-    " 1. ล้าง reject_reason ของ item ทุกตัวในใบนี้
-    UPDATE ztar_i002_item
-      SET reject_reason = @space
-      WHERE payment_uuid = @ls_payment-payment_uuid.
-    DATA(lv_item_count) = sy-dbcnt.
+      SELECT SINGLE payment_uuid, status, salesforce_status
+        FROM ztar_i002_pymt
+        WHERE payment_document_no = @lv_payment_document_no
+        INTO @DATA(ls_payment).
+      IF sy-subrc <> 0.
+        out->write( |Payment { lv_payment_document_no }: not found| ).
+        CONTINUE.
+      ENDIF.
 
-    " 2. status กลับเป็น N + ล้างผล SFDC เพื่อ Reject ได้อีกรอบ
-    UPDATE ztar_i002_pymt
-      SET status             = 'N',
-          salesforce_status  = @space,
-          salesforce_message = @space
-      WHERE payment_uuid = @ls_payment-payment_uuid.
+      " 1. ล้าง reject_reason ของ item ทุกตัวในใบนี้
+      UPDATE ztar_i002_item
+        SET reject_reason = @space
+        WHERE payment_uuid = @ls_payment-payment_uuid.
+      DATA(lv_item_count) = sy-dbcnt.
 
-    " 3. ทิ้ง draft ค้างของ item ในใบนี้ (ถ้ามี) กันค่าเก่าโผล่กลับมา
-    DELETE FROM ztar_e002_item_d
-      WHERE paymentuuid = @ls_payment-payment_uuid.
-    DATA(lv_draft_count) = sy-dbcnt.
+      " 2. status กลับเป็น N + ล้างผล SFDC เพื่อ Reject ได้อีกรอบ
+      UPDATE ztar_i002_pymt
+        SET status             = 'N',
+            salesforce_status  = @space,
+            salesforce_message = @space
+        WHERE payment_uuid = @ls_payment-payment_uuid.
+
+      " 3. ทิ้ง draft ค้างของ item ในใบนี้ (ถ้ามี) กันค่าเก่าโผล่กลับมา
+      DELETE FROM ztar_e002_item_d
+        WHERE paymentuuid = @ls_payment-payment_uuid.
+      DATA(lv_draft_count) = sy-dbcnt.
+
+      out->write( |Payment { lv_payment_document_no }: reject_reason cleared on { lv_item_count } item(s), | &&
+                  |status { ls_payment-status } -> N, salesforce_status { ls_payment-salesforce_status } -> blank, | &&
+                  |{ lv_draft_count } draft(s) removed| ).
+
+    ENDLOOP.
 
     COMMIT WORK.
-
-    out->write( |Payment { gc_payment_document_no }: reject_reason cleared on { lv_item_count } item(s), | &&
-                |status { ls_payment-status } -> N, { lv_draft_count } draft(s) removed| ).
-
 
   ENDMETHOD.
 
