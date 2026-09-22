@@ -103,8 +103,12 @@ item เดียว `amount_paid 10700` → สมดุล 0 ✓ เครื�
 | 004 advance SpGL | ✅ | **PK 19** · G/L `0022020004` · SpGL `Z` · tax `**` · baseline `20261022` — ระบบ derive ให้ครบ |
 | 005 ลูกหนี้ | ❌ | ได้ **PK 11** ตัวอย่างเป็น **PK 15** · tax code ได้ `**` ตัวอย่างว่าง · ที่เหลือตรงหมด — **OQ-39 high priority** |
 
-จุดต่างเล็ก: assignment ของบรรทัด G/L เราใส่ posting date ทุกบรรทัด ตัวอย่างปล่อยให้ sort key ของแต่ละบัญชีเติมเอง
-(001 ว่าง · 002 `2002010000` · 003 `20260922`) — ถ้าอยากเหมือนเป๊ะคือไม่ต้องส่ง assignment เลย รอฟังก์ชันนอลตัดสิน
+จุดต่างเล็ก: assignment ของบรรทัด G/L — **แก้แล้ว 2026-09-22 ไม่ส่ง assignment เลย** ปล่อยให้ sort key ของแต่ละบัญชีเติมเอง
+(001 ว่าง · 002 `2002010000` · 003 `20260922`) · สเปกไม่ได้ระบุเรื่องนี้ ยึดเอกสารตัวอย่างเป็นหลัก (OQ-40 ปิด)
+
+**ช่องว่างของสเปก**: `Submit Logic.docx` ระบุแค่ company code · document date · posting date · doc type `DS` · branch `0000` ที่ header
+และ account type / Dr-Cr / G/L / amount ที่บรรทัด — house bank · business place · tax code `WP` · cost center ของ rounding ·
+baseline date · assignment ล้วนมาจากฟังก์ชันนอลและเอกสารตัวอย่าง ไม่ได้มาจากสเปก
 
 **POC = method `post_payment_poc` ใน `ZCL_ZARE002_UTIL`** (ผู้ใช้เลือก 2026-09-22) · รอเอกสารตัวอย่าง 5 ขาก่อนเขียน
 
