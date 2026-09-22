@@ -42,6 +42,23 @@ API #3  ABAP · inbound  ◀──clearing document / error──  BOT เรี
 | หลาย customer/ใบ | ยังเกิดไม่ได้ — default 1 customer |
 | ปีบัญชีของ 2 doc | ไม่เก็บ — ใช้ปีของ `posting_date` (assumption FY = ปีปฏิทิน) |
 
+### ข้อมูลจาก tenant 2026-09-22 (Q1–Q9 · company 2000)
+
+| เรื่อง | ผล |
+|---|---|
+| `I_JournalEntryTP` | released บน `my442178` ✓ |
+| ตัวอย่าง `3200000006` (DZ · Fiori) | 2 บรรทัด: bank `0011011003` Dr / customer `1000000014` Cr (PK 15 · recon `0011020001`) · **ไม่มี business place** · ไม่มี WHT · ไม่มี profit center · ยังไม่ clear |
+| G/L master | bank: tax cat ว่าง · ไม่ OIM · planning `F0` — fees `0054030012`: tax cat `-` ไม่บังคับ code — **rounding `0059090001`: tax cat `*` + `TaxCodeIsRequired X`** — recon: tax cat `*` |
+| WHT ของ customer | **ไม่มี released view** (`I_CustomerWithHoldingTaxTP` ไม่ C1) · customer ทดสอบไม่มี WHT · เสนอกติกา: invoice มี `WithholdingTaxCode` → ปฏิเสธ Submit (OQ) |
+| SpGL Z | **ไม่มี open item ใน tenant เลย** — เคส advance ลบทดสอบไม่ได้จนกว่าจะ post บวกก่อน |
+| cost center `2002010000` | company 2000 / `A000` · valid ถึง 9999 · ไม่ block primary cost · profit center `0000002000` |
+| tax code ที่ใช้ใน 2000 | `O1` 340 · `OX` 2 (เอกสารทดสอบ) · ไม่มี `O0` |
+
+**คำตอบฟังก์ชันนอล 2026-09-22**: doc type **`DS`** · rounding **ไม่ใส่ tax code** ← ⚠️ ขัดกับ master (`TaxCodeIsRequired X`)
+ต้องแก้ master หรือกำหนด code — รอดูจากเอกสารตัวอย่าง 5 ขาที่ฟังก์ชันนอลจะส่งมา
+
+**POC = method `post_payment_poc` ใน `ZCL_ZARE002_UTIL`** (ผู้ใช้เลือก 2026-09-22) · รอเอกสารตัวอย่าง 5 ขาก่อนเขียน
+
 **ขั้นถัดไปที่ผู้ใช้สั่ง**: POC class post payment ตามเอกสารตัวอย่างในระบบก่อน (พิสูจน์ว่า API post โครงตาม spec ได้จริง —
 fees + cost center · rounding · SpGL Z + baseline date) ก่อนออกแบบ API #1–#3 · SQL export อยู่ §6
 
