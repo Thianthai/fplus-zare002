@@ -64,6 +64,29 @@ API #3  ABAP · inbound  ◀──clearing document / error──  BOT เรี
 - rounding `59090001`: **ไม่ใส่ tax code** (หน้าจอผ่านโดยว่าง แม้ master บอก required) · business place `0000`
 - ตัวอย่างบนจอ: rounding Cr 1.00 = `rounding_diff` บวก → ตรงสูตร `−rounding_diff`
 
+### เอกสารตัวอย่าง 5 ขา `3500000001` (ฟังก์ชันนอล post จากหน้าจอ 2026-09-22)
+
+company 2000 · `DS` · posting/doc date `20260922` · header text `Doc Test ARE002 #1` · ไม่มี `DocumentReferenceID` ·
+invoice ที่จะไป clear = `6000000021` (billing `O600000025` · 10,700 ยัง open)
+
+| # | PK | บัญชี | ยอด | field ที่สำคัญ |
+|---|---|---|---|---|
+| 001 | 40 | G/L `0011011211` | +10,791.00 | bplace `0000` · house bank `SCB01`/`SA001` · value date `20260922` · **ไม่มี assignment** |
+| 002 | 40 | G/L `0054030012` | +10.00 | cost center `2002010000` · tax `WP` · bplace `0000` · assignment `2002010000` (sort key เติมเอง) |
+| 003 | 50 | G/L `0059090001` | −1.00 | cost center `2002010000` · bplace `0000` · **ไม่มี tax code** · assignment `20260922` (sort key) |
+| 004 | **19** | customer SpGL `Z` (G/L `0022020004`) | −100.00 | bplace `0000` · baseline `20261022` (= posting + 30) · tax `**` (ระบบ derive) |
+| 005 | **15** | customer (recon `0011020001`) | −10,700.00 | bplace `0000` · **ไม่มี assignment / text** |
+
+ค่าที่ map กลับมาเป็น test data: `payment_amount 10791` · `fees 10` · `rounding_diff +1` · `advance_payment +100` ·
+item เดียว `amount_paid 10700` → สมดุล 0 ✓ เครื่องหมายทุกขาตรงกับสูตรที่ builder ใช้
+
+**สิ่งที่แก้ตาม (commit `a7cdbb9`)**: business place `0000` ทุกบรรทัด · เลขบรรทัดไล่ G/L ให้จบก่อนแล้วต่อ AR ·
+บรรทัดลูกหนี้ไม่ใส่ assignment / item text (BOT จับคู่จาก customer + จำนวนเงินแทน — ฟังก์ชันนอลตัดสิน) ·
+`ty_line_no` เป็น `n LENGTH 6` ให้ได้ `000001` ไม่ใช่ char ชิดขวา
+
+**ต้องเช็คหลัง post จริง**: บรรทัดลูกหนี้ได้ PK `15` เหมือนตัวอย่างหรือได้ `11` แบบที่ POC เจอ ·
+บรรทัด SpGL ได้ PK `19` + tax `**` หรือไม่ — **ไม่ตรงให้เปิด OQ เป็น high priority** (ต้องถาม business ว่ารับได้ไหม)
+
 **POC = method `post_payment_poc` ใน `ZCL_ZARE002_UTIL`** (ผู้ใช้เลือก 2026-09-22) · รอเอกสารตัวอย่าง 5 ขาก่อนเขียน
 
 **ขั้นถัดไปที่ผู้ใช้สั่ง**: POC class post payment ตามเอกสารตัวอย่างในระบบก่อน (พิสูจน์ว่า API post โครงตาม spec ได้จริง —
