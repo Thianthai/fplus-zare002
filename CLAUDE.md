@@ -109,6 +109,10 @@
 - **inline `DATA(x)` ใน `IMPORTING` ใช้ได้เฉพาะ method call แบบ standalone statement** — ถ้า call อยู่ใน
   expression (ขวาของ `DATA(y) =` · ใน `IF` · เป็น argument) ได้ `inline declaration is not possible in this
   position` → ประกาศตัวแปรก่อน (เจอจริง 2026-09-22 · 2 ที่) · เช่นเดียวกับ `meth( )[ 1 ]-%param` ให้แยก 2 statement
+- **placeholder `&1`–`&4` ของ message class รับได้ 50 ตัวต่อตัว** — `MESSAGE … WITH … INTO` ตัดเงียบ ๆ
+  (เจอจริง 2026-09-22: message ของ FI ขาดที่ 50) → ข้อความยาวให้หั่นเป็นท่อนละ 50 ใส่ `&2&3&4` ติดกัน
+- **HTTP service (`if_http_service_extension`) บน tenant นี้ไม่บังคับ CSRF** — GET `x-csrf-token: fetch` คืน null
+  แต่ POST เข้า handler ได้ (2026-09-22) · Fiori ไม่ต้องขอ token
 - **RAP unit test ต้อง `ROLLBACK ENTITIES` ใน `setup`** — `COMMIT ENTITIES` ที่ fail
   ไม่ทิ้งข้อมูลใน transactional buffer ของค้างจะถูก save ไปพร้อม test ถัดไป
 - **`FAILED` / `REPORTED` ต้องระบุ `LATE` ใน handler ของ save phase**
