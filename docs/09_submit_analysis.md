@@ -5,7 +5,32 @@
 [`poc-clearing`](https://github.com/Thianthai/poc-clearing) (SOAP `JournalEntryBulkClearingRequest_In`)
 — **เอาแค่วิธีทำ ไม่เอา logic ของ POC**
 
-สถานะ: 🟨 รอรีวิว / ตอบคำถาม §5 ก่อนสรุปชื่อ object
+สถานะ: ✅ **ตัดสินแล้ว 2026-09-22** (ประชุมฟังก์ชันนอล) — ดู §0 · §5 เหลือข้อที่ยังเปิด
+
+---
+
+## 0. ผลประชุม 2026-09-22 — flow ที่ตกลง
+
+```
+Fiori (extension)  ──POST list ที่เลือก──▶  API #1  ABAP · HTTP service (ไม่ใช่ RAP action)
+                                              ต่อใบ: validate → post JE → COMMIT → เลข JE
+                   ◀──ผล post ต่อใบ (success/error)──   แสดงบนจอ ARE002 ทันที
+                                              ใบที่ post ได้ → call API #2 ทีละใบ
+API #2  BOT (RPA)  ◀──payment + JE + items──   BOT clear ผ่าน standard app (SpGL Z / partial ได้หมด)
+API #3  ABAP · inbound  ◀──clearing document / error──  BOT เรียกกลับเมื่อเสร็จ
+                                              ABAP: save ผล post + clearing ลง ZTABLE → ยิง SFDC ผลเดียวกัน
+```
+
+| ประเด็นใน §3 | ผล |
+|---|---|
+| 3.3 ที่รัน post | **B — HTTP service** · Reject ยังเป็น RAP action เหมือนเดิม · ผลต่อใบ sync |
+| 3.1 SpGL Z clear ผ่าน API ไม่ได้ | **BOT clear ผ่านหน้าจอ** — ไม่ใช้ Clearing API · ไม่เปลี่ยน business |
+| 3.2 clearing async / นิยาม C | BOT เรียก API #3 กลับพร้อมเลข clearing → ถึงตอนนั้นค่อย `C` + SFDC · ไม่มี job / AIF |
+| 3.4 หา partial เก่าด้วย InvoiceReference | เป็นงานของ BOT บนหน้าจอ — ABAP แค่ส่งข้อมูลให้พอ |
+| bgPF / SOAP / SAP_COM_0002 self-call | **ไม่ต้องมี** |
+
+ยังเปิด: 3.5 deferred tax (BOT clear ได้ถ้ามี แต่ต้องรู้ว่าต้องรวม G/L deferred ไหม) · 3.6 field/status ใน ZARI002 ·
+3.7 ค่าคงที่ · หลาย customer/ใบ · contract JSON ของ API #1 #2 #3 · พฤติกรรมเมื่อ API #2 เรียกไม่ได้ (BOT ล่ม)
 
 ---
 
