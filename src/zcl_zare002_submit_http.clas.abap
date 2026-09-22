@@ -1,7 +1,7 @@
 "! API ของปุ่ม Submit
 "! Fiori ส่ง list PaymentUuid เข้ามา post ทีละใบผ่าน ZCL_ZARE002_SUBMIT และได้ผลลัพธิ์ตอบกลับต่อใบ
 "! 1 PaymentUuid ต่อ 1 LUW ใบที่ไม่ผ่านจะไม่กระทบใบอื่น
-"! CSRF ให้ framework คุม (GET ขอ token ก่อน POST)
+"! tenant นี้ไม่บังคับ CSRF — GET x-csrf-token: fetch คืน null และ POST ผ่านโดยไม่มี token
 "! JSON key เป็น PascalCase
 CLASS zcl_zare002_submit_http DEFINITION
   PUBLIC
@@ -65,8 +65,7 @@ CLASS zcl_zare002_submit_http DEFINITION
 
   PRIVATE SECTION.
 
-    "! GET = ให้ framework ออก CSRF token
-    "! body บอกแค่ว่า service ทำงาน
+    "! GET มีหน้าที่เดียวคือให้เรียกเช็คว่า service ทำงานอยู่
     METHODS handle_get
       CHANGING co_response TYPE REF TO if_web_http_response.
 

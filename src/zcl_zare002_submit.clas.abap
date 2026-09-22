@@ -26,7 +26,7 @@ CLASS zcl_zare002_submit DEFINITION
       gc_method_cheque   TYPE ztar_i002_pymt-payment_method VALUE 'Cheque',
 
       "! ตัด message จาก FI ก่อนใส่ &2 ของ message number 108 / submit_message
-      gc_message_max     TYPE i VALUE 175.
+      gc_message_max     TYPE i VALUE 150.
 
     TYPES:
       "! ผลของ 1 payment — caller เอาไปตอบ Fiori ตรงๆ
@@ -134,7 +134,8 @@ CLASS zcl_zare002_submit IMPLEMENTATION.
 
     rs_result-payment_document_no = ls_header-payment_document_no.
 
-    " 2. payment ถูก post แล้ว/ payment ถูก reject แล้ว จะไมให้่ post อีก และบอกให้ caller ไปขั้น clearing ต่อเลย
+    " 2. ใบที่ post ไว้แล้วแต่ยังไม่มี clearing ให้ทำต่อจากที่ค้าง ไม่ post ซ้ำ ให้ caller ไปเรียก BOT เพื่อทำ clearing ต่อได้เลย
+    " ใบที่ reject แล้วไม่เข้าเงื่อนไขนี้ ปล่อยให้ตกไป validate เพื่อได้ message 102
     IF  ls_header-payment_accounting_document IS NOT INITIAL
     AND ls_header-clearing_accounting_document IS INITIAL
     AND ls_header-status <> gc_status_rejected.

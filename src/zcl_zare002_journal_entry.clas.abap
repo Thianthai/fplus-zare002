@@ -52,36 +52,45 @@ CLASS zcl_zare002_journal_entry DEFINITION
       ty_house_bank_account TYPE c LENGTH 5.
 
     CONSTANTS:
-      "! ค่าคงที่ตาม spec Submit ข้อ 3 (ฟังก์ชันนอล 2026-09-22: constant ใน class ก่อน)
+      "! document type ของเอกสารรับชำระ
       gc_doc_type             TYPE c LENGTH 2  VALUE 'DS',
+
+      "! business transaction type ของเอกสารรับชำระ
       gc_bus_trans_type       TYPE c LENGTH 4  VALUE 'RFPI',
       gc_gl_bank_charge       TYPE c LENGTH 10 VALUE '0054030012',
       gc_gl_rounding          TYPE c LENGTH 10 VALUE '0059090001',
       gc_cost_center          TYPE c LENGTH 10 VALUE '2002010000',
       gc_special_gl_code      TYPE c LENGTH 1  VALUE 'Z',
       gc_baseline_days        TYPE i           VALUE 30,
+
       "! currency role 00 = transaction currency
       gc_currency_role        TYPE c LENGTH 2  VALUE '00',
+
       "! prefix ของ %cid — ต่อด้วย payment_document_no
       gc_cid_prefix           TYPE string      VALUE 'PAY',
-      "! bank charge ต้องมี tax code 0% + business place (ฟังก์ชันนอล 2026-09-22)
+
+      "! bank charge ต้องมี tax code 0% + business place
       gc_tax_code_bank_charge TYPE c LENGTH 2  VALUE 'WP',
       gc_business_place       TYPE c LENGTH 4  VALUE '0000',
-      "! G/L bank incoming ตัวเดียวที่บังคับ house bank — ค่าคงที่ตามฟังก์ชันนอล 2026-09-22
-      "! G/L อีก 4 ตัว (11011212-15) ไม่บังคับ ไม่ใส่
+
+      "! G/L bank incoming บังคับระบุ house bank
+      "! G/L อีก 4 ตัว (11011212-15) ไม่บังคับ ไม่ต้องระบุ
       gc_gl_bank_scb          TYPE c LENGTH 10 VALUE '0011011211',
       gc_house_bank_scb       TYPE c LENGTH 5  VALUE 'SCB01',
       gc_house_bank_acct_scb  TYPE c LENGTH 5  VALUE 'SA001'.
 
-    "! สมดุลตาม spec: payment_amount + fees - sum(amount_paid) - rounding_diff - advance_payment ต้องเป็น 0
-    "! คืนผลต่าง (0 = สมดุล)
+    "! payment_amount + fees - sum(amount_paid) - rounding_diff - advance_payment ต้องเป็น 0
+    "! คืนผลต่าง (0 = balanced)
     CLASS-METHODS check_balance
       IMPORTING is_payment           TYPE ty_payment
                 it_item              TYPE tt_item
       RETURNING VALUE(rv_difference) TYPE ztar_i002_pymt-payment_amount.
 
     "! สร้าง payload 1 เอกสาร: bank / bank charge / ลูกหนี้ต่อ item / rounding / advance (Special G/L)
-    "! เครื่องหมายฝั่ง API: เดบิต = บวก · เครดิต = ลบ · บรรทัดที่ยอด 0 ไม่ส่ง
+    "! เครื่องหมายฝั่ง API
+    "! เดบิต = บวก
+    "! เครดิต = ลบ
+    "! บรรทัดที่ยอด 0 = ไม่ส่ง
     CLASS-METHODS build
       IMPORTING is_payment      TYPE ty_payment
                 it_item         TYPE tt_item
@@ -106,7 +115,7 @@ CLASS zcl_zare002_journal_entry DEFINITION
                 iv_posting_date                TYPE ztar_i002_pymt-posting_date
       RETURNING VALUE(rv_accounting_document)  TYPE ztar_i002_pymt-payment_accounting_document.
 
-    "! ยอดรวม Special G/L Z open item ของ customer (เครดิตติดลบ) — spec ข้อ 3.2/005 เคส advance ติดลบ
+    "! ยอดรวม Special G/L Z open item ของ customer (เครดิตติดลบ) เคส advance ติดลบ
     CLASS-METHODS read_special_gl_open_amount
       IMPORTING iv_company_code  TYPE ztar_i002_pymt-company_code
                 iv_customer      TYPE ztar_i002_item-customer_code
@@ -123,21 +132,27 @@ CLASS zcl_zare002_journal_entry DEFINITION
     TYPES:
       "! แถวเดียวของ payload — จาก tt_entry เพราะ TABLE FOR ACTION IMPORT รับ path ต่อท้ายไม่ได้
       ty_entry           TYPE LINE OF tt_entry,
+
       "! _GLItems ของ 1 เอกสาร
       tt_gl_item         TYPE ty_entry-%param-_glitems,
       ty_gl_item         TYPE LINE OF tt_gl_item,
+
       "! _ARItems ของ 1 เอกสาร
       tt_ar_item         TYPE ty_entry-%param-_aritems,
+
       "! ยอด 1 บรรทัดใน _CurrencyAmount (โครงเดียวกันทุก node)
       tt_currency_amount TYPE ty_gl_item-_currencyamount,
-      "! เลขบรรทัด (docln6)
+
+      "! เลขบรรทัด
       ty_line_no         TYPE c LENGTH 6,
-      "! assignment (acpi_zuonr ไม่ released)
+
+      "! assignment
       ty_assignment      TYPE c LENGTH 18,
-      "! text บรรทัด (sgtxt)
+
+      "! item text
       ty_item_text       TYPE c LENGTH 50.
 
-    "! ห่อยอด 1 ตัวเป็น _CurrencyAmount
+    "! รวบยอด 1 ตัวเป็น _CurrencyAmount
     CLASS-METHODS amount
       IMPORTING iv_currency      TYPE ztar_i002_pymt-currency
                 iv_amount        TYPE ztar_i002_pymt-payment_amount
@@ -181,6 +196,11 @@ CLASS zcl_zare002_journal_entry IMPLEMENTATION.
 
     " ขาบัญชี 001 G/L Bank Incoming
     " บันทึกบัญชีเงินฝากธนาคารที่รับเงินเข้า
+    " payment_amount = ยอดสุทธิที่เข้าบัญชีจริง (หักค่าธรรมเนียมแล้ว) = เดบิตเสมอ
+    " G/L มาจาก header ของ payment ที่ SBPA ส่งมา (มี 5 บัญชีตามธนาคาร)
+    " assignment = posting date
+    " value date = posting date (วันที่เงินเข้าบัญชีจริง)
+    " house bank / account ใส่เฉพาะ G/L ที่ระบบบังคับ ดูจาก derive_house_bank
     derive_house_bank( EXPORTING iv_gl_account         = is_payment-gl_account
                        IMPORTING ev_house_bank         = DATA(lv_house_bank)
                                  ev_house_bank_account = DATA(lv_house_bank_account) ).
@@ -198,6 +218,10 @@ CLASS zcl_zare002_journal_entry IMPLEMENTATION.
 
     " ขาบัญชี 002 G/L Bank Charge
     " บันทึกค่าธรรมเนียมธนาคาร (ถ้ามี)
+    " fees = ส่วนที่ธนาคารหักไว้ ลูกค้าจ่ายเต็มแต่เงินเข้าบัญชีไม่เต็ม = เดบิตเสมอ
+    " cost center = 2002010000 (ระบบ derive profit center 2000 ให้เอง)
+    " tax code = WP (Non-taxable Purchase 0%)
+    " business place = 0000 บังคับที่บัญชีนี้
     IF is_payment-fees <> 0.
       lv_line += 1.
       APPEND VALUE #( glaccountlineitem   = CONV ty_line_no( lv_line )
@@ -212,7 +236,11 @@ CLASS zcl_zare002_journal_entry IMPLEMENTATION.
     ENDIF.
 
     " ขาบัญชี 003 G/L Account Receivable
-    " บันทึกล้างลูกหนี้
+    " บันทึกล้างลูกหนี้ 1 บรรทัดต่อ 1 item
+    " amount_paid เป็นบวก (invoice) = เครดิต (ส่ง -amount_paid)
+    " amount_paid เป็นลบ (CN) = เดบิต (ส่ง -amount_paid)
+    " assignment = เลข invoice (ไว้ให้ BOT จับคู่ตอน clearing)
+    " text = billing document (ไว้ให้ BOT จับคู่ตอน clearing)
     LOOP AT it_item INTO DATA(ls_item).
       lv_line += 1.
       APPEND VALUE #( glaccountlineitem   = CONV ty_line_no( lv_line )
@@ -225,6 +253,10 @@ CLASS zcl_zare002_journal_entry IMPLEMENTATION.
     ENDLOOP.
 
     " ขาบัญชี 004 G/L Rounding Adjustment
+    " บันทึกส่วนต่างปัดเศษสตางค์ (ถ้ามี)
+    " rounding_diff เป็นบวก = เครดิต (ส่ง -rounding_diff)
+    " rounding_diff เป็นลบ = เดบิต (ส่ง -rounding_diff)
+    " ไม่ใส่ tax code ได้ ถึงแม้ G/L master ตั้ง TaxCodeIsRequired ไว้
     IF is_payment-rounding_diff <> 0.
       lv_line += 1.
       APPEND VALUE #( glaccountlineitem   = CONV ty_line_no( lv_line )
@@ -237,8 +269,14 @@ CLASS zcl_zare002_journal_entry IMPLEMENTATION.
                     ) TO lt_gl_item.
     ENDIF.
 
-    " 005 Customer Special G/L
-    " บันทึกเงินรับล่วงหน้า (ถ้ามี)
+    " ขาบัญชี 005 Customer Special G/L
+    " บันทึกเงินรับล่วงหน้า (ถ้ามี) แยกจากบรรทัด 003 ด้วย Special G/L = Z
+    " advance_payment เป็นบวก = รับเงินล่วงหน้าเพิ่ม = เครดิต (ส่ง -advance_payment)
+    " advance_payment เป็นลบ = ดึงของเก่ามาใช้หักกับ invoice = เดบิต (ส่ง -advance_payment)
+    " เคสติดลบต้องมียอดค้างพอดีกับที่ขอใช้ ดู validate ข้อ 5 ของ ZCL_ZARE002_SUBMIT
+    " baseline date = posting date + 30 วัน (ใช้ตั้งวันครบกำหนดของยอดล่วงหน้า)
+    " customer ตัวแรกพอ เพราะ 1 payment มี customer เดียว
+    " ถ้าไม่มี item = ไม่รู้ว่า customer ไหน ให้ข้ามบรรทัดนี้ไปเลย
     IF is_payment-advance_payment <> 0 AND it_item IS NOT INITIAL.
       lv_line += 1.
       APPEND VALUE #( glaccountlineitem      = CONV ty_line_no( lv_line )
@@ -251,8 +289,13 @@ CLASS zcl_zare002_journal_entry IMPLEMENTATION.
                     ) TO lt_ar_item.
     ENDIF.
 
-    " reference = payment_document_no ไว้หาเลขเอกสารหลัง commit
-    " header text = request_id
+    " header ของเอกสาร
+    " doc type = DS
+    " business transaction type = RFPI (ของเอกสารรับชำระ)
+    " document date = posting date
+    " tax determination date = posting date (บังคับใส่เพราะ company code เปิด time-dependent tax)
+    " reference = payment_document_no (ไว้หาเลขเอกสารกลับหลัง commit (late numbering))
+    " header text = request_id ของ SBPA (ไว้ไล่ย้อนว่ามาจาก request ไหน)
     rt_entry = VALUE #(
       ( %cid   = |{ gc_cid_prefix }{ is_payment-payment_document_no }|
         %param = VALUE #( companycode                  = is_payment-company_code
@@ -277,14 +320,17 @@ CLASS zcl_zare002_journal_entry IMPLEMENTATION.
 
       APPEND |Header {  ls_entry-%param-companycode } { ls_entry-%param-accountingdocumenttype } | &&
              |{ ls_entry-%param-businesstransactiontype } post { ls_entry-%param-postingdate } | &&
-             |ref { ls_entry-%param-documentreferenceid } text { ls_entry-%param-accountingdocumentheadertext }| TO rt_text.
+             |ref { ls_entry-%param-documentreferenceid } text { ls_entry-%param-accountingdocumentheadertext }|
+          TO rt_text.
 
       LOOP AT ls_entry-%param-_glitems INTO DATA(ls_gl).
         DATA(ls_gl_amount) = VALUE #( ls_gl-_currencyamount[ 1 ] OPTIONAL ).
         lv_total += ls_gl_amount-journalentryitemamount.
         APPEND |  GL [{ ls_gl-glaccountlineitem }] { ls_gl-glaccount } { ls_gl_amount-journalentryitemamount } | &&
                |{ ls_gl_amount-currency } cc { ls_gl-costcenter } tax { ls_gl-taxcode } | &&
-               |assign { ls_gl-assignmentreference } value { ls_gl-valuedate }| TO rt_text.
+               |assign { ls_gl-assignmentreference } value { ls_gl-valuedate }| &&
+               |bank { ls_gl-housebank }/{ ls_gl-housebankaccount } bplace { ls_gl-businessplace }|
+            TO rt_text.
       ENDLOOP.
 
       LOOP AT ls_entry-%param-_aritems INTO DATA(ls_ar).
@@ -293,7 +339,8 @@ CLASS zcl_zare002_journal_entry IMPLEMENTATION.
         APPEND |  AR [{ ls_ar-glaccountlineitem }] { ls_ar-customer } spgl { ls_ar-specialglcode } | &&
                |{ ls_ar_amount-journalentryitemamount } { ls_ar_amount-currency } | &&
                |assign { ls_ar-assignmentreference } text { ls_ar-documentitemtext } | &&
-               |baseline { ls_ar-duecalculationbasedate }| TO rt_text.
+               |baseline { ls_ar-duecalculationbasedate }|
+             TO rt_text.
       ENDLOOP.
 
       APPEND |  balance { lv_total } (must be 0)| TO rt_text.

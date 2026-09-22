@@ -17,7 +17,7 @@ CLASS zcl_zare002_util DEFINITION
     CLASS-DATA gt_payment_document_no TYPE tt_payment_document_no.
 
     "! abap_true = สร้าง payload แล้วพิมพ์ ไม่ post · abap_false = post จริง (ได้เอกสารใหม่ทุกครั้งที่ F9)
-    CONSTANTS gc_submit_simulate TYPE abap_bool VALUE abap_false.
+    CONSTANTS gc_submit_simulate TYPE abap_bool VALUE abap_true.
 
     "! reset ทุกใบใน gt_payment_document_no ให้ Reject ซ้ำได้ — ล้าง reject_reason ทุก item · status → N · ล้างผล SFDC · ทิ้ง draft
     METHODS reset_payment
@@ -42,7 +42,7 @@ CLASS zcl_zare002_util IMPLEMENTATION.
     " เปิด comment บรรทัดที่ต้องการก่อน F9 — ค่าเริ่มต้นไม่ทำอะไร กันรันพลาด
 *    reset_payment( out ).
 *    test_sfdc_bearer( out ).
-    submit_poc( out ).
+*    submit_poc( out ).
 
   ENDMETHOD.
 
