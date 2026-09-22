@@ -29,8 +29,23 @@ API #3  ABAP · inbound  ◀──clearing document / error──  BOT เรี
 | 3.4 หา partial เก่าด้วย InvoiceReference | เป็นงานของ BOT บนหน้าจอ — ABAP แค่ส่งข้อมูลให้พอ |
 | bgPF / SOAP / SAP_COM_0002 self-call | **ไม่ต้องมี** |
 
-ยังเปิด: 3.5 deferred tax (BOT clear ได้ถ้ามี แต่ต้องรู้ว่าต้องรวม G/L deferred ไหม) · 3.6 field/status ใน ZARI002 ·
-3.7 ค่าคงที่ · หลาย customer/ใบ · contract JSON ของ API #1 #2 #3 · พฤติกรรมเมื่อ API #2 เรียกไม่ได้ (BOT ล่ม)
+### คำตอบเพิ่มเติม 2026-09-22 (หลังประชุม)
+
+| เรื่อง | คำตอบ |
+|---|---|
+| UI + table | เพิ่ม 2 คอลัมน์ **Payment Doc** · **Clearing Doc** (header) + column เก็บ **submit message** — ขอ ZARI002 |
+| ปุ่ม Submit ตัดสินจาก 2 คอลัมน์ ไม่ใช่ status | ไม่มีทั้งคู่ → post + clearing · มีแค่ Payment Doc → clearing (call BOT) อย่างเดียว · มีครบ → ปฏิเสธ · **ไม่เพิ่ม `P` ใน domain** |
+| partial | field `partial_amount` = `X` → post อย่างเดียว · ใบ final (ไม่มี X) → post + clearing (n payment : 1 clearing) · **sprint อื่น ยังไม่ทำ** |
+| clearing ต่อ payment | ปกติ 1 : 1 |
+| ค่าคงที่ | constant ใน class ก่อน |
+| deferred tax | ไม่มีใน spec นี้ |
+| หลาย customer/ใบ | ยังเกิดไม่ได้ — default 1 customer |
+| ปีบัญชีของ 2 doc | ไม่เก็บ — ใช้ปีของ `posting_date` (assumption FY = ปีปฏิทิน) |
+
+**ขั้นถัดไปที่ผู้ใช้สั่ง**: POC class post payment ตามเอกสารตัวอย่างในระบบก่อน (พิสูจน์ว่า API post โครงตาม spec ได้จริง —
+fees + cost center · rounding · SpGL Z + baseline date) ก่อนออกแบบ API #1–#3 · SQL export อยู่ §6
+
+ยังเปิด: contract JSON ของ API #1 #2 #3 · พฤติกรรมเมื่อ API #2 เรียกไม่ได้ (BOT ล่ม) — ใบค้างที่ "มี Payment Doc" กดซ้ำได้ตามกฎข้างบน
 
 ---
 
@@ -175,3 +190,22 @@ R7 "จัดเก็บ Error Message ลง ZTABLE" · header มี `salesfo
 7. ข้อความ error ของ Cheque (5.2.6 ข้อ 4) และรูปแบบ popup ผล — ทีม Fiori ต้องการ message แบบไหนจาก backend?
 8. หลาย customer ในใบเดียว: 005 ใช้ customer ไหน?
 9. ค่าคงที่ (3.7) ไว้ที่ไหน?
+
+---
+
+## 6. SQL export เอกสารตัวอย่าง (2026-09-22)
+
+รูปแบบสำหรับ **ADT SQL Console** (Data Preview → SQL Console) — ถ้าจะวางใน console class ให้เติม `INTO TABLE @DATA(lt_x).`
+แทนค่า `<CC>` `<DOC>` `<FY>` ก่อนรัน · เอกสารตัวอย่างควรเป็นใบที่ post จาก *Post Incoming Payments* และมีบรรทัดครบที่สุด
+(bank · fees · customer · rounding · advance SpGL Z) — ถ้าไม่มีใบเดียวครบ ส่งหลายใบ
+
+| # | ดึงอะไร | View |
+|---|---|---|
+| Q1 | header | `I_JournalEntry` |
+| Q2 | บรรทัด entry view (สิ่งที่ต้องส่งเข้า API) | `I_OperationalAcctgDocItem` |
+| Q3 | ทุก field ของบรรทัด (หา baseline date / business place / WHT / planning level) | `I_OperationalAcctgDocItem` `SELECT *` |
+| Q4 | G/L view รวมบรรทัด splitting (ไว้เทียบหลัง post) | `I_JournalEntryItem` |
+| Q5 | G/L master ของบัญชีที่ spec ใช้ (tax category — ถ้า `*` ต้องใส่ tax code) | `I_GLAccountInCompanyCode` |
+| Q6 | WHT type/code ของ customer (ต้องส่ง `_WithHoldingTaxItems`) | `I_CustomerWithholdingTax` (เช็คว่า released) |
+| Q7 | SpGL Z open item ของ customer (เช็คยอดก่อน post advance ลบ) | `I_OperationalAcctgDocItem` |
+| Q8 | invoice ที่ payment ตัวอย่างจ่าย (ไว้ให้ BOT/clearing เทียบ) | `I_OperationalAcctgDocItem` |
