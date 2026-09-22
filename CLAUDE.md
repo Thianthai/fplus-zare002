@@ -103,6 +103,9 @@
 - **RAP derived type (`TYPE STRUCTURE FOR READ RESULT ...`) ใช้ตรง ๆ ใน method signature ไม่ได้**
   parser จะกิน token ถัดไป (`RETURNING`, `EXPORTING`) เข้ามาเป็นส่วนหนึ่งของ type
   → ประกาศเป็น `TYPES:` alias ก่อนเสมอ แล้วค่อยอ้าง alias ใน signature
+- **`TYPE TABLE FOR ACTION IMPORT bo~action` ต่อ path component ไม่ได้** (เจอจริง 2026-09-22:
+  `does not have an action "POST-%PARAM-_GLITEMS-..."`) → ประกาศตัวเต็มเป็น `tt_entry` ก่อน แล้วเจาะด้วย
+  `ty_entry TYPE LINE OF tt_entry` · `tt_gl_item TYPE ty_entry-%param-_glitems` · `LINE OF` ต่อไปทีละชั้น
 - **RAP unit test ต้อง `ROLLBACK ENTITIES` ใน `setup`** — `COMMIT ENTITIES` ที่ fail
   ไม่ทิ้งข้อมูลใน transactional buffer ของค้างจะถูก save ไปพร้อม test ถัดไป
 - **`FAILED` / `REPORTED` ต้องระบุ `LATE` ใน handler ของ save phase**
