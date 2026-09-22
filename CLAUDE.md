@@ -106,6 +106,9 @@
 - **`TYPE TABLE FOR ACTION IMPORT bo~action` ต่อ path component ไม่ได้** (เจอจริง 2026-09-22:
   `does not have an action "POST-%PARAM-_GLITEMS-..."`) → ประกาศตัวเต็มเป็น `tt_entry` ก่อน แล้วเจาะด้วย
   `ty_entry TYPE LINE OF tt_entry` · `tt_gl_item TYPE ty_entry-%param-_glitems` · `LINE OF` ต่อไปทีละชั้น
+- **inline `DATA(x)` ใน `IMPORTING` ใช้ได้เฉพาะ method call แบบ standalone statement** — ถ้า call อยู่ใน
+  expression (ขวาของ `DATA(y) =` · ใน `IF` · เป็น argument) ได้ `inline declaration is not possible in this
+  position` → ประกาศตัวแปรก่อน (เจอจริง 2026-09-22 · 2 ที่) · เช่นเดียวกับ `meth( )[ 1 ]-%param` ให้แยก 2 statement
 - **RAP unit test ต้อง `ROLLBACK ENTITIES` ใน `setup`** — `COMMIT ENTITIES` ที่ fail
   ไม่ทิ้งข้อมูลใน transactional buffer ของค้างจะถูก save ไปพร้อม test ถัดไป
 - **`FAILED` / `REPORTED` ต้องระบุ `LATE` ใน handler ของ save phase**
