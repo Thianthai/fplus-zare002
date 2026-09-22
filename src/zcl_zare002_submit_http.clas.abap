@@ -44,7 +44,17 @@ CLASS zcl_zare002_submit_http DEFINITION
       "! response เคส HTTP status 400
       BEGIN OF ty_error_response,
         error TYPE string,
-      END OF ty_error_response.
+      END OF ty_error_response,
+
+      "! ตัวอย่างที่ GET ตอบกลับ ไว้ให้ caller ดูโครงสร้างโดยไม่ต้องเปิดเอกสาร
+      BEGIN OF ty_usage,
+        service  TYPE string,
+        method   TYPE string,
+        request  TYPE ty_request,
+        response TYPE ty_response,
+        outcome  TYPE tt_uuid_text,
+        note     TYPE tt_uuid_text,
+      END OF ty_usage.
 
     CONSTANTS:
       "! จำนวนใบสูงสุดต่อ 1 request — กัน timeout ฝั่ง browser (post ต่อใบ ~1 วินาที)
@@ -65,7 +75,9 @@ CLASS zcl_zare002_submit_http DEFINITION
 
   PRIVATE SECTION.
 
-    "! GET มีหน้าที่เดียวคือให้เรียกเช็คว่า service ทำงานอยู่
+    "! GET = ตัวอย่าง request และ response ไว้ให้ caller ดูโครงสร้าง
+    "! ใช้เช็คว่า service ทำงานอยู่ได้ด้วย
+    "! ไม่แตะข้อมูลใด ๆ
     METHODS handle_get
       CHANGING co_response TYPE REF TO if_web_http_response.
 
@@ -116,9 +128,46 @@ CLASS zcl_zare002_submit_http IMPLEMENTATION.
 
   METHOD handle_get.
 
+    " ตัวอย่างล้วน ไม่ได้อ่านจาก DB
+    " PaymentUuid ใส่ทั้งแบบ 36 ตัวมีขีด และ 32 ตัวไม่มีขีด เพื่อบอกว่ารับได้ทั้งสองแบบ
+    DATA(ls_usage) = VALUE ty_usage(
+      service = `ZARE002_SUBMIT`
+      method  = `POST /sap/bc/http/sap/ZARE002_SUBMIT`
+
+      request = VALUE #( payments = VALUE #( ( `FA163E19-5F2E-1FE1-AAE6-A0E51561A3EF` )
+                                             ( `FA163E195F2E1FE1AAE6A0E51561A3F0` ) ) )
+
+      response = VALUE #(
+        success = 1
+        error   = 1
+        results = VALUE #(
+          ( payment_uuid        = `FA163E19-5F2E-1FE1-AAE6-A0E51561A3EF`
+            payment_document_no = `1000000002`
+            outcome             = `P`
+            accounting_document = `3200000010`
+            message             = `Payment 1000000002 posted: document 3200000010` )
+          ( payment_uuid        = `FA163E19-5F2E-1FE1-AAE6-A0E51561A3F0`
+            payment_document_no = `1000000003`
+            outcome             = `E`
+            accounting_document = ``
+            message             = `Payment 1000000003: cheque must be posted manually` ) ) )
+
+      outcome = VALUE #( ( `P = post สำเร็จรอบนี้` )
+                         ( `A = เคย post ไว้แล้ว รอ clearing` )
+                         ( `E = ไม่ผ่าน ดูเหตุผลที่ Message` )
+                         ( |Success = P + A, Error = E| ) )
+
+      note = VALUE #( ( |สูงสุด { gc_max_payments } ใบต่อ 1 request, PaymentUuid ซ้ำถูกตัดอัตโนมัติ| )
+                      ( `ต่อใบใช้เวลาประมาณ 1 วินาที ตั้ง timeout ฝั่ง client ให้พอ` )
+                      ( `ใบที่ไม่ผ่านไม่กระทบใบอื่น body ถูกต้องจะได้ 200 เสมอ` )
+                      ( `body ผิดรูปแบบได้ 400 พร้อม {"Error":"..."}` )
+                      ( `ไม่ต้องใช้ CSRF token` ) ) ).
+
     reply( EXPORTING iv_status   = 200
                      iv_reason   = 'OK'
-                     iv_json     = `{"Status":"ok"}`
+                     iv_json     = xco_cp_json=>data->from_abap( ls_usage
+                                     )->apply( VALUE #( ( xco_cp_json=>transformation->underscore_to_pascal_case ) )
+                                     )->to_string( )
            CHANGING  co_response = co_response ).
 
   ENDMETHOD.
