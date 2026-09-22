@@ -57,6 +57,13 @@ API #3  ABAP · inbound  ◀──clearing document / error──  BOT เรี
 **คำตอบฟังก์ชันนอล 2026-09-22**: doc type **`DS`** · rounding **ไม่ใส่ tax code** ← ⚠️ ขัดกับ master (`TaxCodeIsRequired X`)
 ต้องแก้ master หรือกำหนด code — รอดูจากเอกสารตัวอย่าง 5 ขาที่ฟังก์ชันนอลจะส่งมา
 
+**ฟังก์ชันนอล 2026-09-22 (รอบ 2 · จากหน้าจอ Clear Incoming Payments)**:
+- bank incoming G/L ที่ SBPA จะส่ง: `11011211` SCB 8303 · `11011214` SCB 7603 · `11011212` TTB 0976 · `11011213` KBK 5698 · `11011215` KBK 9737
+  · **เฉพาะ `11011211` บังคับ House Bank `SCB01` / Account `SA001`** (fix ค่า) · ตัวอื่นไม่ใส่
+- bank charge `54030012`: **tax code `WP`** (non-taxable purchase 0%) + **business place `0000`**
+- rounding `59090001`: **ไม่ใส่ tax code** (หน้าจอผ่านโดยว่าง แม้ master บอก required) · business place `0000`
+- ตัวอย่างบนจอ: rounding Cr 1.00 = `rounding_diff` บวก → ตรงสูตร `−rounding_diff`
+
 **POC = method `post_payment_poc` ใน `ZCL_ZARE002_UTIL`** (ผู้ใช้เลือก 2026-09-22) · รอเอกสารตัวอย่าง 5 ขาก่อนเขียน
 
 **ขั้นถัดไปที่ผู้ใช้สั่ง**: POC class post payment ตามเอกสารตัวอย่างในระบบก่อน (พิสูจน์ว่า API post โครงตาม spec ได้จริง —
