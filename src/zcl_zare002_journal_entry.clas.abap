@@ -25,6 +25,7 @@ CLASS zcl_zare002_journal_entry DEFINITION
       END OF ty_payment,
 
       "! item ของ payment — 1 item = 1 บรรทัดลูกหนี้
+      "! billing_document ไม่ได้ใช้ในเอกสารบัญชี เก็บไว้ส่งให้ BOT ตอน clearing (8B.5)
       BEGIN OF ty_item,
         customer_code       TYPE ztar_i002_item-customer_code,
         accounting_document TYPE ztar_i002_item-accounting_document,
@@ -143,14 +144,12 @@ CLASS zcl_zare002_journal_entry DEFINITION
       "! ยอด 1 บรรทัดใน _CurrencyAmount (โครงเดียวกันทุก node)
       tt_currency_amount TYPE ty_gl_item-_currencyamount,
 
-      "! เลขบรรทัด
-      ty_line_no         TYPE c LENGTH 6,
+      "! เลขบรรทัด (docln6)
+      "! ต้องเป็นตัวเลขเติมศูนย์ 000001 ไม่ใช่ char ชิดขวาที่มีช่องว่างนำหน้า
+      ty_line_no         TYPE n LENGTH 6,
 
       "! assignment
-      ty_assignment      TYPE c LENGTH 18,
-
-      "! item text
-      ty_item_text       TYPE c LENGTH 50.
+      ty_assignment      TYPE c LENGTH 18.
 
     "! รวบยอด 1 ตัวเป็น _CurrencyAmount
     CLASS-METHODS amount
@@ -194,12 +193,17 @@ CLASS zcl_zare002_journal_entry IMPLEMENTATION.
     " assignment ของบรรทัด G/L = posting date
     DATA(lv_assignment_date) = CONV ty_assignment( is_payment-posting_date ).
 
+    " เลขบรรทัดต้องไล่ให้จบฝั่ง G/L ก่อนแล้วค่อยต่อฝั่ง AR
+    " เพื่อให้เหมือนเอกสารตัวอย่าง 3500000001 ที่ post จากหน้าจอ
+    " bank 001 / bank charge 002 / rounding 003 แล้วจึง advance 004 / ลูกหนี้ 005
+
     " ขาบัญชี 001 G/L Bank Incoming
     " บันทึกบัญชีเงินฝากธนาคารที่รับเงินเข้า
     " payment_amount = ยอดสุทธิที่เข้าบัญชีจริง (หักค่าธรรมเนียมแล้ว) = เดบิตเสมอ
     " G/L มาจาก header ของ payment ที่ SBPA ส่งมา (มี 5 บัญชีตามธนาคาร)
     " assignment = posting date
     " value date = posting date (วันที่เงินเข้าบัญชีจริง)
+    " business place = 0000 ใส่ทุกบรรทัดตามเอกสารตัวอย่าง
     " house bank / account ใส่เฉพาะ G/L ที่ระบบบังคับ ดูจาก derive_house_bank
     derive_house_bank( EXPORTING iv_gl_account         = is_payment-gl_account
                        IMPORTING ev_house_bank         = DATA(lv_house_bank)
@@ -208,6 +212,7 @@ CLASS zcl_zare002_journal_entry IMPLEMENTATION.
     lv_line += 1.
     APPEND VALUE #( glaccountlineitem   = CONV ty_line_no( lv_line )
                     glaccount           = is_payment-gl_account
+                    businessplace       = gc_business_place
                     assignmentreference = lv_assignment_date
                     valuedate           = is_payment-posting_date
                     housebank           = lv_house_bank
@@ -221,7 +226,7 @@ CLASS zcl_zare002_journal_entry IMPLEMENTATION.
     " fees = ส่วนที่ธนาคารหักไว้ ลูกค้าจ่ายเต็มแต่เงินเข้าบัญชีไม่เต็ม = เดบิตเสมอ
     " cost center = 2002010000 (ระบบ derive profit center 2000 ให้เอง)
     " tax code = WP (Non-taxable Purchase 0%)
-    " business place = 0000 บังคับที่บัญชีนี้
+    " business place = 0000
     IF is_payment-fees <> 0.
       lv_line += 1.
       APPEND VALUE #( glaccountlineitem   = CONV ty_line_no( lv_line )
@@ -235,28 +240,13 @@ CLASS zcl_zare002_journal_entry IMPLEMENTATION.
                     ) TO lt_gl_item.
     ENDIF.
 
-    " ขาบัญชี 003 G/L Account Receivable
-    " บันทึกล้างลูกหนี้ 1 บรรทัดต่อ 1 item
-    " amount_paid เป็นบวก (invoice) = เครดิต (ส่ง -amount_paid)
-    " amount_paid เป็นลบ (CN) = เดบิต (ส่ง -amount_paid)
-    " assignment = เลข invoice (ไว้ให้ BOT จับคู่ตอน clearing)
-    " text = billing document (ไว้ให้ BOT จับคู่ตอน clearing)
-    LOOP AT it_item INTO DATA(ls_item).
-      lv_line += 1.
-      APPEND VALUE #( glaccountlineitem   = CONV ty_line_no( lv_line )
-                      customer            = ls_item-customer_code
-                      assignmentreference = CONV ty_assignment( ls_item-accounting_document )
-                      documentitemtext    = CONV ty_item_text( ls_item-billing_document )
-                      _currencyamount     = amount( iv_currency = is_payment-currency
-                                                    iv_amount   = - ls_item-amount_paid )
-                    ) TO lt_ar_item.
-    ENDLOOP.
-
-    " ขาบัญชี 004 G/L Rounding Adjustment
+    " ขาบัญชี 003 G/L Rounding Adjustment
     " บันทึกส่วนต่างปัดเศษสตางค์ (ถ้ามี)
     " rounding_diff เป็นบวก = เครดิต (ส่ง -rounding_diff)
     " rounding_diff เป็นลบ = เดบิต (ส่ง -rounding_diff)
+    " business place = 0000
     " ไม่ใส่ tax code ได้ ถึงแม้ G/L master ตั้ง TaxCodeIsRequired ไว้
+    " เอกสารตัวอย่าง 3500000001 บรรทัด 003 ก็ไม่มี tax code
     IF is_payment-rounding_diff <> 0.
       lv_line += 1.
       APPEND VALUE #( glaccountlineitem   = CONV ty_line_no( lv_line )
@@ -269,12 +259,14 @@ CLASS zcl_zare002_journal_entry IMPLEMENTATION.
                     ) TO lt_gl_item.
     ENDIF.
 
-    " ขาบัญชี 005 Customer Special G/L
-    " บันทึกเงินรับล่วงหน้า (ถ้ามี) แยกจากบรรทัด 003 ด้วย Special G/L = Z
+    " ขาบัญชี 004 Customer Special G/L
+    " บันทึกเงินรับล่วงหน้า (ถ้ามี) แยกจากบรรทัดลูกหนี้ปกติด้วย Special G/L = Z
     " advance_payment เป็นบวก = รับเงินล่วงหน้าเพิ่ม = เครดิต (ส่ง -advance_payment)
     " advance_payment เป็นลบ = ดึงของเก่ามาใช้หักกับ invoice = เดบิต (ส่ง -advance_payment)
     " เคสติดลบต้องมียอดค้างพอดีกับที่ขอใช้ ดู validate ข้อ 5 ของ ZCL_ZARE002_SUBMIT
     " baseline date = posting date + 30 วัน (ใช้ตั้งวันครบกำหนดของยอดล่วงหน้า)
+    " business place = 0000
+    " ไม่ส่ง G/L account และ tax code ระบบ derive ให้เองจาก config ของ Special G/L
     " customer ตัวแรกพอ เพราะ 1 payment มี customer เดียว
     " ถ้าไม่มี item = ไม่รู้ว่า customer ไหน ให้ข้ามบรรทัดนี้ไปเลย
     IF is_payment-advance_payment <> 0 AND it_item IS NOT INITIAL.
@@ -282,12 +274,29 @@ CLASS zcl_zare002_journal_entry IMPLEMENTATION.
       APPEND VALUE #( glaccountlineitem      = CONV ty_line_no( lv_line )
                       customer               = it_item[ 1 ]-customer_code
                       specialglcode          = gc_special_gl_code
+                      businessplace          = gc_business_place
                       duecalculationbasedate = is_payment-posting_date + gc_baseline_days
-                      assignmentreference    = lv_assignment_date
                       _currencyamount        = amount( iv_currency = is_payment-currency
                                                        iv_amount   = - is_payment-advance_payment )
                     ) TO lt_ar_item.
     ENDIF.
+
+    " ขาบัญชี 005 G/L Account Receivable
+    " บันทึกล้างลูกหนี้ 1 บรรทัดต่อ 1 item
+    " amount_paid เป็นบวก (invoice) = เครดิต (ส่ง -amount_paid)
+    " amount_paid เป็นลบ (CN) = เดบิต (ส่ง -amount_paid)
+    " business place = 0000
+    " ไม่ใส่ assignment และ item text ตามเอกสารตัวอย่าง (บรรทัด 005 ว่างทั้งคู่)
+    " BOT จะจับคู่ตอน clearing จาก customer และจำนวนเงินแทน
+    LOOP AT it_item INTO DATA(ls_item).
+      lv_line += 1.
+      APPEND VALUE #( glaccountlineitem = CONV ty_line_no( lv_line )
+                      customer          = ls_item-customer_code
+                      businessplace     = gc_business_place
+                      _currencyamount   = amount( iv_currency = is_payment-currency
+                                                  iv_amount   = - ls_item-amount_paid )
+                    ) TO lt_ar_item.
+    ENDLOOP.
 
     " header ของเอกสาร
     " doc type = DS
