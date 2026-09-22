@@ -178,6 +178,9 @@
   · `"!` ใช้ได้เฉพาะหน้า declaration ใน body ใช้ `"` ธรรมดา
   · **`METHODS … REDEFINITION` (เช่น `save_modified` / `cleanup_finalize` ใน `lsc_Item`) ใส่ `"!` ไม่ได้**
   — warning `ABAP Doc comment is in the wrong position` · ใช้ `"` ธรรมดา
+- **Comment ใน ABAP หนึ่งบรรทัดหนึ่งเรื่อง** (ผู้ใช้สั่ง 2026-09-22 ใช้ทุก session)
+  ห้ามใช้ `·` คั่นความในบรรทัดเดียว ให้แตกบรรทัดใหม่อธิบายแทน · ใช้ `->` ไม่ใช่ `→`
+  เช่น เคส amount บวก/ลบ แยกคนละบรรทัด · markdown ยังใช้ `·` `→` ได้ตามเดิม
 - **ห้ามใส่ emoji / สัญลักษณ์ (⚠️ ฯลฯ) ใน comment ของ ABAP object** (ผู้ใช้สั่ง 2026-09-20) —
   ใช้คำแทน เช่น "utility ทดสอบ" · emoji ใช้ได้เฉพาะในเอกสาร markdown
 - utility ทดสอบทั้งหมดรวมใน `ZCL_ZARE002_UTIL` ตัวเดียว (method ต่อ 1 งาน · main ปิดไว้ค่าเริ่มต้น)
