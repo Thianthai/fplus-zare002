@@ -77,7 +77,7 @@ CLASS zcl_zare002_submit_http DEFINITION
 
     "! GET = ตัวอย่าง request และ response ไว้ให้ caller ดูโครงสร้าง
     "! ใช้เช็คว่า service ทำงานอยู่ได้ด้วย
-    "! ไม่แตะข้อมูลใด ๆ
+    "! ไม่แตะข้อมูล
     METHODS handle_get
       CHANGING co_response TYPE REF TO if_web_http_response.
 
