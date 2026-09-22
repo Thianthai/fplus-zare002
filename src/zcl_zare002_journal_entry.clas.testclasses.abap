@@ -74,6 +74,7 @@ CLASS ltc_journal_entry IMPLEMENTATION.
     cl_abap_unit_assert=>assert_equals( act = ls_bank-glaccountlineitem exp = '000001' ).
     cl_abap_unit_assert=>assert_equals( act = ls_bank-businessplace     exp = '0000' ).
     cl_abap_unit_assert=>assert_equals( act = ls_bank-_currencyamount[ 1 ]-journalentryitemamount exp = '10779.50' ).
+    cl_abap_unit_assert=>assert_initial( ls_bank-assignmentreference ).
 
     " G/L 002 bank charge เดบิต 20.00
     DATA(ls_charge) = ls_param-_glitems[ 2 ].
@@ -83,6 +84,7 @@ CLASS ltc_journal_entry IMPLEMENTATION.
     cl_abap_unit_assert=>assert_equals( act = ls_charge-taxcode           exp = 'WP' ).
     cl_abap_unit_assert=>assert_equals( act = ls_charge-businessplace     exp = '0000' ).
     cl_abap_unit_assert=>assert_equals( act = ls_charge-_currencyamount[ 1 ]-journalentryitemamount exp = '20.00' ).
+    cl_abap_unit_assert=>assert_initial( ls_charge-assignmentreference ).
 
     " G/L 003 rounding
     " rounding_diff ของ sample เป็น -0.50 (ติดลบ) จึงต้องออกมาเป็นเดบิต +0.50
@@ -93,6 +95,7 @@ CLASS ltc_journal_entry IMPLEMENTATION.
     cl_abap_unit_assert=>assert_equals( act = ls_rounding-businessplace     exp = '0000' ).
     cl_abap_unit_assert=>assert_initial( ls_rounding-taxcode ).
     cl_abap_unit_assert=>assert_equals( act = ls_rounding-_currencyamount[ 1 ]-journalentryitemamount exp = '0.50' ).
+    cl_abap_unit_assert=>assert_initial( ls_rounding-assignmentreference ).
 
     " AR 004 advance
     " advance_payment ของ sample เป็น +100 (รับเพิ่ม) จึงต้องออกมาเป็นเครดิต -100

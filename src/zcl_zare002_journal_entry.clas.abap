@@ -72,6 +72,13 @@ CLASS zcl_zare002_journal_entry DEFINITION
 
       "! bank charge ต้องมี tax code 0% + business place
       gc_tax_code_bank_charge TYPE c LENGTH 2  VALUE 'WP',
+
+      "! account key ของภาษีซื้อ ใช้คู่กับ tax code WP ในบรรทัด tax statement
+      gc_tax_account_key      TYPE c LENGTH 3  VALUE 'VST',
+
+      "! condition type ของภาษีซื้อ ต้องใส่คู่กับ account key ไม่งั้นได้ Error: KSCHL is empty
+      gc_tax_condition_type   TYPE c LENGTH 4  VALUE 'MWVS',
+
       gc_business_place       TYPE c LENGTH 4  VALUE '0000',
 
       "! G/L bank incoming บังคับระบุ house bank
@@ -141,20 +148,22 @@ CLASS zcl_zare002_journal_entry DEFINITION
       "! _ARItems ของ 1 เอกสาร
       tt_ar_item         TYPE ty_entry-%param-_aritems,
 
+      "! _TaxItems ของ 1 เอกสาร
+      tt_tax_item        TYPE ty_entry-%param-_taxitems,
+
       "! ยอด 1 บรรทัดใน _CurrencyAmount (โครงเดียวกันทุก node)
       tt_currency_amount TYPE ty_gl_item-_currencyamount,
 
       "! เลขบรรทัด (docln6)
       "! ต้องเป็นตัวเลขเติมศูนย์ 000001 ไม่ใช่ char ชิดขวาที่มีช่องว่างนำหน้า
-      ty_line_no         TYPE n LENGTH 6,
-
-      "! assignment
-      ty_assignment      TYPE c LENGTH 18.
+      ty_line_no         TYPE n LENGTH 6.
 
     "! รวบยอด 1 ตัวเป็น _CurrencyAmount
+    "! iv_tax_base ใส่เฉพาะบรรทัด tax statement
     CLASS-METHODS amount
       IMPORTING iv_currency      TYPE ztar_i002_pymt-currency
                 iv_amount        TYPE ztar_i002_pymt-payment_amount
+                iv_tax_base      TYPE ztar_i002_pymt-payment_amount OPTIONAL
       RETURNING VALUE(rt_amount) TYPE tt_currency_amount.
 
 ENDCLASS.
@@ -179,31 +188,30 @@ CLASS zcl_zare002_journal_entry IMPLEMENTATION.
 
     rt_amount = VALUE #( ( currencyrole           = gc_currency_role
                            currency               = iv_currency
-                           journalentryitemamount = iv_amount ) ).
+                           journalentryitemamount = iv_amount
+                           taxbaseamount          = iv_tax_base ) ).
 
   ENDMETHOD.
 
 
   METHOD build.
 
-    DATA lt_gl_item TYPE tt_gl_item.
-    DATA lt_ar_item TYPE tt_ar_item.
-    DATA lv_line    TYPE i.
-
-    " assignment ของบรรทัด G/L = posting date
-    DATA(lv_assignment_date) = CONV ty_assignment( is_payment-posting_date ).
+    DATA lt_gl_item  TYPE tt_gl_item.
+    DATA lt_ar_item  TYPE tt_ar_item.
+    DATA lt_tax_item TYPE tt_tax_item.
+    DATA lv_line     TYPE i.
 
     " เลขบรรทัดต้องไล่ให้จบฝั่ง G/L ก่อนแล้วค่อยต่อฝั่ง AR
-    " เพื่อให้เหมือนเอกสารตัวอย่าง 3500000001 ที่ post จากหน้าจอ
     " bank 001 / bank charge 002 / rounding 003 แล้วจึง advance 004 / ลูกหนี้ 005
+    " ทุกบรรทัดไม่ส่ง assignment ระบบเติมจาก sort key ของแต่ละบัญชีเอง
 
     " ขาบัญชี 001 G/L Bank Incoming
     " บันทึกบัญชีเงินฝากธนาคารที่รับเงินเข้า
     " payment_amount = ยอดสุทธิที่เข้าบัญชีจริง (หักค่าธรรมเนียมแล้ว) = เดบิตเสมอ
     " G/L มาจาก header ของ payment ที่ SBPA ส่งมา (มี 5 บัญชีตามธนาคาร)
-    " assignment = posting date
+    " ไม่ส่ง assignment ระบบเติมจาก sort key ของบัญชีเอง
     " value date = posting date (วันที่เงินเข้าบัญชีจริง)
-    " business place = 0000 ใส่ทุกบรรทัดตามเอกสารตัวอย่าง
+    " business place = 0000 ใส่ทุกบรรทัด
     " house bank / account ใส่เฉพาะ G/L ที่ระบบบังคับ ดูจาก derive_house_bank
     derive_house_bank( EXPORTING iv_gl_account         = is_payment-gl_account
                        IMPORTING ev_house_bank         = DATA(lv_house_bank)
@@ -213,7 +221,6 @@ CLASS zcl_zare002_journal_entry IMPLEMENTATION.
     APPEND VALUE #( glaccountlineitem   = CONV ty_line_no( lv_line )
                     glaccount           = is_payment-gl_account
                     businessplace       = gc_business_place
-                    assignmentreference = lv_assignment_date
                     valuedate           = is_payment-posting_date
                     housebank           = lv_house_bank
                     housebankaccount    = lv_house_bank_account
@@ -227,6 +234,7 @@ CLASS zcl_zare002_journal_entry IMPLEMENTATION.
     " cost center = 2002010000 (ระบบ derive profit center 2000 ให้เอง)
     " tax code = WP (Non-taxable Purchase 0%)
     " business place = 0000
+    " ไม่ส่ง assignment ระบบเติมจาก sort key ของบัญชีเอง
     IF is_payment-fees <> 0.
       lv_line += 1.
       APPEND VALUE #( glaccountlineitem   = CONV ty_line_no( lv_line )
@@ -234,7 +242,6 @@ CLASS zcl_zare002_journal_entry IMPLEMENTATION.
                       costcenter          = gc_cost_center
                       taxcode             = gc_tax_code_bank_charge
                       businessplace       = gc_business_place
-                      assignmentreference = lv_assignment_date
                       _currencyamount     = amount( iv_currency = is_payment-currency
                                                     iv_amount   = is_payment-fees )
                     ) TO lt_gl_item.
@@ -245,15 +252,14 @@ CLASS zcl_zare002_journal_entry IMPLEMENTATION.
     " rounding_diff เป็นบวก = เครดิต (ส่ง -rounding_diff)
     " rounding_diff เป็นลบ = เดบิต (ส่ง -rounding_diff)
     " business place = 0000
+    " ไม่ส่ง assignment ระบบเติมจาก sort key ของบัญชีเอง
     " ไม่ใส่ tax code ได้ ถึงแม้ G/L master ตั้ง TaxCodeIsRequired ไว้
-    " เอกสารตัวอย่าง 3500000001 บรรทัด 003 ก็ไม่มี tax code
     IF is_payment-rounding_diff <> 0.
       lv_line += 1.
       APPEND VALUE #( glaccountlineitem   = CONV ty_line_no( lv_line )
                       glaccount           = gc_gl_rounding
                       costcenter          = gc_cost_center
                       businessplace       = gc_business_place
-                      assignmentreference = lv_assignment_date
                       _currencyamount     = amount( iv_currency = is_payment-currency
                                                     iv_amount   = - is_payment-rounding_diff )
                     ) TO lt_gl_item.
@@ -286,7 +292,7 @@ CLASS zcl_zare002_journal_entry IMPLEMENTATION.
     " amount_paid เป็นบวก (invoice) = เครดิต (ส่ง -amount_paid)
     " amount_paid เป็นลบ (CN) = เดบิต (ส่ง -amount_paid)
     " business place = 0000
-    " ไม่ใส่ assignment และ item text ตามเอกสารตัวอย่าง (บรรทัด 005 ว่างทั้งคู่)
+    " ไม่ใส่ assignment และ item text
     " BOT จะจับคู่ตอน clearing จาก customer และจำนวนเงินแทน
     LOOP AT it_item INTO DATA(ls_item).
       lv_line += 1.
@@ -297,6 +303,25 @@ CLASS zcl_zare002_journal_entry IMPLEMENTATION.
                                                   iv_amount   = - ls_item-amount_paid )
                     ) TO lt_ar_item.
     ENDLOOP.
+
+    " ขาบัญชี 006 tax statement ของขาบัญชี 002 G/L Bank Charge
+    " FI ต้องการ tax statement ทุกครั้งที่บรรทัด G/L มี tax code ถึงอัตราจะเป็น 0 ก็ตาม
+    " หน้าจอคำนวณและสร้างให้เอง แต่ API ไม่สร้างให้ ต้องส่งมาเอง
+    " ไม่งั้นได้ Error: Tax statement item missing for tax code WP
+    " ยอดภาษี = 0 เพราะ WP เป็น 0 เปอร์เซ็นต์
+    " ฐานภาษี = ยอดค่าธรรมเนียม
+    " ไม่ระบุ G/L account ระบบ derive จาก tax code กับ account key เอง
+    IF is_payment-fees <> 0.
+      lv_line += 1.
+      APPEND VALUE #( glaccountlineitem     = CONV ty_line_no( lv_line )
+                      taxcode               = gc_tax_code_bank_charge
+                      taxitemclassification = gc_tax_account_key
+                      conditiontype         = gc_tax_condition_type
+                      _currencyamount       = amount( iv_currency = is_payment-currency
+                                                      iv_amount   = 0
+                                                      iv_tax_base = is_payment-fees )
+                    ) TO lt_tax_item.
+    ENDIF.
 
     " header ของเอกสาร
     " doc type = DS
@@ -317,7 +342,8 @@ CLASS zcl_zare002_journal_entry IMPLEMENTATION.
                           accountingdocumentheadertext = is_payment-request_id
                           createdbyuser                = cl_abap_context_info=>get_user_technical_name( )
                           _glitems                     = lt_gl_item
-                          _aritems                     = lt_ar_item ) ) ).
+                          _aritems                     = lt_ar_item
+                          _taxitems                    = lt_tax_item ) ) ).
 
   ENDMETHOD.
 
@@ -350,6 +376,16 @@ CLASS zcl_zare002_journal_entry IMPLEMENTATION.
                |bplace { ls_ar-businessplace } | &&
                |assign { ls_ar-assignmentreference } text { ls_ar-documentitemtext } | &&
                |baseline { ls_ar-duecalculationbasedate }|
+            TO rt_text.
+      ENDLOOP.
+
+      LOOP AT ls_entry-%param-_taxitems INTO DATA(ls_tax).
+        DATA(ls_tax_amount) = VALUE #( ls_tax-_currencyamount[ 1 ] OPTIONAL ).
+        lv_total += ls_tax_amount-journalentryitemamount.
+        APPEND |  TAX [{ ls_tax-glaccountlineitem }] tax { ls_tax-taxcode } | &&
+               |key { ls_tax-taxitemclassification } cond { ls_tax-conditiontype } | &&
+               |{ ls_tax_amount-journalentryitemamount } { ls_tax_amount-currency } | &&
+               |base { ls_tax_amount-taxbaseamount }|
             TO rt_text.
       ENDLOOP.
 
