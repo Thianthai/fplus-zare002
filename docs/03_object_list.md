@@ -93,6 +93,11 @@ object type จริงบน tenant นี้ (ปิด OQ-11) และช�
 | ~~`ZARE002_REJECT_RESULT_REST`~~ | Outbound Service (SCO3) — เลิกใช้ 8C.8 · **ลบแล้ว 8C.10** | — | 8A | 🗑️ `651ec78` (2026-09-21) |
 | ~~`ZCS_REJECT_RESULT`~~ | Communication Scenario outbound (SCO1) — OAuth 2.0 · เลิกใช้ 8C.8 (token cache ค้าง OQ-34) · **ลบแล้ว 8C.10** | — | 8A | 🗑️ `651ec78` (2026-09-21) |
 | ~~Communication Arrangement `ZCA_REJECT_RESULT`~~ | Fiori config — OAuth 2.0 × `SFDC_DEV` · **ลบแล้ว 8C.10** · ทางออกไป SFDC ทั้งหมดตอนนี้คือ `ZCA_SFDC_TOKEN` (package `ZBCUTILITY`) | — ไม่ขึ้น git | 8A | 🗑️ 2026-09-21 |
+| `ZCL_ZARE002_JOURNAL_ENTRY` | Class — สร้าง + post journal entry ของ 1 payment ผ่าน `I_JournalEntryTP~Post` (EML) · `build`/`check_balance`/`describe`/`derive_house_bank` pure · `post` (มี `COMMIT ENTITIES` ห้ามเรียกใน RAP) · `find_document` | `src/zcl_zare002_journal_entry.clas.abap` | 8B | ✅ `2ed2145` · 5 test |
+| `ZCL_ZARE002_JOURNAL_ENTRY` testclasses | builder อย่างเดียว ไม่ post | `src/zcl_zare002_journal_entry.clas.testclasses.abap` | 8B | ✅ 5 test เขียว |
+| `ZCL_ZARE002_SUBMIT` | Class — Submit 1 payment: validate (101–107) → post → บันทึก `payment_accounting_document` + `submit_message` · 1 payment = 1 LUW | `src/zcl_zare002_submit.clas.abap` | 8B | ✅ `2ed2145` |
+| `ZCL_ZARE002_SUBMIT_HTTP` | Class — handler ของ API #1 (`if_http_service_extension`) · parse/build response static ทดสอบได้ | `src/zcl_zare002_submit_http.clas.abap` | 8B | ✅ `2ed2145` · 4 test |
+| `ZARE002_SUBMIT` | HTTP Service — `/sap/bc/http/sap/ZARE002_SUBMIT` · ผูกใน IAM `ZIAM_ZARE002_EXT` | `src/zare002_submit.http.xml` | 8B | ✅ `2ed2145` |
 | `ZCL_ZARE002_SFDC_RESULT` | Class — Composite API (25 subrequest/call) PATCH ผล payment ไป SFDC · `build_payload` / `parse_response` / `build_response_date` pure · `send` (client จาก `ZCL_UTILITY=>create_sfdc_client` · ping ย้ายไป `ZCL_UTILITY=>check_sfdc_connection`) | `src/zcl_zare002_sfdc_result.clas.abap` | 8A / 8C | ✅ token จาก `ZCL_UTILITY` ทุก call ผ่าน `ZCA_SFDC_TOKEN` + Bearer เอง · ping `/limits` · ชื่อ field จริง · batch id ตัด 15 (OQ-28) · 10 test เขียว |
 
 ## Action ที่ประกาศ
