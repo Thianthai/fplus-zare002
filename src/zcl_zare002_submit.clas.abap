@@ -25,7 +25,9 @@ CLASS zcl_zare002_submit DEFINITION
       "! ค่าใน payment_method ที่ต้อง post มือ (ZARI002 เก็บเป็นคำ)
       gc_method_cheque   TYPE ztar_i002_pymt-payment_method VALUE 'Cheque',
 
-      "! ตัด message จาก FI ก่อนใส่ &2 ของ message number 108 / submit_message
+      "! ความยาวสูงสุดของ message จาก FI ที่เก็บได้
+      "! แบ่งใส่ &2&3&4 ของ message number 108 ส่วนละ 50 ตัว
+      "! 150 + ข้อความนำหน้า "Payment <no>: " = ไม่เกิน 200 ตัวของ submit_message
       gc_message_max     TYPE i VALUE 150.
 
     TYPES:

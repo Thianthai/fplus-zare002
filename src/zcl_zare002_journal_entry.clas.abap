@@ -328,8 +328,8 @@ CLASS zcl_zare002_journal_entry IMPLEMENTATION.
         lv_total += ls_gl_amount-journalentryitemamount.
         APPEND |  GL [{ ls_gl-glaccountlineitem }] { ls_gl-glaccount } { ls_gl_amount-journalentryitemamount } | &&
                |{ ls_gl_amount-currency } cc { ls_gl-costcenter } tax { ls_gl-taxcode } | &&
-               |assign { ls_gl-assignmentreference } value { ls_gl-valuedate }| &&
-               |bank { ls_gl-housebank }/{ ls_gl-housebankaccount } bplace { ls_gl-businessplace }|
+               |bplace { ls_gl-businessplace } bank { ls_gl-housebank }/{ ls_gl-housebankaccount } | &&
+               |assign { ls_gl-assignmentreference } value { ls_gl-valuedate }|
             TO rt_text.
       ENDLOOP.
 
@@ -338,9 +338,10 @@ CLASS zcl_zare002_journal_entry IMPLEMENTATION.
         lv_total += ls_ar_amount-journalentryitemamount.
         APPEND |  AR [{ ls_ar-glaccountlineitem }] { ls_ar-customer } spgl { ls_ar-specialglcode } | &&
                |{ ls_ar_amount-journalentryitemamount } { ls_ar_amount-currency } | &&
+               |bplace { ls_ar-businessplace } | &&
                |assign { ls_ar-assignmentreference } text { ls_ar-documentitemtext } | &&
                |baseline { ls_ar-duecalculationbasedate }|
-             TO rt_text.
+            TO rt_text.
       ENDLOOP.
 
       APPEND |  balance { lv_total } (must be 0)| TO rt_text.
