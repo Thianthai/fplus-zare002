@@ -84,6 +84,15 @@ item เดียว `amount_paid 10700` → สมดุล 0 ✓ เครื�
 บรรทัดลูกหนี้ไม่ใส่ assignment / item text (BOT จับคู่จาก customer + จำนวนเงินแทน — ฟังก์ชันนอลตัดสิน) ·
 `ty_line_no` เป็น `n LENGTH 6` ให้ได้ `000001` ไม่ใช่ char ชิดขวา
 
+**post จริงผ่านแล้ว 2026-09-22 — เอกสาร `3500000004`** (ใบทดสอบ `1000002300` สร้างด้วย `set_test_data`)
+พิสูจน์ว่า ABAP post เอกสารรับชำระ 5 ขาตาม spec ได้จริงผ่าน `I_JournalEntryTP~Post`
+
+ทางที่กว่าจะผ่าน (เก็บไว้กันลืม):
+1. `An entry is required in House bank field` -> บรรทัด bank ของ G/L `11011211` ต้องมี house bank `SCB01`/`SA001`
+2. `Tax statement item missing for tax code WP` -> ต้องส่ง `_TaxItems` เอง หน้าจอสร้างให้ แต่ API ไม่สร้าง
+   ยอดภาษี 0 ฐานภาษี = ยอด fees
+3. `KSCHL is empty` -> tax item ต้องมี `ConditionType` (`MWVS`) คู่กับ account key (`VST`)
+
 **ต้องเช็คหลัง post จริง**: บรรทัดลูกหนี้ได้ PK `15` เหมือนตัวอย่างหรือได้ `11` แบบที่ POC เจอ ·
 บรรทัด SpGL ได้ PK `19` + tax `**` หรือไม่ — **ไม่ตรงให้เปิด OQ เป็น high priority** (ต้องถาม business ว่ารับได้ไหม)
 
