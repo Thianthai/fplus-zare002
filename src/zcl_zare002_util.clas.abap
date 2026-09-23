@@ -77,8 +77,8 @@ CLASS zcl_zare002_util IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD class_constructor.
-    "! payment document ที่ utility จะทำงานด้วย (reset_payment / submit_poc)
-    "! แก้ list ใน class_constructor แล้วรันใหม่ (F9)
+    " payment document ที่ utility จะทำงานด้วย (reset_payment / submit_poc)
+    " แก้ list ใน class_constructor แล้วรันใหม่ (F9)
     gt_payment_document_no = VALUE #( ( '1000002300' ) ).
 *    gt_payment_document_no = VALUE #( ( '1000000002' ) ).
 *                                      ( '1000000102' ) ).

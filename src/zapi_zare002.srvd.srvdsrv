@@ -1,0 +1,4 @@
+@EndUserText.label: 'Automatic Incoming Payments - Clearing'
+define service ZAPI_ZARE002 {
+  expose ZI_ZARE002_CLEARING as ClearingItems;
+}
