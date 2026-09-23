@@ -104,6 +104,24 @@
      <MSGNR>109</MSGNR>
      <TEXT>Payment &amp;1 posted: document &amp;2</TEXT>
     </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>ZARE002</ARBGB>
+     <MSGNR>110</MSGNR>
+     <TEXT>Payments posted successfully: Success &amp;1</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>ZARE002</ARBGB>
+     <MSGNR>111</MSGNR>
+     <TEXT>Payments posted successfully: Success &amp;1 / Error &amp;2</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>ZARE002</ARBGB>
+     <MSGNR>112</MSGNR>
+     <TEXT>Payments posted failed: Error &amp;1</TEXT>
+    </T100>
    </T100>
   </asx:values>
  </asx:abap>

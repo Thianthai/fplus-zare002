@@ -12,6 +12,8 @@ CLASS ltc_submit_http DEFINITION FINAL FOR TESTING
     METHODS parse_rejects_bad_uuid     FOR TESTING.
     "! นับ Success (P+A) / Error (E) และ key เป็น PascalCase
     METHODS response_counts_outcomes   FOR TESTING.
+    "! สำเร็จทั้งหมดได้ Status S และไม่สำเร็จเลยได้ Status E
+    METHODS response_status_per_case FOR TESTING.
 ENDCLASS.
 
 
@@ -49,6 +51,8 @@ CLASS ltc_submit_http IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD response_counts_outcomes.
+
+    " สำเร็จ 2 (P กับ A) และตก 1 ใบ
     DATA(lt_result) = VALUE zcl_zare002_submit=>tt_result(
       ( payment_document_no = '1000000001' outcome = 'P' accounting_document = '3200000010' message = 'posted' )
       ( payment_document_no = '1000000002' outcome = 'A' accounting_document = '3200000011' message = 'already' )
@@ -56,10 +60,33 @@ CLASS ltc_submit_http IMPLEMENTATION.
 
     DATA(lv_json) = zcl_zare002_submit_http=>build_response( lt_result ).
 
+    cl_abap_unit_assert=>assert_true( xsdbool( lv_json CS `"Status":"S"` ) ).
     cl_abap_unit_assert=>assert_true( xsdbool( lv_json CS `"Success":2` ) ).
     cl_abap_unit_assert=>assert_true( xsdbool( lv_json CS `"Error":1` ) ).
+    cl_abap_unit_assert=>assert_true( xsdbool( lv_json CS `Success 2 / Error 1` ) ).
     cl_abap_unit_assert=>assert_true( xsdbool( lv_json CS `"PaymentDocumentNo":"1000000003"` ) ).
     cl_abap_unit_assert=>assert_true( xsdbool( lv_json CS `"AccountingDocument":"3200000010"` ) ).
+
+  ENDMETHOD.
+
+  METHOD response_status_per_case.
+
+    " ทุกใบสำเร็จ
+    DATA(lv_all_ok) = zcl_zare002_submit_http=>build_response(
+      VALUE #( ( payment_document_no = '1000000001' outcome = 'P' )
+               ( payment_document_no = '1000000002' outcome = 'P' ) ) ).
+
+    cl_abap_unit_assert=>assert_true( xsdbool( lv_all_ok CS `"Status":"S"` ) ).
+    cl_abap_unit_assert=>assert_true( xsdbool( lv_all_ok CS `Success 2` ) ).
+    cl_abap_unit_assert=>assert_false( xsdbool( lv_all_ok CS `Error` && `:"` ) ).
+
+    " ไม่สำเร็จเลย
+    DATA(lv_all_error) = zcl_zare002_submit_http=>build_response(
+      VALUE #( ( payment_document_no = '1000000003' outcome = 'E' ) ) ).
+
+    cl_abap_unit_assert=>assert_true( xsdbool( lv_all_error CS `"Status":"E"` ) ).
+    cl_abap_unit_assert=>assert_true( xsdbool( lv_all_error CS `Payments posted failed: Error 1` ) ).
+
   ENDMETHOD.
 
 ENDCLASS.

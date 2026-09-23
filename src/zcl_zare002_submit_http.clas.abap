@@ -33,18 +33,17 @@ CLASS zcl_zare002_submit_http DEFINITION
       tt_result_line TYPE STANDARD TABLE OF ty_result_line WITH EMPTY KEY,
 
       "! response ทั้งก้อน
-      "! Success = P + A
-      "! Error = E
+      "! Status S = มีใบที่สำเร็จอย่างน้อย 1 ใบ
+      "! Status E = ไม่สำเร็จเลย หรือ body ผิดรูปแบบ
+      "! Success = outcome P + A
+      "! Error = outcome E
       BEGIN OF ty_response,
+        status  TYPE string,
+        message TYPE string,
         success TYPE i,
         error   TYPE i,
         results TYPE tt_result_line,
       END OF ty_response,
-
-      "! response เคส HTTP status 400
-      BEGIN OF ty_error_response,
-        error TYPE string,
-      END OF ty_error_response,
 
       "! ตัวอย่างที่ GET ตอบกลับ ไว้ให้ caller ดูโครงสร้างโดยไม่ต้องเปิดเอกสาร
       BEGIN OF ty_usage,
@@ -58,7 +57,15 @@ CLASS zcl_zare002_submit_http DEFINITION
 
     CONSTANTS:
       "! จำนวนใบสูงสุดต่อ 1 request — กัน timeout ฝั่ง browser (post ต่อใบ ~1 วินาที)
-      gc_max_payments TYPE i VALUE 60.
+      gc_max_payments   TYPE i       VALUE 60,
+
+      gc_msgid          TYPE symsgid VALUE 'ZARE002',
+
+      "! Status ของ response ทั้งก้อน
+      "! S = มีใบที่สำเร็จอย่างน้อย 1 ใบ
+      "! E = ไม่สำเร็จเลย หรือ body ผิดรูปแบบ
+      gc_status_success TYPE string  VALUE 'S',
+      gc_status_error   TYPE string  VALUE 'E'.
 
     "! แปลง body เป็น list uuid
     "! คืน ev_error = ผิดรูปแบบ / ว่าง / เกินค่า max (et_payment_uuid ว่าง)
@@ -102,6 +109,20 @@ CLASS zcl_zare002_submit_http DEFINITION
       EXPORTING ev_uuid      TYPE sysuuid_x16
       RETURNING VALUE(rv_ok) TYPE abap_bool.
 
+    "! text ของ message class — MESSAGE ... INTO
+    "! placeholder ละไม่เกิน 50 ตัว
+    CLASS-METHODS message_text
+      IMPORTING iv_number      TYPE symsgno
+                iv_v1          TYPE simple OPTIONAL
+                iv_v2          TYPE simple OPTIONAL
+      RETURNING VALUE(rv_text) TYPE string.
+
+    "! สร้าง response ของเคส body ผิดรูปแบบ
+    "! ใช้โครงเดียวกับเคสปกติ ฝั่ง Fiori จะได้อ่าน Status กับ Message ที่เดียว
+    CLASS-METHODS build_error_response
+      IMPORTING iv_message     TYPE string
+      RETURNING VALUE(rv_json) TYPE string.
+
 ENDCLASS.
 
 
@@ -138,6 +159,8 @@ CLASS zcl_zare002_submit_http IMPLEMENTATION.
                                              ( `FA163E195F2E1FE1AAE6A0E51561A3F0` ) ) )
 
       response = VALUE #(
+        status  = `S`
+        message = `Payments posted successfully: Success 1 / Error 1`
         success = 1
         error   = 1
         results = VALUE #(
@@ -152,7 +175,9 @@ CLASS zcl_zare002_submit_http IMPLEMENTATION.
             accounting_document = ``
             message             = `Payment 1000000003: cheque must be posted manually` ) ) )
 
-      outcome = VALUE #( ( `P = post สำเร็จรอบนี้` )
+      outcome = VALUE #( ( `Status S = สำเร็จอย่างน้อย 1 ใบ` )
+                         ( `Status E = ไม่สำเร็จเลย หรือ body ผิด format` )
+                         ( `P = post สำเร็จรอบนี้` )
                          ( `A = เคย post ไว้แล้ว รอ clearing` )
                          ( `E = ไม่ผ่าน ดูเหตุผลที่ Message` )
                          ( |Success = P + A, Error = E| ) )
@@ -160,7 +185,7 @@ CLASS zcl_zare002_submit_http IMPLEMENTATION.
       note = VALUE #( ( |สูงสุด { gc_max_payments } ใบต่อ 1 request, PaymentUuid ซ้ำถูกตัดอัตโนมัติ| )
                       ( `ต่อใบใช้เวลาประมาณ 1 วินาที ตั้ง timeout ฝั่ง client ให้พอ` )
                       ( `ใบที่ไม่ผ่านไม่กระทบใบอื่น body ถูกต้องจะได้ 200 เสมอ` )
-                      ( `body ผิดรูปแบบได้ 400 พร้อม {"Error":"..."}` )
+                      ( `body ผิด format ได้ 400 ได้ Status เป็น E และได้ Results ว่าง` )
                       ( `ไม่ต้องใช้ CSRF token` ) ) ).
 
     reply( EXPORTING iv_status   = 200
@@ -184,9 +209,7 @@ CLASS zcl_zare002_submit_http IMPLEMENTATION.
     IF lv_error IS NOT INITIAL.
       reply( EXPORTING iv_status   = 400
                        iv_reason   = 'Bad Request'
-                       iv_json     = xco_cp_json=>data->from_abap( VALUE ty_error_response( error = lv_error )
-                                       )->apply( VALUE #( ( xco_cp_json=>transformation->underscore_to_pascal_case ) )
-                                       )->to_string( )
+                       iv_json     = build_error_response( lv_error )
              CHANGING  co_response = co_response ).
       RETURN.
     ENDIF.
@@ -323,7 +346,42 @@ CLASS zcl_zare002_submit_http IMPLEMENTATION.
       ENDIF.
     ENDLOOP.
 
+    " สรุปผลรวมให้ Fiori เอาไปขึ้น popup ได้ทันที ไม่ต้องนับเอง
+    " สำเร็จอย่างน้อย 1 ใบ ถือว่า Status เป็น S ถึงจะมีใบที่ตกปนมาก็ตาม
+    IF ls_response-success = 0.
+      ls_response-status  = gc_status_error.
+      ls_response-message = message_text( iv_number = '112'
+                                          iv_v1     = |{ ls_response-error }| ).
+    ELSEIF ls_response-error = 0.
+      ls_response-status  = gc_status_success.
+      ls_response-message = message_text( iv_number = '110'
+                                          iv_v1     = |{ ls_response-success }| ).
+    ELSE.
+      ls_response-status  = gc_status_success.
+      ls_response-message = message_text( iv_number = '111'
+                                          iv_v1     = |{ ls_response-success }|
+                                          iv_v2     = |{ ls_response-error }| ).
+    ENDIF.
+
     rv_json = xco_cp_json=>data->from_abap( ls_response
+                )->apply( VALUE #( ( xco_cp_json=>transformation->underscore_to_pascal_case ) )
+                )->to_string( ).
+
+  ENDMETHOD.
+
+
+  METHOD message_text.
+
+    MESSAGE ID gc_msgid TYPE 'I' NUMBER iv_number WITH iv_v1 iv_v2 INTO rv_text.
+
+  ENDMETHOD.
+
+
+  METHOD build_error_response.
+
+    " ไม่มีใบไหนถูกประมวลผลเลย จำนวนทั้งสองฝั่งจึงเป็น 0 และ Results ว่าง
+    rv_json = xco_cp_json=>data->from_abap( VALUE ty_response( status  = gc_status_error
+                                                               message = iv_message )
                 )->apply( VALUE #( ( xco_cp_json=>transformation->underscore_to_pascal_case ) )
                 )->to_string( ).
 
