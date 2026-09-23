@@ -6,8 +6,12 @@
 | API | ทิศทาง | สถานะ |
 |---|---|---|
 | **#1 Submit** | Fiori → ABAP | ✅ ใช้งานได้ (2026-09-22) |
-| #2 Clearing request | ABAP → BOT | ⬜ 8B.5 รอตกลงกับทีม BOT |
-| #3 Clearing result | BOT → ABAP | ⬜ 8B.6 |
+| ~~#2 Clearing request~~ | ABAP → BOT | 🗑️ **ตัดทิ้ง 2026-09-23** — BOT เปลี่ยนไปดึงงานเองด้วย API #4 |
+| **#4 Pending clearing** | BOT → ABAP (query) | ✅ ใช้งานได้ (2026-09-23) |
+| #3 Clearing result | BOT → ABAP (ส่งผล) | ⬜ 8B.6 |
+
+**flow รวม**: ผู้ใช้กด Submit กลางวัน -> API #1 post JE -> ใบค้างคิว ·
+BOT ตั้ง job ตี 2 ดึงคิวจาก API #4 -> clear ผ่าน App Clear Incoming Payments -> ส่งเลข clearing กลับทาง API #3
 
 ---
 
@@ -179,7 +183,77 @@ const { Status, Message, Success, Error: errorCount, Results } = await response.
 
 ---
 
-## API #2 / #3 (BOT) — รอตกลง
+## API #4 — Pending clearing (OData V4 Web API)
 
-โครงที่เสนอไว้ใน `docs/09_submit_analysis.md` §0
-จะเขียนลงเอกสารนี้เมื่อคุยกับทีม BOT จบ
+BOT ดึงรายการที่ post JE แล้วแต่ยังไม่ได้ clear ไปทำเอง
+
+### Endpoint
+
+```
+GET https://my442178-api.s4hana.cloud.sap/sap/opu/odata4/sap/zapi_zare002_o4/srvd_a2x/sap/zapi_zare002/0001/ClearingItems
+```
+
+- Communication Arrangement **`ZCA_PAYMENT_CLEARING`** (scenario `ZCS_PAYMENT_CLEARING`) × Communication System `SBPA_DEV`
+- Authentication: **Basic** ด้วย communication user ของ BOT
+- อ่านอย่างเดียว ไม่มี POST / PATCH / DELETE
+
+### Response
+
+```json
+{
+  "@odata.context": "$metadata#ClearingItems",
+  "value": [
+    {
+      "ItemUuid": "fa163e19-5f2e-1fe1-ead4-6328cdb004a3",
+      "PaymentAccountingDocument": "3500000004",
+      "PaymentDocumentNo": "1000002300",
+      "CompanyCode": "2000",
+      "CustomerCode": "1000000014",
+      "JournalEntryDate": "2026-09-22",
+      "PostingDate": "2026-09-22",
+      "JournalEntryType": "DS",
+      "InvoiceAccountingDocument": "6000000021"
+    }
+  ]
+}
+```
+
+| Field | ชนิด | BOT เอาไปใช้ |
+|---|---|---|
+| `ItemUuid` | Guid | key ของแถว ไม่ต้องใช้ทำอะไร |
+| `PaymentAccountingDocument` | string(10) | เลขเอกสาร JE ที่ SAP post ไว้ · เลือกบรรทัดนี้ในจอ และ **ส่งกลับมาใน API #3** |
+| `PaymentDocumentNo` | string(10) | เลขใบฝั่งต้นทาง ไว้ไล่เรื่องย้อนกลับ ไม่ต้องกรอกที่ไหน |
+| `CompanyCode` | string(4) | ช่อง **Company Code** ใน popup Clear Open Items |
+| `CustomerCode` | string(10) | ช่อง **Customer** ใน popup |
+| `JournalEntryDate` | Edm.Date | ช่อง **Journal Entry Date** |
+| `PostingDate` | Edm.Date | ช่อง **Posting Date** |
+| `JournalEntryType` | string(2) | ช่อง **Journal Entry Type** (คงที่ `DS`) |
+| `InvoiceAccountingDocument` | string(10) | เลขเอกสาร invoice ที่ต้องเลือก clear ในคอลัมน์ **Journal Entry** |
+
+### กติกาของ view
+
+- **1 แถว = 1 item** ของ payment · payment ที่มีหลาย invoice จะมีหลายแถว **กลุ่มเดียวกันคือ `PaymentAccountingDocument` เดียวกัน**
+- แสดงเฉพาะใบที่ **post JE แล้ว** และ **ยังไม่มีเลข clearing**
+- ใบที่ clear เสร็จและส่งผลกลับทาง API #3 แล้ว จะหายจาก view นี้เอง ไม่ต้องมีใครมาลบคิว
+- ใบที่ BOT clear ไม่สำเร็จจะยังอยู่ในคิว คืนถัดไปจะถูกดึงไปทำใหม่โดยอัตโนมัติ
+
+### Query ที่ใช้ได้ (OData V4 มาตรฐาน)
+
+```
+?$filter=PostingDate ge 2026-09-01
+?$filter=PostingDate ge 2026-09-01 and PostingDate le 2026-09-30
+?$filter=CompanyCode eq '2000'
+?$orderby=PaymentAccountingDocument&$top=100
+?$count=true
+```
+
+ไม่ส่ง query parameter เลย = ได้ทุกใบที่ยังค้าง
+
+---
+
+## API #3 — Clearing result (BOT → ABAP)
+
+⬜ กำลังทำ (8B.6) · จะเขียนลงเอกสารนี้เมื่อเสร็จ
+
+โครงที่ตกลงไว้: BOT ส่งทีละใบ `{ CompanyCode, PaymentAccountingDocument, Status, ClearingDocument, Message }`
+ผ่าน `POST /sap/bc/http/sap/ZARE002_CLEARING`

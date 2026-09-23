@@ -239,9 +239,12 @@ object กลาง (8C.2 · 8C.3 · 8C.5 · 8C.6) อยู่ใน repo **`fp
 | 8B.2 | CDS + 2 คอลัมน์ Payment Doc / Clearing Doc (position 120/130 · RejectReason → 140) · features ดู status + 2 doc · Reject ปฏิเสธใบที่ post แล้ว (007) · `ZR_ZARE002` ไม่ต้องแก้ (header มาทาง `_Payment`) | `ZI_ZARE002_PYMT` `ZC_ZARE002` (+ddlx) `ZBP_R_ZARE002` message 007 | ✅ `aa9fea9` (2026-09-22) |
 | 8B.3 | post JE ต่อใบ + validate + `submit_poc` (simulate เป็นค่าเริ่มต้น) · 5 บรรทัดตาม spec · house bank เฉพาะ `11011211` · bank charge `WP` + business place · rounding ไม่มี tax code · กัน post ซ้ำด้วย `find_document` | `ZCL_ZARE002_JOURNAL_ENTRY` (+5 test) `ZCL_ZARE002_SUBMIT` message 101–109 `ZCL_ZARE002_UTIL` | ✅ `2ed2145` · comment `c83f7ea` (2026-09-22) — **post จริงผ่านแล้ว 2026-09-22 เอกสาร `3500000004`** |
 | 8B.4 | API #1 Fiori → ABAP · `POST {"Payments":[uuid]}` → `{Success,Error,Results[]}` · ต่อใบ 1 LUW · tenant ไม่บังคับ CSRF | HTTP `ZARE002_SUBMIT` · `ZCL_ZARE002_SUBMIT_HTTP` (+4 test) · IAM `ZIAM_ZARE002_EXT` | ✅ `2ed2145` — ยิงจาก browser ผ่าน chain ครบ (2026-09-22) |
-| 8B.5 | API #2 ABAP → BOT | `ZARE002_CLEARING_REQUEST_REST` · `ZCS_CLEARING_REQUEST` · arrangement × `SBPA_DEV` · `ZCL_ZARE002_BOT_CLEARING` | ⬜ |
-| 8B.6 | API #3 BOT → ABAP + SFDC Completed | HTTP `ZARE002_CLEARING_RESULT` · `ZCL_ZARE002_CLEARING_HTTP` · `ZCS_CLEARING_RESULT` · arrangement | ⬜ |
-| 8B.7 | end-to-end + เทียบเอกสารตัวอย่าง 5 ขา · ลบ `submit_poc` | | ⬜ |
+| 8B.5 | **API #4 BOT ดึงคิวเอง** (OData V4 Web API read-only) · entity set `ClearingItems` · 1 row ต่อ item ของใบที่ post JE แล้วแต่ยังไม่ clear · `$filter` posting date ได้ · ~~API #2 ABAP → BOT ตัดทิ้ง~~ | `ZI_ZARE002_CLEARING` · `ZAPI_ZARE002` · `ZAPI_ZARE002_O4` · `ZCS_PAYMENT_CLEARING` · `ZCA_PAYMENT_CLEARING` | ✅ (2026-09-23) |
+| 8B.6 | API #3 BOT → ABAP + SFDC Completed | HTTP `ZARE002_CLEARING` · `ZCL_ZARE002_CLEARING_HTTP` · `ZCL_ZARE002_CLEARING_RESULT` · message 120–124 · ใช้ scenario `ZCS_PAYMENT_CLEARING` ตัวเดียวกับ 8B.5 | ⬜ |
+| 8B.7 | validate `salesforce_id` / `salesforce_item_id` ว่าง = record ไม่สมบูรณ์ ห้าม Submit (113) ห้าม Reject (008) · แก้ `set_test_data` ให้เติม id | | ⬜ |
+| 8B.8 | filter บนหน้าจอ ARE002 มี Payment Doc แต่ยังไม่มี Clearing Doc | `ZI_ZARE002_PYMT` `ZC_ZARE002` (+ddlx) | ⬜ |
+| 8B.9 | ลบ comment ที่อ้าง API #2 ใน `handle_post` | `ZCL_ZARE002_SUBMIT_HTTP` | ⬜ |
+| 8B.10 | end-to-end + ลบ `submit_poc` | | ⬜ |
 
 ชื่อ 8B.2–8B.6 เป็น tentative — confirm ทีละขั้นก่อนส่ง code
 

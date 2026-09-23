@@ -93,6 +93,11 @@ object type จริงบน tenant นี้ (ปิด OQ-11) และช�
 | ~~`ZARE002_REJECT_RESULT_REST`~~ | Outbound Service (SCO3) — เลิกใช้ 8C.8 · **ลบแล้ว 8C.10** | — | 8A | 🗑️ `651ec78` (2026-09-21) |
 | ~~`ZCS_REJECT_RESULT`~~ | Communication Scenario outbound (SCO1) — OAuth 2.0 · เลิกใช้ 8C.8 (token cache ค้าง OQ-34) · **ลบแล้ว 8C.10** | — | 8A | 🗑️ `651ec78` (2026-09-21) |
 | ~~Communication Arrangement `ZCA_REJECT_RESULT`~~ | Fiori config — OAuth 2.0 × `SFDC_DEV` · **ลบแล้ว 8C.10** · ทางออกไป SFDC ทั้งหมดตอนนี้คือ `ZCA_SFDC_TOKEN` (package `ZBCUTILITY`) | — ไม่ขึ้น git | 8A | 🗑️ 2026-09-21 |
+| `ZI_ZARE002_CLEARING` | CDS view entity — คิวของ BOT: 1 row ต่อ item ของใบที่ post JE แล้วแต่ยังไม่ clear | `src/zi_zare002_clearing.ddls.asddls` | 8B | ✅ (2026-09-23) |
+| `ZAPI_ZARE002` | Service Definition (Web API) — expose `ZI_ZARE002_CLEARING` as `ClearingItems` | `src/zapi_zare002.srvd.srvdsrv` | 8B | ✅ |
+| `ZAPI_ZARE002_O4` | Service Binding OData V4 Web API | `src/zapi_zare002_o4.srvb.xml` | 8B | ✅ published |
+| `ZCS_PAYMENT_CLEARING` | Communication Scenario inbound — ครอบ `ZAPI_ZARE002_O4` (8B.6 จะเพิ่ม HTTP service) | `src/zcs_payment_clearing.sco1.xml` | 8B | ✅ published locally |
+| Communication Arrangement `ZCA_PAYMENT_CLEARING` | × `SBPA_DEV` · inbound user ของ BOT | — ไม่ขึ้น git | 8B | ✅ |
 | `ZCL_ZARE002_JOURNAL_ENTRY` | Class — สร้าง + post journal entry ของ 1 payment ผ่าน `I_JournalEntryTP~Post` (EML) · `build`/`check_balance`/`describe`/`derive_house_bank` pure · `post` (มี `COMMIT ENTITIES` ห้ามเรียกใน RAP) · `find_document` | `src/zcl_zare002_journal_entry.clas.abap` | 8B | ✅ `2ed2145` · 5 test |
 | `ZCL_ZARE002_JOURNAL_ENTRY` testclasses | builder อย่างเดียว ไม่ post | `src/zcl_zare002_journal_entry.clas.testclasses.abap` | 8B | ✅ 5 test เขียว |
 | `ZCL_ZARE002_SUBMIT` | Class — Submit 1 payment: validate (101–107) → post → บันทึก `payment_accounting_document` + `submit_message` · 1 payment = 1 LUW | `src/zcl_zare002_submit.clas.abap` | 8B | ✅ `2ed2145` |
