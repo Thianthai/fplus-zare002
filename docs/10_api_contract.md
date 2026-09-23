@@ -247,7 +247,31 @@ GET https://my442178-api.s4hana.cloud.sap/sap/opu/odata4/sap/zapi_zare002_o4/srv
 ?$count=true
 ```
 
-ไม่ส่ง query parameter เลย = ได้ทุกใบที่ยังค้าง
+ไม่ส่ง query parameter เลย = ได้ทุกแถวที่ยังค้าง (ภายใต้ข้อจำกัดเรื่อง paging ข้างล่าง)
+
+### 3 เรื่องที่ต้องระวังตอนเขียนฝั่ง BOT
+
+**1. แถวที่ได้คือ item ไม่ใช่ใบ**
+payment ที่มี 3 invoice จะได้ 3 แถวที่มี `PaymentAccountingDocument` เดียวกัน
+BOT ต้อง group ตาม `PaymentAccountingDocument` แล้วทำ clearing ทีละกลุ่ม
+ค่า `CompanyCode` `CustomerCode` `JournalEntryDate` `PostingDate` `JournalEntryType` ของแถวในกลุ่มเดียวกันจะเท่ากันเสมอ
+
+**2. มี server-side paging**
+ถ้าผลลัพธ์ยาวเกิน page size ของ server จะได้มาแค่หน้าแรก พร้อม `"@odata.nextLink"` ต่อท้าย response
+**ถ้าอ่านแค่ `value` แล้วจบ จะได้ข้อมูลไม่ครบโดยไม่มีอะไรฟ้อง** ต้องวนตาม `nextLink` จนกว่าจะไม่มี
+ทดสอบให้เห็นได้ด้วย `?$top=1` แล้วดูว่ามี `nextLink` โผล่หรือไม่
+
+**3. ลำดับไม่การันตีถ้าไม่สั่ง**
+ไม่ใส่ `$orderby` จะได้ลำดับตามที่ฐานข้อมูลคืนมา ไม่ใช่ลำดับที่คาดเดาได้
+
+### รูปแบบที่แนะนำให้ BOT ใช้
+
+```
+GET .../ClearingItems?$count=true&$orderby=PaymentAccountingDocument
+```
+
+`$count=true` จะได้ `"@odata.count"` กลับมาด้วย เอาไว้เทียบว่าดึงครบหรือยัง
+แล้ววนตาม `@odata.nextLink` จนหมด
 
 ---
 
