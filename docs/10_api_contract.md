@@ -58,6 +58,8 @@ GET /sap/bc/http/sap/ZARE002_SUBMIT
 
 ```json
 {
+  "Status": "S",
+  "Message": "Payments posted successfully: Success 1 / Error 1",
   "Success": 1,
   "Error": 1,
   "Results": [
@@ -81,6 +83,8 @@ GET /sap/bc/http/sap/ZARE002_SUBMIT
 
 | Field | ชนิด | รายละเอียด |
 |---|---|---|
+| `Status` | string(1) | `S` = สำเร็จอย่างน้อย 1 ใบ · `E` = ไม่สำเร็จเลย |
+| `Message` | string | ข้อความสรุปพร้อมแสดงผู้ใช้ทันที ไม่ต้องประกอบเอง |
 | `Success` | int | จำนวนใบที่ `Outcome` เป็น `P` หรือ `A` |
 | `Error` | int | จำนวนใบที่ `Outcome` เป็น `E` |
 | `Results` | array | 1 แถวต่อ 1 ใบ เรียงตามลำดับที่ประมวลผล |
@@ -88,7 +92,7 @@ GET /sap/bc/http/sap/ZARE002_SUBMIT
 | `Results[].PaymentDocumentNo` | string | เลขใบจาก SBPA ใช้แสดงใน message ให้ผู้ใช้อ่าน |
 | `Results[].Outcome` | string(1) | `P` / `A` / `E` — ดูตารางล่าง |
 | `Results[].AccountingDocument` | string | เลขเอกสารบัญชีที่ post ได้ ว่างเมื่อ `E` |
-| `Results[].Message` | string | ข้อความพร้อมแสดงผู้ใช้ ภาษาอังกฤษ ไม่เกิน 200 ตัว |
+| `Results[].Message` | string | ข้อความของใบนั้น ภาษาอังกฤษ ไม่เกิน 200 ตัว |
 
 | Outcome | หมายถึง | นับเป็น |
 |---|---|---|
@@ -96,10 +100,20 @@ GET /sap/bc/http/sap/ZARE002_SUBMIT
 | `A` | ใบนี้เคย post ไว้แล้ว ยังไม่ได้ clearing ระบบไม่ post ซ้ำ | Success |
 | `E` | ไม่ผ่าน ดูเหตุผลที่ `Message` | Error |
 
+ข้อความใน `Message` ระดับบนสุดมี 3 แบบ
+
+| เคส | Status | Message |
+|---|---|---|
+| สำเร็จทั้งหมด | `S` | `Payments posted successfully: Success 3` |
+| สำเร็จบางส่วน | `S` | `Payments posted successfully: Success 2 / Error 1` |
+| ไม่สำเร็จเลย | `E` | `Payments posted failed: Error 3` |
+
 ### Response 400
 
+โครงเดียวกับ 200 เพื่อให้อ่าน `Status` กับ `Message` ที่เดียวทุกเคส
+
 ```json
-{ "Error": "Payments is empty" }
+{ "Status": "E", "Message": "Payments is empty", "Success": 0, "Error": 0, "Results": [] }
 ```
 
 เกิดเมื่อ body ไม่ใช่ JSON ที่อ่านได้ · `Payments` ว่าง · `PaymentUuid` ผิดรูปแบบ · เกิน 60 ใบ
@@ -118,7 +132,7 @@ method อื่นนอกจาก `GET` / `POST`
 2. **เวลา** — post ต่อใบประมาณ 1 วินาที 60 ใบ ≈ 1 นาที
    ตั้ง timeout ฝั่ง client ให้พอ และแสดง busy indicator ระหว่างรอ
 3. **หลังได้ response** — refresh ตาราง คอลัมน์ **Payment Doc** ของใบที่สำเร็จจะมีค่า
-   แล้วแสดง popup สรุปจาก `Success` / `Error` พร้อมรายการ `Message`
+   แล้วแสดง popup จาก `Status` กับ `Message` ระดับบนสุด พร้อมรายการ `Results[].Message`
 4. **ปุ่ม Submit กดซ้ำได้** — ใบที่มี Payment Doc แล้วแต่ยังไม่มี Clearing Doc จะได้ `A`
    ใบที่มีครบทั้งสองจะได้ `E` พร้อมข้อความว่าทำครบแล้ว
 5. **ยังไม่มี clearing** — ตอนนี้ใบที่สำเร็จจะได้ Payment Doc อย่างเดียว
@@ -134,13 +148,14 @@ const response = await fetch("/sap/bc/http/sap/ZARE002_SUBMIT", {
 });
 
 if (!response.ok) {
-  const { Error } = await response.json();
-  // body ผิดรูปแบบ ไม่มีใบไหนถูกประมวลผล
+  const { Message } = await response.json();
+  // body ผิดรูปแบบ ไม่มีใบไหนถูกประมวลผล โครง response เหมือนเคส 200
   return;
 }
 
-const { Success, Error: errorCount, Results } = await response.json();
-// แสดง popup จาก Success / errorCount แล้ว refresh ตาราง
+const { Status, Message, Success, Error: errorCount, Results } = await response.json();
+// Status และ Message ใช้ขึ้น popup ได้ทันที
+// Results ใช้แสดงรายบรรทัด แล้ว refresh ตาราง
 ```
 
 ---
@@ -158,6 +173,9 @@ const { Success, Error: errorCount, Results } = await response.json();
 | 107 | `Special G/L open item balance is not enough` | ใช้เงินรับล่วงหน้าแต่ยอดค้างไม่ตรงกับที่ขอใช้ |
 | 108 | `Payment &1: &2&3&4` | FI ปฏิเสธการ post ข้อความที่ตามมาเป็นของ FI เอง |
 | 109 | `Payment &1 posted: document &2` | `Outcome = P` |
+| 110 | `Payments posted successfully: Success &1` | `Message` ระดับบนสุด สำเร็จทั้งหมด |
+| 111 | `Payments posted successfully: Success &1 / Error &2` | `Message` ระดับบนสุด สำเร็จบางส่วน |
+| 112 | `Payments posted failed: Error &1` | `Message` ระดับบนสุด ไม่สำเร็จเลย |
 
 ---
 
