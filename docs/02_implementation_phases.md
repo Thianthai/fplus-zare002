@@ -235,7 +235,7 @@ object กลาง (8C.2 · 8C.3 · 8C.5 · 8C.6) อยู่ใน repo **`fp
 
 | # | งาน | Object | Status |
 |---|---|---|---|
-| 8B.1 | table +3 field (ZARI002) | `ZTAR_I002_PYMT` `payment_accounting_document` `clearing_accounting_document` `submit_message` | ✅ `fplus-zari002` `08c105c` (2026-09-22) |
+| 8B.1 | table +6 field (ZARI002) | `ZTAR_I002_PYMT` `payment_accounting_document` `payment_fiscal_year` `clearing_accounting_document` `clearing_fiscal_year` `submit_message` `clearing_message` | ✅ `fplus-zari002` `08c105c` + `aa68dd4` (2026-09-24) |
 | 8B.2 | CDS + 2 คอลัมน์ Payment Doc / Clearing Doc (position 120/130 · RejectReason → 140) · features ดู status + 2 doc · Reject ปฏิเสธใบที่ post แล้ว (007) · `ZR_ZARE002` ไม่ต้องแก้ (header มาทาง `_Payment`) | `ZI_ZARE002_PYMT` `ZC_ZARE002` (+ddlx) `ZBP_R_ZARE002` message 007 | ✅ `aa9fea9` (2026-09-22) |
 | 8B.3 | post JE ต่อใบ + validate + `submit_poc` (simulate เป็นค่าเริ่มต้น) · 5 บรรทัดตาม spec · house bank เฉพาะ `11011211` · bank charge `WP` + business place · rounding ไม่มี tax code · กัน post ซ้ำด้วย `find_document` | `ZCL_ZARE002_JOURNAL_ENTRY` (+5 test) `ZCL_ZARE002_SUBMIT` message 101–109 `ZCL_ZARE002_UTIL` | ✅ `2ed2145` · comment `c83f7ea` (2026-09-22) — **post จริงผ่านแล้ว 2026-09-22 เอกสาร `3500000004`** |
 | 8B.4 | API #1 Fiori → ABAP · `POST {"Payments":[uuid]}` → `{Success,Error,Results[]}` · ต่อใบ 1 LUW · tenant ไม่บังคับ CSRF | HTTP `ZARE002_SUBMIT` · `ZCL_ZARE002_SUBMIT_HTTP` (+4 test) · IAM `ZIAM_ZARE002_EXT` | ✅ `2ed2145` — ยิงจาก browser ผ่าน chain ครบ (2026-09-22) |

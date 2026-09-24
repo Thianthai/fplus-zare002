@@ -41,7 +41,8 @@
 `cheque_no` `issue_date` `due_on` `cheque_bank_branch` `rounding_diff` `advance_payment`
 `fees` `payment_amount` `salesforce_status` `salesforce_message`
 
-**Header — เพิ่ม 2026-09-22 สำหรับ Submit (ZARI002 `08c105c`)**: `payment_accounting_document` · `clearing_accounting_document` · `submit_message`
+**Header — เพิ่มสำหรับ Submit**: `payment_accounting_document` · `payment_fiscal_year` · `clearing_accounting_document` · `clearing_fiscal_year` · `submit_message` · `clearing_message`
+(3 ตัวแรกชุดแรก ZARI002 `08c105c` 2026-09-22 · อีก 3 ตัว `aa68dd4` 2026-09-24)
 — 2 ตัวแรกจะขึ้นเป็นคอลัมน์ **Payment Doc** / **Clearing Doc** (8B.2) · ZARE002 เป็นผู้เขียนทั้ง 3
 
 **Item** — `salesforce_item_id` `invoice_posting_date` `amount_paid` `partial_amount` `sale_submit_date`
