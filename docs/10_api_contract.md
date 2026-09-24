@@ -284,66 +284,102 @@ GET .../ClearingItems?$count=true&$orderby=PaymentAccountingDocument
 
 BOT ส่งผลการ clear กลับมา **ทีละใบ** ผ่าน `POST /sap/bc/http/sap/ZARE002_CLEARING`
 
+### Endpoint
+
+```
+POST https://my442178-api.s4hana.cloud.sap/sap/bc/http/sap/ZARE002_CLEARING
+Content-Type: application/json
+```
+
+- Authentication: **Basic** ด้วย communication user เดิม (arrangement `ZCA_PAYMENT_CLEARING` ตัวเดียวกับ API #4)
+- ไม่ต้องใช้ CSRF token
+- `GET` ที่ URL เดียวกันคืนตัวอย่าง request/response ให้ดูโครงสร้าง
+
+### Request
+
 ```json
 {
+  "RequestId": "20260924_143000",
   "CompanyCode": "2000",
   "PaymentDocumentNo": "1000002301",
   "PaymentAccountingDocument": "3500000006",
   "PaymentAccountingDocYear": "2026",
-  "Status": "S",
   "ClearingDocument": "3000000012",
   "ClearingDocumentYear": "2026",
-  "Message": ""
+  "ClearingStatus": "S",
+  "ClearingMessage": ""
 }
 ```
 
-### Request
-
 | Field | บังคับ | รายละเอียด |
 |---|---|---|
-| `CompanyCode` | ✔ | จาก API #4 |
-| `PaymentDocumentNo` | | จาก API #4 · ใช้ตอบกลับและไล่เรื่อง ไม่ได้ใช้ค้นหา |
-| `PaymentAccountingDocument` | ✔ | จาก API #4 · **ใช้ค้นหาใบคู่กับ CompanyCode และปี** |
-| `PaymentAccountingDocYear` | ✔ | จาก API #4 |
-| `Status` | ✔ | `S` clear สำเร็จ · `E` ไม่สำเร็จ · ค่าอื่นได้ 400 |
+| `RequestId` | | รูปแบบ `YYYYMMDD_hhmmss` · ยังไม่ได้ใช้ทำอะไร เก็บไว้รอ log table ที่จะบันทึกทุกครั้งที่ BOT ยิงเข้ามา |
+| `CompanyCode` | ✔ | ค่าที่ได้จาก API #4 |
+| `PaymentDocumentNo` | | ค่าที่ได้จาก API #4 · ใช้ไล่เรื่องเท่านั้น ไม่ได้ใช้ค้นหา |
+| `PaymentAccountingDocument` | ✔ | ค่าที่ได้จาก API #4 · **SAP ใช้ค้นหาใบจากตัวนี้คู่กับ CompanyCode และปี** |
+| `PaymentAccountingDocYear` | ✔ | ค่าที่ได้จาก API #4 |
 | `ClearingDocument` | ✔ เมื่อ `S` | เลขเอกสาร clearing ที่ BOT เพิ่งสร้าง |
 | `ClearingDocumentYear` | ✔ เมื่อ `S` | ปีบัญชีของเอกสาร clearing |
-| `Message` | | เหตุผลเมื่อ `Status = E` |
+| `ClearingStatus` | ✔ | `S` = clear สำเร็จ · `E` = ไม่สำเร็จ · ค่าอื่นได้ 400 |
+| `ClearingMessage` | | เหตุผลเมื่อ `ClearingStatus = E` |
 
-**ทุก field เป็น string** รวมถึงปี (`"2026"` ไม่ใช่ `2026`)
-ใช้ communication user และ arrangement เดียวกับ API #4
+**ทุกค่าเป็น string** รวมถึงปี — ส่ง `"2026"` ไม่ใช่ `2026`
 
 ### Response 200
 
 ```json
 {
-  "Status": "C",
-  "Message": "Payment 1000002301 cleared by document 3000000012",
-  "PaymentDocumentNo": "1000002301",
-  "PaymentAccountingDocument": "3500000006",
-  "ClearingDocument": "3000000012",
-  "SalesforceStatus": "E"
+  "SapStatus": "C",
+  "SapMessage": "Payment 1000002301 cleared by document 3000000012",
+  "SalesforceStatus": "E",
+  "SalesforceMessage": "Salesforce rejected the update: NOT_FOUND ..."
 }
 ```
 
-| Field | รายละเอียด |
+| Field | ความหมาย |
 |---|---|
-| `Status` | `C` ปิดงานเรียบร้อย · `E` ไม่ผ่าน ดูเหตุผลที่ `Message` |
-| `Message` | ข้อความพร้อมแสดง |
-| `SalesforceStatus` | `S` แจ้ง Salesforce สำเร็จ · `E` ไม่สำเร็จ · ว่างคือไม่ได้ยิง (เช่นเคส `Status = E` จาก BOT) |
+| `SapStatus` | `C` = SAP บันทึกผล clearing เรียบร้อย · `E` = ไม่ผ่าน ดูเหตุผลที่ `SapMessage` |
+| `SapMessage` | ข้อความพร้อมแสดง |
+| `SalesforceStatus` | ผลของขั้นถัดไปที่ **ZARI003** ทำ · `S` สำเร็จ · `E` ไม่สำเร็จ · ว่าง = ไม่ได้ยิง |
+| `SalesforceMessage` | ข้อความจาก Salesforce เมื่อ `SalesforceStatus = E` |
 
-**`SalesforceStatus = E` ไม่ได้แปลว่า clearing ล้มเหลว** งานบัญชีเสร็จแล้วจริง
-เก็บผลไว้เพื่อส่งซ้ำทีหลัง การแจ้ง Salesforce เป็นงานของ RICEFW **ZARI003**
+**`SalesforceStatus = E` ไม่ใช่ปัญหาของ BOT** — งานบัญชีเสร็จแล้วจริง ฝั่ง SAP จัดการส่งซ้ำเอง
+ไม่ต้องยิง API #3 ใหม่
 
 ### Response 400
 
-โครงเดียวกัน `Status` เป็น `E` และ `Message` บอกว่าอะไรขาด เช่น
-`Clearing result rejected: PaymentAccountingDocYear is required`
-ในกรณีนี้ **ไม่มีอะไรถูกบันทึก**
+โครงเดียวกัน `SapStatus` เป็น `E` และ `SapMessage` บอกว่าอะไรขาด
+
+```json
+{ "SapStatus": "E",
+  "SapMessage": "Clearing result rejected: PaymentAccountingDocYear is required",
+  "SalesforceStatus": "", "SalesforceMessage": "" }
+```
+
+ในกรณีนี้ **ไม่มีอะไรถูกบันทึกในฝั่ง SAP**
 
 ### กติกาที่ระบบบังคับ
 
-- ใบที่หาไม่เจอจาก `CompanyCode` + `PaymentAccountingDocument` + `PaymentAccountingDocYear` ได้ `Status E`
-- **ใบที่มีเลข clearing อยู่แล้วจะไม่ถูกเขียนทับ** · ส่งเลขเดิมซ้ำถือว่าสำเร็จ · ส่งเลขใหม่ได้ `Status E`
-- `Status = E` จาก BOT: เก็บเหตุผลอย่างเดียว ใบยังอยู่ในคิวของ API #4 **คืนถัดไปจะถูกดึงไปทำใหม่เอง**
-- `Status = S`: บันทึกเลข clearing + ปี · ตั้งสถานะใบเป็น Completed · แล้วแจ้ง Salesforce
+1. **ส่งทีละใบ** ไม่รับเป็น array
+2. **ใบที่ clear ไม่สำเร็จให้ส่ง `ClearingStatus = E` มาเสมอ** พร้อมเหตุผลใน `ClearingMessage` —
+   SAP เก็บข้อความไว้และ **ใบยังอยู่ในคิวของ API #4 ให้ดึงไปทำใหม่คืนถัดไป** ถ้าไม่ส่งมาเลยจะไม่มีใครรู้ว่าเกิดอะไรขึ้น
+3. **ส่งซ้ำเลขเดิมได้** ถ้าไม่แน่ใจว่าครั้งก่อนถึงไหม — ได้ `SapStatus C` และไม่ทำอะไรซ้ำ
+4. **ส่งเลข clearing ใหม่ทับใบที่มีเลขอยู่แล้วไม่ได้** จะได้ `SapStatus E` และของเดิมไม่ถูกแตะ
+5. ใบที่หาไม่เจอจาก 3 field ที่ใช้ค้นหา ได้ `SapStatus E`
+6. ใบที่ส่งผลสำเร็จแล้วจะ **หายจาก API #4** ทันที
+
+### ตัวอย่างเคส clear ไม่สำเร็จ
+
+```json
+{
+  "RequestId": "20260924_143500",
+  "CompanyCode": "2000",
+  "PaymentDocumentNo": "1000002301",
+  "PaymentAccountingDocument": "3500000006",
+  "PaymentAccountingDocYear": "2026",
+  "ClearingDocument": "",
+  "ClearingDocumentYear": "",
+  "ClearingStatus": "E",
+  "ClearingMessage": "Open item not found for customer 1000000014"
+}
+```
