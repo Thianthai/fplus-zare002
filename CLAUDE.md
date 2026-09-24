@@ -202,7 +202,8 @@
 | ใคร | ทำอะไรกับ table |
 |---|---|
 | **ZARI002** | insert อย่างเดียว · เขียน `status = 'N'` · ไม่เคยแตะ `reject_reason` |
-| **ZARE002** (งานนี้) | อ่านทุก row · **update `reject_reason` ที่ item** · header: `status` `salesforce_status` `salesforce_message` (Reject/Submit) · `payment_accounting_document` `payment_fiscal_year` `clearing_accounting_document` `clearing_fiscal_year` `submit_message` `clearing_message` (Submit) |
+| **ZARE002** (งานนี้) | อ่านทุก row · **update `reject_reason` ที่ item** · header: `status` `salesforce_status` `salesforce_message` (Reject/Submit) · `payment_accounting_document` `payment_fiscal_year` `clearing_accounting_document` `clearing_fiscal_year` `submit_message` `clearing_message` (Submit) · `salesforce_status` `salesforce_message` **เฉพาะ path Reject** |
+| **ZARI003** | อ่าน item · เขียน `salesforce_status` `salesforce_message` **เฉพาะ path Completed** (repo `fplus-zari003`) |
 | **ZARI003** | อ่านอย่างเดียว |
 
 การแบ่งงานนี้ยืนยันแล้วใน `zari002/docs/01_architecture.md` §9 และ `04_field_mapping.md`

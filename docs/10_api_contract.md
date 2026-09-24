@@ -8,7 +8,7 @@
 | **#1 Submit** | Fiori → ABAP | ✅ ใช้งานได้ (2026-09-22) |
 | ~~#2 Clearing request~~ | ABAP → BOT | 🗑️ **ตัดทิ้ง 2026-09-23** — BOT เปลี่ยนไปดึงงานเองด้วย API #4 |
 | **#4 Pending clearing** | BOT → ABAP (query) | ✅ ใช้งานได้ (2026-09-23) |
-| #3 Clearing result | BOT → ABAP (ส่งผล) | ⬜ 8B.6 |
+| **#3 Clearing result** | BOT → ABAP (ส่งผล) | ✅ ใช้งานได้ (2026-09-24) |
 
 **flow รวม**: ผู้ใช้กด Submit กลางวัน -> API #1 post JE -> ใบค้างคิว ·
 BOT ตั้ง job ตี 2 ดึงคิวจาก API #4 -> clear ผ่าน App Clear Incoming Payments -> ส่งเลข clearing กลับทาง API #3
@@ -212,9 +212,9 @@ GET https://my442178-api.s4hana.cloud.sap/sap/opu/odata4/sap/zapi_zare002_o4/srv
       "PostingDate": "2026-09-22",
       "JournalEntryType": "DS",
       "InvoiceAccountingDocument": "6000000021",
-      "InvoiceAccountingDocumentYear": "2026",
+      "InvoiceAccountingDocYear": "2026",
       "PaymentAccountingDocument": "3500000006",
-      "PaymentAccountingDocumentYear": "2026"
+      "PaymentAccountingDocYear": "2026"
     }
   ]
 }
@@ -230,9 +230,9 @@ GET https://my442178-api.s4hana.cloud.sap/sap/opu/odata4/sap/zapi_zare002_o4/srv
 | `PostingDate` | Edm.Date | ช่อง **Posting Date** |
 | `JournalEntryType` | string(2) | ช่อง **Journal Entry Type** (คงที่ `DS`) |
 | `InvoiceAccountingDocument` | string(10) | เลขเอกสาร invoice ที่ต้องเลือก clear ในคอลัมน์ **Journal Entry** |
-| `InvoiceAccountingDocumentYear` | string(4) | ปีบัญชีของ invoice · ใช้คู่กับเลขเอกสารตอนเลือกในจอ · อ่านจากเอกสาร FI จริง ไม่ได้คำนวณจากวันที่ |
+| `InvoiceAccountingDocYear` | string(4) | ปีบัญชีของ invoice · ใช้คู่กับเลขเอกสารตอนเลือกในจอ · อ่านจากเอกสาร FI จริง ไม่ได้คำนวณจากวันที่ |
 | `PaymentAccountingDocument` | string(10) | เลขเอกสาร JE ที่ SAP post ไว้ · เลือกบรรทัดนี้ในจอ และ **ส่งกลับมาใน API #3** |
-| `PaymentAccountingDocumentYear` | string(4) | ปีบัญชีของเอกสาร JE · ใช้คู่กับเลขเอกสารเสมอ และ **ส่งกลับมาใน API #3** |
+| `PaymentAccountingDocYear` | string(4) | ปีบัญชีของเอกสาร JE · ใช้คู่กับเลขเอกสารเสมอ และ **ส่งกลับมาใน API #3** |
 
 ### กติกาของ view
 
@@ -282,16 +282,14 @@ GET .../ClearingItems?$count=true&$orderby=PaymentAccountingDocument
 
 ## API #3 — Clearing result (BOT → ABAP)
 
-⬜ กำลังทำ (8B.6) · จะเขียนลงเอกสารนี้เมื่อเสร็จ
-
-โครงที่ตกลงไว้ BOT ส่ง **ทีละใบ** ผ่าน `POST /sap/bc/http/sap/ZARE002_CLEARING`
+BOT ส่งผลการ clear กลับมา **ทีละใบ** ผ่าน `POST /sap/bc/http/sap/ZARE002_CLEARING`
 
 ```json
 {
   "CompanyCode": "2000",
   "PaymentDocumentNo": "1000002301",
   "PaymentAccountingDocument": "3500000006",
-  "PaymentAccountingDocumentYear": "2026",
+  "PaymentAccountingDocYear": "2026",
   "Status": "S",
   "ClearingDocument": "3000000012",
   "ClearingDocumentYear": "2026",
@@ -299,8 +297,53 @@ GET .../ClearingItems?$count=true&$orderby=PaymentAccountingDocument
 }
 ```
 
-- 4 field แรกคือค่าที่ได้จาก API #4 ส่งกลับมาตรง ๆ
-- `Status` = `S` clear สำเร็จ · `E` ไม่สำเร็จ (ใส่เหตุผลใน `Message`)
-- `Status = E` ไม่ต้องมี `ClearingDocument` / `ClearingDocumentYear`
-- **ทุก field เป็น string** รวมถึงปี (`"2026"` ไม่ใช่ `2026`)
-- ใช้ communication user และ arrangement เดียวกับ API #4
+### Request
+
+| Field | บังคับ | รายละเอียด |
+|---|---|---|
+| `CompanyCode` | ✔ | จาก API #4 |
+| `PaymentDocumentNo` | | จาก API #4 · ใช้ตอบกลับและไล่เรื่อง ไม่ได้ใช้ค้นหา |
+| `PaymentAccountingDocument` | ✔ | จาก API #4 · **ใช้ค้นหาใบคู่กับ CompanyCode และปี** |
+| `PaymentAccountingDocYear` | ✔ | จาก API #4 |
+| `Status` | ✔ | `S` clear สำเร็จ · `E` ไม่สำเร็จ · ค่าอื่นได้ 400 |
+| `ClearingDocument` | ✔ เมื่อ `S` | เลขเอกสาร clearing ที่ BOT เพิ่งสร้าง |
+| `ClearingDocumentYear` | ✔ เมื่อ `S` | ปีบัญชีของเอกสาร clearing |
+| `Message` | | เหตุผลเมื่อ `Status = E` |
+
+**ทุก field เป็น string** รวมถึงปี (`"2026"` ไม่ใช่ `2026`)
+ใช้ communication user และ arrangement เดียวกับ API #4
+
+### Response 200
+
+```json
+{
+  "Status": "C",
+  "Message": "Payment 1000002301 cleared by document 3000000012",
+  "PaymentDocumentNo": "1000002301",
+  "PaymentAccountingDocument": "3500000006",
+  "ClearingDocument": "3000000012",
+  "SalesforceStatus": "E"
+}
+```
+
+| Field | รายละเอียด |
+|---|---|
+| `Status` | `C` ปิดงานเรียบร้อย · `E` ไม่ผ่าน ดูเหตุผลที่ `Message` |
+| `Message` | ข้อความพร้อมแสดง |
+| `SalesforceStatus` | `S` แจ้ง Salesforce สำเร็จ · `E` ไม่สำเร็จ · ว่างคือไม่ได้ยิง (เช่นเคส `Status = E` จาก BOT) |
+
+**`SalesforceStatus = E` ไม่ได้แปลว่า clearing ล้มเหลว** งานบัญชีเสร็จแล้วจริง
+เก็บผลไว้เพื่อส่งซ้ำทีหลัง การแจ้ง Salesforce เป็นงานของ RICEFW **ZARI003**
+
+### Response 400
+
+โครงเดียวกัน `Status` เป็น `E` และ `Message` บอกว่าอะไรขาด เช่น
+`Clearing result rejected: PaymentAccountingDocYear is required`
+ในกรณีนี้ **ไม่มีอะไรถูกบันทึก**
+
+### กติกาที่ระบบบังคับ
+
+- ใบที่หาไม่เจอจาก `CompanyCode` + `PaymentAccountingDocument` + `PaymentAccountingDocYear` ได้ `Status E`
+- **ใบที่มีเลข clearing อยู่แล้วจะไม่ถูกเขียนทับ** · ส่งเลขเดิมซ้ำถือว่าสำเร็จ · ส่งเลขใหม่ได้ `Status E`
+- `Status = E` จาก BOT: เก็บเหตุผลอย่างเดียว ใบยังอยู่ในคิวของ API #4 **คืนถัดไปจะถูกดึงไปทำใหม่เอง**
+- `Status = S`: บันทึกเลข clearing + ปี · ตั้งสถานะใบเป็น Completed · แล้วแจ้ง Salesforce
