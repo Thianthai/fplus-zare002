@@ -159,6 +159,9 @@
 - **`cl_sxml_string_reader=>create( )` auto-detect format** — ส่ง HTML/XML เข้าไปมันจะ parse
   เป็น XML สำเร็จ ไม่ raise (เจอจริง 2026-09-20 จาก unit test) → ห้ามพึ่ง exception เป็นตัวบอกว่า
   body ไม่ใช่ JSON ที่คาด ต้องเช็คเองว่าเจอ member ที่ต้องการหรือไม่
+- **offset/length (`lv_x+10(1)`) ใช้กับตัวแปร `string` ไม่ได้** (เจอจริง 2026-09-24 ใน unit test:
+  `Offsets or lengths cannot be specified for fields of type STRING`) → ใช้ `substring( val = … off = … len = … )`
+  · ใช้ได้เฉพาะ type char-like เช่น `d` / `c` / `n`
 - **table expression `itab[ … ]` รับแค่ `=`** ไม่รับ `<>` / `>` (`Field "TABLE_LINE" is unknown`)
   → เงื่อนไขอื่นใช้ `LOOP AT … WHERE` · **`DATA(x) = 'literal'` ได้ type `c` ไม่ใช่ `string`**
   → ส่งเข้า parameter `string` ไม่ได้ ใช้ backtick `` `…` `` หรือ `&&`
