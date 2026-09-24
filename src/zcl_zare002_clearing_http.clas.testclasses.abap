@@ -24,23 +24,25 @@ CLASS ltc_clearing_http IMPLEMENTATION.
 
   METHOD parse_accepts_full_body.
     zcl_zare002_clearing_http=>parse_request(
-      EXPORTING iv_body    = `{"CompanyCode":"2000","PaymentDocumentNo":"1000002301",`
-                          && `"PaymentAccountingDocument":"3500000006","PaymentAccountingDocYear":"2026",`
-                          && `"Status":"S","ClearingDocument":"3000000012","ClearingDocumentYear":"2026","Message":""}`
+      EXPORTING iv_body    = `{"RequestId":"20260924_143000","CompanyCode":"2000",`
+                          && `"PaymentDocumentNo":"1000002301","PaymentAccountingDocument":"3500000006",`
+                          && `"PaymentAccountingDocYear":"2026","ClearingDocument":"3000000012",`
+                          && `"ClearingDocumentYear":"2026","ClearingStatus":"S","ClearingMessage":""}`
       IMPORTING es_request = DATA(ls_request)
                 ev_error   = DATA(lv_error) ).
 
     cl_abap_unit_assert=>assert_initial( lv_error ).
+    cl_abap_unit_assert=>assert_equals( act = ls_request-request_id                  exp = '20260924_143000' ).
     cl_abap_unit_assert=>assert_equals( act = ls_request-payment_accounting_document exp = '3500000006' ).
     cl_abap_unit_assert=>assert_equals( act = ls_request-payment_accounting_doc_year exp = '2026' ).
     cl_abap_unit_assert=>assert_equals( act = ls_request-clearing_document           exp = '3000000012' ).
     cl_abap_unit_assert=>assert_equals( act = ls_request-clearing_document_year      exp = '2026' ).
-    cl_abap_unit_assert=>assert_equals( act = ls_request-status                      exp = 'S' ).
+    cl_abap_unit_assert=>assert_equals( act = ls_request-clearing_status             exp = 'S' ).
   ENDMETHOD.
 
   METHOD parse_rejects_missing_key.
     zcl_zare002_clearing_http=>parse_request(
-      EXPORTING iv_body  = `{"CompanyCode":"2000","Status":"S"}`
+      EXPORTING iv_body  = `{"CompanyCode":"2000","ClearingStatus":"S"}`
       IMPORTING ev_error = DATA(lv_error) ).
 
     cl_abap_unit_assert=>assert_true( xsdbool( lv_error CS 'PaymentAccountingDocument' ) ).
@@ -49,7 +51,7 @@ CLASS ltc_clearing_http IMPLEMENTATION.
   METHOD parse_rejects_success_wo_doc.
     zcl_zare002_clearing_http=>parse_request(
       EXPORTING iv_body  = `{"CompanyCode":"2000","PaymentAccountingDocument":"3500000006",`
-                        && `"PaymentAccountingDocYear":"2026","Status":"S"}`
+                        && `"PaymentAccountingDocYear":"2026","ClearingStatus":"S"}`
       IMPORTING ev_error = DATA(lv_error) ).
 
     cl_abap_unit_assert=>assert_true( xsdbool( lv_error CS 'ClearingDocument' ) ).
@@ -58,23 +60,23 @@ CLASS ltc_clearing_http IMPLEMENTATION.
   METHOD parse_rejects_bad_status.
     zcl_zare002_clearing_http=>parse_request(
       EXPORTING iv_body  = `{"CompanyCode":"2000","PaymentAccountingDocument":"3500000006",`
-                        && `"PaymentAccountingDocYear":"2026","Status":"X"}`
+                        && `"PaymentAccountingDocYear":"2026","ClearingStatus":"X"}`
       IMPORTING ev_error = DATA(lv_error) ).
 
-    cl_abap_unit_assert=>assert_true( xsdbool( lv_error CS 'Status must be S or E' ) ).
+    cl_abap_unit_assert=>assert_true( xsdbool( lv_error CS 'ClearingStatus must be S or E' ) ).
   ENDMETHOD.
 
   METHOD parse_accepts_error_status.
     zcl_zare002_clearing_http=>parse_request(
       EXPORTING iv_body    = `{"CompanyCode":"2000","PaymentAccountingDocument":"3500000006",`
-                          && `"PaymentAccountingDocYear":"2026","Status":"E",`
-                          && `"Message":"Open item not found"}`
+                          && `"PaymentAccountingDocYear":"2026","ClearingStatus":"E",`
+                          && `"ClearingMessage":"Open item not found"}`
       IMPORTING es_request = DATA(ls_request)
                 ev_error   = DATA(lv_error) ).
 
     cl_abap_unit_assert=>assert_initial( lv_error ).
-    cl_abap_unit_assert=>assert_equals( act = ls_request-status  exp = 'E' ).
-    cl_abap_unit_assert=>assert_equals( act = ls_request-message exp = 'Open item not found' ).
+    cl_abap_unit_assert=>assert_equals( act = ls_request-clearing_status  exp = 'E' ).
+    cl_abap_unit_assert=>assert_equals( act = ls_request-clearing_message exp = 'Open item not found' ).
   ENDMETHOD.
 
 ENDCLASS.

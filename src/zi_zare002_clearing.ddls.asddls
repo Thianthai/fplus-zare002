@@ -58,7 +58,7 @@ define view entity ZI_ZARE002_CLEARING
       // อ่านจากเอกสาร FI จริง ไม่ได้คำนวณจากวันที่ เพื่อให้ถูกแม้ปีบัญชีไม่ตรงปีปฏิทิน
       // ว่างได้ถ้าหาเอกสารไม่เจอ หรือ user ที่เรียกไม่มีสิทธิ์อ่านเอกสาร FI
       @EndUserText.label: 'Invoice Doc Year'
-      Invoice.FiscalYear                   as InvoiceAccountingDocumentYear,
+      Invoice.FiscalYear                   as InvoiceAccountingDocYear,
 
       // เลขเอกสาร JE ที่ ZARE002 post ไว้
       // BOT ส่งค่านี้กลับมาคู่กับเลข clearing เพื่อบอกว่าทำใบไหนเสร็จ
@@ -68,7 +68,7 @@ define view entity ZI_ZARE002_CLEARING
       // ปีบัญชีของเอกสาร JE
       // เลขเอกสารบัญชี unique แค่ภายใน company code และปีบัญชี BOT จึงต้องใช้คู่กันเสมอ
       @EndUserText.label: 'Payment Doc Year'
-      Payment.payment_fiscal_year          as PaymentAccountingDocumentYear
+      Payment.payment_fiscal_year          as PaymentAccountingDocYear
 }
 where
       Payment.payment_accounting_document  <> ''

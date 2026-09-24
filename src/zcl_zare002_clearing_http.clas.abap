@@ -14,26 +14,25 @@ CLASS zcl_zare002_clearing_http DEFINITION
     TYPES:
       "! request ที่ BOT ส่งมา
       BEGIN OF ty_request,
-        company_code                     TYPE string,
-        payment_document_no              TYPE string,
-        payment_accounting_document      TYPE string,
-        payment_accounting_doc_year      TYPE string,
-        status                           TYPE string,
-        clearing_document                TYPE string,
-        clearing_document_year           TYPE string,
-        message                          TYPE string,
+        request_id                  TYPE string,
+        company_code                TYPE string,
+        payment_document_no         TYPE string,
+        payment_accounting_document TYPE string,
+        payment_accounting_doc_year TYPE string,
+        clearing_document           TYPE string,
+        clearing_document_year      TYPE string,
+        clearing_status             TYPE string,
+        clearing_message            TYPE string,
       END OF ty_request,
 
       "! response ที่ตอบกลับ
-      "! Status C คือปิดงานเรียบร้อย
-      "! Status E คือไม่ผ่าน ดูเหตุผลที่ Message
+      "! SapStatus C คือ SAP บันทึกผล clearing เรียบร้อย E คือไม่ผ่าน
+      "! SalesforceStatus เป็นผลของขั้นถัดไปที่ ZARI003 ทำ ไม่ใช่ความรับผิดชอบของ BOT
       BEGIN OF ty_response,
-        status                      TYPE string,
-        message                     TYPE string,
-        payment_document_no         TYPE string,
-        payment_accounting_document TYPE string,
-        clearing_document           TYPE string,
-        salesforce_status           TYPE string,
+        sap_status         TYPE string,
+        sap_message        TYPE string,
+        salesforce_status  TYPE string,
+        salesforce_message TYPE string,
       END OF ty_response,
 
       "! ตัวอย่างที่ GET ตอบกลับ
@@ -119,30 +118,31 @@ CLASS zcl_zare002_clearing_http IMPLEMENTATION.
       service = `ZARE002_CLEARING`
       method  = `POST /sap/bc/http/sap/ZARE002_CLEARING`
 
-      request = VALUE #( company_code                     = `2000`
-                         payment_document_no              = `1000002301`
-                         payment_accounting_document      = `3500000006`
-                         payment_accounting_doc_year      = `2026`
-                         status                           = `S`
-                         clearing_document                = `3000000012`
-                         clearing_document_year           = `2026`
-                         message                          = `` )
+      request = VALUE #( request_id                  = `20260924_143000`
+                         company_code                = `2000`
+                         payment_document_no         = `1000002301`
+                         payment_accounting_document = `3500000006`
+                         payment_accounting_doc_year = `2026`
+                         clearing_document           = `3000000012`
+                         clearing_document_year      = `2026`
+                         clearing_status             = `S`
+                         clearing_message            = `` )
 
-      response = VALUE #( status                      = `C`
-                          message                     = `Payment 1000002301 cleared by document 3000000012`
-                          payment_document_no         = `1000002301`
-                          payment_accounting_document = `3500000006`
-                          clearing_document           = `3000000012`
-                          salesforce_status           = `S` )
+      response = VALUE #( sap_status         = `C`
+                          sap_message        = `Payment 1000002301 cleared by document 3000000012`
+                          salesforce_status  = `E`
+                          salesforce_message = `Salesforce rejected the update: NOT_FOUND` )
 
       note = VALUE #( ( `ส่งทีละ 1 ใบ` )
-                      ( `4 field แรกคือค่าที่ได้จาก API ดึงคิว ส่งกลับมาตรงๆ` )
-                      ( `Status S คือ clear สำเร็จ ต้องมี ClearingDocument และ ClearingDocumentYear` )
-                      ( `Status E คือ clear ไม่สำเร็จ ใส่เหตุผลใน Message ใบจะยังอยู่ในคิวให้ทำใหม่` )
+                      ( `RequestId รูปแบบ YYYYMMDD_hhmmss ยังไม่บังคับ เก็บไว้รอ log table` )
+                      ( `4 field ถัดมาคือค่าที่ได้จาก API ดึงคิว ส่งกลับมาตรงๆ` )
+                      ( `ClearingStatus S คือ clear สำเร็จ ต้องมี ClearingDocument และ ClearingDocumentYear` )
+                      ( `ClearingStatus E คือ clear ไม่สำเร็จ ใส่เหตุผลใน ClearingMessage ใบจะยังอยู่ในคิวให้ทำใหม่` )
                       ( `ทุกค่าเป็น string รวมถึงปีบัญชี` )
-                      ( `Status ใน response C คือปิดงานเรียบร้อย E คือไม่ผ่าน` )
+                      ( `SapStatus C คือ SAP บันทึกผลเรียบร้อย E คือไม่ผ่าน ดูเหตุผลที่ SapMessage` )
                       ( `SalesforceStatus S คือแจ้ง Salesforce สำเร็จ E คือไม่สำเร็จ ว่างคือไม่ได้ยิง` )
-                      ( `body ผิดรูปแบบได้ 400 โครงเดียวกัน Status เป็น E` )
+                      ( `SalesforceStatus E ไม่ใช่ปัญหาของ BOT ฝั่ง SAP จัดการส่งซ้ำเอง` )
+                      ( `body ผิดรูปแบบได้ 400 โครงเดียวกัน SapStatus เป็น E` )
                       ( `ไม่ต้องใช้ CSRF token` ) ) ).
 
     reply( EXPORTING iv_status   = 200
@@ -165,8 +165,8 @@ CLASS zcl_zare002_clearing_http IMPLEMENTATION.
       reply( EXPORTING iv_status   = 400
                        iv_reason   = 'Bad Request'
                        iv_json     = build_response( VALUE #(
-                                       outcome = zcl_zare002_clearing_result=>gc_outcome_error
-                                       message = lv_error ) )
+                                       sap_status  = zcl_zare002_clearing_result=>gc_sap_error
+                                       sap_message = lv_error ) )
              CHANGING  co_response = co_response ).
       RETURN.
     ENDIF.
@@ -214,18 +214,19 @@ CLASS zcl_zare002_clearing_http IMPLEMENTATION.
       WHEN ls_json-company_code IS INITIAL                THEN `CompanyCode`
       WHEN ls_json-payment_accounting_document IS INITIAL THEN `PaymentAccountingDocument`
       WHEN ls_json-payment_accounting_doc_year IS INITIAL THEN `PaymentAccountingDocYear`
-      WHEN ls_json-status IS INITIAL                      THEN `Status` ).
+      WHEN ls_json-clearing_status IS INITIAL             THEN `ClearingStatus` ).
 
     IF lv_missing IS NOT INITIAL.
       ev_error = message_text( iv_number = '124' iv_v1 = |{ lv_missing } is required| ).
       RETURN.
     ENDIF.
 
-    DATA(lv_status) = to_upper( condense( ls_json-status ) ).
+    DATA(lv_status) = to_upper( condense( ls_json-clearing_status ) ).
 
     IF  lv_status <> zcl_zare002_clearing_result=>gc_bot_success
     AND lv_status <> zcl_zare002_clearing_result=>gc_bot_error.
-      ev_error = message_text( iv_number = '124' iv_v1 = |Status must be S or E, got { ls_json-status }| ).
+      ev_error = message_text( iv_number = '124'
+                               iv_v1     = |ClearingStatus must be S or E, got { ls_json-clearing_status }| ).
       RETURN.
     ENDIF.
 
@@ -236,21 +237,23 @@ CLASS zcl_zare002_clearing_http IMPLEMENTATION.
         WHEN ls_json-clearing_document_year IS INITIAL THEN `ClearingDocumentYear` ).
 
       IF lv_missing_clearing IS NOT INITIAL.
-        ev_error = message_text( iv_number = '124' iv_v1 = |{ lv_missing_clearing } is required when Status is S| ).
+        ev_error = message_text( iv_number = '124'
+                                 iv_v1     = |{ lv_missing_clearing } is required when ClearingStatus is S| ).
         RETURN.
       ENDIF.
     ENDIF.
 
     es_request = VALUE #(
-      company_code                     = ls_json-company_code
-      payment_document_no              = ls_json-payment_document_no
+      request_id                  = ls_json-request_id
+      company_code                = ls_json-company_code
+      payment_document_no         = ls_json-payment_document_no
       " เลขเอกสารในตารางเก็บแบบเติมศูนย์ข้างหน้า ค่าที่ BOT ส่งมาอาจไม่เติมมาให้
-      payment_accounting_document      = |{ ls_json-payment_accounting_document ALPHA = IN }|
-      payment_accounting_doc_year      = ls_json-payment_accounting_doc_year
-      status                           = lv_status
-      clearing_document                = |{ ls_json-clearing_document ALPHA = IN }|
-      clearing_document_year           = ls_json-clearing_document_year
-      message                          = ls_json-message ).
+      payment_accounting_document = |{ ls_json-payment_accounting_document ALPHA = IN }|
+      payment_accounting_doc_year = ls_json-payment_accounting_doc_year
+      clearing_document           = |{ ls_json-clearing_document ALPHA = IN }|
+      clearing_document_year      = ls_json-clearing_document_year
+      clearing_status             = lv_status
+      clearing_message            = ls_json-clearing_message ).
 
   ENDMETHOD.
 
@@ -258,12 +261,10 @@ CLASS zcl_zare002_clearing_http IMPLEMENTATION.
   METHOD build_response.
 
     rv_json = xco_cp_json=>data->from_abap( VALUE ty_response(
-                status                      = is_result-outcome
-                message                     = is_result-message
-                payment_document_no         = is_result-payment_document_no
-                payment_accounting_document = is_result-payment_accounting_document
-                clearing_document           = is_result-clearing_document
-                salesforce_status           = is_result-salesforce_status )
+                sap_status         = is_result-sap_status
+                sap_message        = is_result-sap_message
+                salesforce_status  = is_result-salesforce_status
+                salesforce_message = is_result-salesforce_message )
                 )->apply( VALUE #( ( xco_cp_json=>transformation->underscore_to_pascal_case ) )
                 )->to_string( ).
 
