@@ -1,0 +1,253 @@
+"! รับผลการ clear ของ 1 payment จาก BOT แล้วปิดงานฝั่ง SAP
+"! สำเร็จ บันทึกเลข clearing กับปีบัญชี ตั้งสถานะเป็น Complete แล้วให้ ZARI003 แจ้ง Salesforce
+"! ไม่สำเร็จ เก็บเหตุผลไว้อย่างเดียว ใบยังอยู่ในคิวของ API ดึงงาน รอบถัดไป BOT จะหยิบไปทำใหม่เอง หรือ user หยิบไปทำ manual
+"! ผลของการแจ้ง Salesforce ไม่ย้อนกลับมาทำให้ clearing เป็นโมฆะ เพราะงานบัญชีเสร็จไปแล้วจริง
+"! การแจ้ง Salesforce และการเขียน salesforce_status เป็นของ ZARI003 คลาสนี้แค่เรียกและรับผลมาแสดง
+"! 1 payment เท่ากับ 1 LUW ของตัวเอง ต้องเรียกนอก RAP
+CLASS zcl_zare002_clearing_result DEFINITION
+  PUBLIC
+  FINAL
+  CREATE PUBLIC.
+
+  PUBLIC SECTION.
+
+    CONSTANTS:
+      "! สถานะที่ BOT ส่งมา
+      gc_bot_success     TYPE string VALUE 'S',
+      gc_bot_error       TYPE string VALUE 'E',
+
+      "! outcome ที่คืนให้ caller
+      "! C คือปิดงานเรียบร้อย
+      "! E คือไม่ผ่าน ดูเหตุผลที่ message
+      gc_outcome_cleared TYPE c LENGTH 1 VALUE 'C',
+      gc_outcome_error   TYPE c LENGTH 1 VALUE 'E',
+
+      gc_msgid           TYPE symsgid           VALUE 'ZARE002',
+      gc_status_complete TYPE ze_request_status VALUE 'C'.
+
+    TYPES:
+      "! สิ่งที่ BOT ส่งเข้ามา 1 ใบ
+      "! ปีบัญชีมาคู่กับเลขเอกสารเสมอ เพราะเลขเอกสารบัญชี unique แค่ภายใน company code และปีบัญชี
+      BEGIN OF ty_request,
+        company_code                     TYPE ztar_i002_pymt-company_code,
+        payment_document_no              TYPE ztar_i002_pymt-payment_document_no,
+        payment_accounting_document      TYPE ztar_i002_pymt-payment_accounting_document,
+        payment_accounting_doc_year      TYPE ztar_i002_pymt-payment_fiscal_year,
+        status                           TYPE string,
+        clearing_document                TYPE ztar_i002_pymt-clearing_accounting_document,
+        clearing_document_year           TYPE ztar_i002_pymt-clearing_fiscal_year,
+        message                          TYPE string,
+      END OF ty_request,
+
+      "! ผลที่ตอบกลับไปให้ BOT
+      "! salesforce_status ว่างแปลว่าไม่ได้ยิง เช่นกรณี BOT แจ้ง error มา
+      BEGIN OF ty_result,
+        outcome                     TYPE c LENGTH 1,
+        message                     TYPE string,
+        payment_document_no         TYPE ztar_i002_pymt-payment_document_no,
+        payment_accounting_document TYPE ztar_i002_pymt-payment_accounting_document,
+        clearing_document           TYPE ztar_i002_pymt-clearing_accounting_document,
+        salesforce_status           TYPE ze_response_status,
+      END OF ty_result.
+
+    "! ทำ 1 ใบให้จบ
+    "! อ่าน payment จากเลขเอกสาร JE แล้วตัดสินตามสถานะที่ BOT แจ้งมา
+    METHODS process
+      IMPORTING is_request       TYPE ty_request
+      RETURNING VALUE(rs_result) TYPE ty_result.
+
+  PRIVATE SECTION.
+
+    TYPES:
+      "! payment ที่หาเจอจากเลขเอกสาร JE
+      BEGIN OF ty_payment,
+        payment_uuid                 TYPE sysuuid_x16,
+        payment_document_no          TYPE ztar_i002_pymt-payment_document_no,
+        clearing_accounting_document TYPE ztar_i002_pymt-clearing_accounting_document,
+      END OF ty_payment.
+
+    "! หา payment จาก company code เลขเอกสาร JE และปีบัญชี
+    METHODS read_payment
+      IMPORTING is_request      TYPE ty_request
+      EXPORTING es_payment      TYPE ty_payment
+      RETURNING VALUE(rv_found) TYPE abap_bool.
+
+    "! บันทึกเลข clearing ปีบัญชี สถานะ และข้อความ แล้ว COMMIT WORK
+    METHODS save_clearing
+      IMPORTING iv_payment_uuid TYPE sysuuid_x16
+                is_request      TYPE ty_request
+                iv_message      TYPE string.
+
+    "! เก็บเฉพาะข้อความของขั้น clearing โดยไม่แตะเลขเอกสารและสถานะ
+    METHODS save_message
+      IMPORTING iv_payment_uuid TYPE sysuuid_x16
+                iv_message      TYPE string.
+
+    "! text ของ message class
+    "! placeholder ละไม่เกิน 50 ตัว
+    METHODS message_text
+      IMPORTING iv_number      TYPE symsgno
+                iv_v1          TYPE simple OPTIONAL
+                iv_v2          TYPE simple OPTIONAL
+                iv_v3          TYPE simple OPTIONAL
+      RETURNING VALUE(rv_text) TYPE string.
+
+ENDCLASS.
+
+
+CLASS zcl_zare002_clearing_result IMPLEMENTATION.
+
+  METHOD process.
+
+    DATA ls_payment TYPE ty_payment.
+
+    rs_result-outcome                     = gc_outcome_error.
+    rs_result-payment_document_no         = is_request-payment_document_no.
+    rs_result-payment_accounting_document = is_request-payment_accounting_document.
+
+    " 1. หาใบจากเลขเอกสาร JE ที่เราส่งให้ BOT ไปตอนดึงคิว
+    DATA(lv_found) = read_payment( EXPORTING is_request = is_request
+                                   IMPORTING es_payment = ls_payment ).
+
+    IF lv_found = abap_false.
+      rs_result-message = message_text( iv_number = '120'
+                                        iv_v1     = is_request-payment_accounting_document
+                                        iv_v2     = is_request-company_code ).
+      RETURN.
+    ENDIF.
+
+    rs_result-payment_document_no = ls_payment-payment_document_no.
+
+    " 2. BOT แจ้งว่า clear ไม่สำเร็จ
+    " เก็บเหตุผลไว้อย่างเดียว ไม่แตะเลขเอกสารและสถานะ
+    " ใบยังไม่มีเลข clearing จึงยังอยู่ในคิวของ API ดึงงาน คืนถัดไป BOT หยิบไปทำใหม่เอง
+    IF is_request-status = gc_bot_error.
+      rs_result-message = message_text(
+                            iv_number = '123'
+                            iv_v1     = ls_payment-payment_document_no
+                            iv_v2     = substring( val = is_request-message
+                                                   len = nmin( val1 = strlen( is_request-message ) val2 = 50 ) )
+                            iv_v3     = COND #( WHEN strlen( is_request-message ) > 50
+                                                THEN substring( val = is_request-message
+                                                                off = 50
+                                                                len = nmin( val1 = strlen( is_request-message ) - 50
+                                                                            val2 = 50 ) ) ) ).
+
+      save_message( iv_payment_uuid = ls_payment-payment_uuid
+                    iv_message      = rs_result-message ).
+
+      RETURN.
+    ENDIF.
+
+    " 3. ใบนี้มีเลข clearing อยู่แล้ว
+    " เลขเดียวกันแปลว่า BOT ส่งซ้ำ ถือว่าสำเร็จและไม่ทำอะไรต่อ
+    " เลขต่างกันแปลว่ามีอะไรผิด ไม่เขียนทับของเดิมเด็ดขาด
+    IF ls_payment-clearing_accounting_document IS NOT INITIAL.
+      rs_result-clearing_document = ls_payment-clearing_accounting_document.
+      rs_result-message           = message_text( iv_number = '121'
+                                                  iv_v1     = ls_payment-payment_document_no
+                                                  iv_v2     = ls_payment-clearing_accounting_document ).
+
+      IF ls_payment-clearing_accounting_document = is_request-clearing_document.
+        rs_result-outcome = gc_outcome_cleared.
+      ENDIF.
+
+      RETURN.
+    ENDIF.
+
+    " 4. clear สำเร็จ บันทึกเลข clearing กับสถานะ
+    rs_result-outcome           = gc_outcome_cleared.
+    rs_result-clearing_document = is_request-clearing_document.
+    rs_result-message           = message_text( iv_number = '122'
+                                                iv_v1     = ls_payment-payment_document_no
+                                                iv_v2     = is_request-clearing_document ).
+
+    save_clearing( iv_payment_uuid = ls_payment-payment_uuid
+                   is_request      = is_request
+                   iv_message      = rs_result-message ).
+
+    " 5. ให้ ZARI003 แจ้ง Salesforce ว่าใบนี้ Completed
+    " ZARI003 เป็นคนเขียน salesforce_status และ salesforce_message เอง คลาสนี้แค่รับผลมาตอบ BOT
+    " ยิงไม่สำเร็จไม่ทำให้ clearing เป็นโมฆะ เพราะเอกสารบัญชีเกิดไปแล้วจริง
+    DATA(ls_sfdc) = NEW zcl_zari003_sfdc_result( )->send_payment_result( ls_payment-payment_uuid ).
+
+    rs_result-salesforce_status = ls_sfdc-status.
+
+  ENDMETHOD.
+
+
+  METHOD read_payment.
+
+    CLEAR es_payment.
+
+    rv_found = abap_false.
+
+    SELECT SINGLE
+      FROM ztar_i002_pymt
+      FIELDS payment_uuid,
+             payment_document_no,
+             clearing_accounting_document
+      WHERE company_code                = @is_request-company_code
+        AND payment_accounting_document = @is_request-payment_accounting_document
+        AND payment_fiscal_year         = @is_request-payment_accounting_doc_year
+      INTO CORRESPONDING FIELDS OF @es_payment.
+
+    IF sy-subrc <> 0.
+      RETURN.
+    ENDIF.
+
+    rv_found = abap_true.
+
+  ENDMETHOD.
+
+
+  METHOD save_clearing.
+
+    DATA lv_now TYPE abp_lastchange_tstmpl.
+
+    GET TIME STAMP FIELD lv_now.
+    DATA(lv_user)    = cl_abap_context_info=>get_user_technical_name( ).
+    DATA(lv_message) = CONV ztar_i002_pymt-clearing_message( iv_message ).
+
+    UPDATE ztar_i002_pymt
+      SET clearing_accounting_document = @is_request-clearing_document,
+          clearing_fiscal_year         = @is_request-clearing_document_year,
+          status                       = @gc_status_complete,
+          clearing_message             = @lv_message,
+          last_changed_by              = @lv_user,
+          last_changed_at              = @lv_now,
+          local_last_changed_at        = @lv_now
+      WHERE payment_uuid = @iv_payment_uuid.
+
+    COMMIT WORK.
+
+  ENDMETHOD.
+
+
+  METHOD save_message.
+
+    DATA lv_now TYPE abp_lastchange_tstmpl.
+
+    GET TIME STAMP FIELD lv_now.
+    DATA(lv_user)    = cl_abap_context_info=>get_user_technical_name( ).
+    DATA(lv_message) = CONV ztar_i002_pymt-clearing_message( iv_message ).
+
+    UPDATE ztar_i002_pymt
+      SET clearing_message      = @lv_message,
+          last_changed_by       = @lv_user,
+          last_changed_at       = @lv_now,
+          local_last_changed_at = @lv_now
+      WHERE payment_uuid = @iv_payment_uuid.
+
+    COMMIT WORK.
+
+  ENDMETHOD.
+
+
+  METHOD message_text.
+
+    MESSAGE ID gc_msgid TYPE 'I' NUMBER iv_number WITH iv_v1 iv_v2 iv_v3 INTO rv_text.
+
+  ENDMETHOD.
+
+ENDCLASS.

@@ -122,6 +122,36 @@
      <MSGNR>112</MSGNR>
      <TEXT>Payments posted failed: Error &amp;1</TEXT>
     </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>ZARE002</ARBGB>
+     <MSGNR>120</MSGNR>
+     <TEXT>Payment document &amp;1 not found in company code &amp;2</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>ZARE002</ARBGB>
+     <MSGNR>121</MSGNR>
+     <TEXT>Payment &amp;1 already cleared by document &amp;2</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>ZARE002</ARBGB>
+     <MSGNR>122</MSGNR>
+     <TEXT>Payment &amp;1 cleared by document &amp;2</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>ZARE002</ARBGB>
+     <MSGNR>123</MSGNR>
+     <TEXT>Payment &amp;1 not cleared: &amp;2&amp;3</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>ZARE002</ARBGB>
+     <MSGNR>124</MSGNR>
+     <TEXT>Clearing result rejected: &amp;1&amp;2&amp;3</TEXT>
+    </T100>
    </T100>
   </asx:values>
  </asx:abap>
