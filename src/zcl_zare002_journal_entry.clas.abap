@@ -37,10 +37,12 @@ CLASS zcl_zare002_journal_entry DEFINITION
       "! payload ของ action Post — 1 แถวต่อ 1 เอกสาร
       tt_entry TYPE TABLE FOR ACTION IMPORT i_journalentrytp~post,
 
-      "! ผลของ post — สำเร็จ = COMMIT ผ่าน · accounting_document ได้จาก find_document หลัง commit
+      "! ผลของ post — สำเร็จ = COMMIT ผ่าน
+      "! accounting_document กับ fiscal_year ได้จาก find_document หลัง commit
       BEGIN OF ty_post_result,
         success             TYPE abap_bool,
         accounting_document TYPE ztar_i002_pymt-payment_accounting_document,
+        fiscal_year         TYPE ztar_i002_pymt-payment_fiscal_year,
         message             TYPE string,
       END OF ty_post_result,
 
@@ -116,12 +118,15 @@ CLASS zcl_zare002_journal_entry DEFINITION
       RETURNING VALUE(rs_result) TYPE ty_post_result.
 
     "! หาเลขเอกสารจาก DocumentReferenceID (late numbering — MAPPED ให้แค่ %pid)
+    "! คืนปีบัญชีมาด้วยเพราะเลขเอกสารบัญชี unique แค่ภายใน company code และปีบัญชี
     "! ใช้ทั้งหลัง post และก่อน post เพื่อกันการ post ซ้ำเมื่อรอบก่อน commit แล้วแต่บันทึกเลขไม่ทัน
+    "! ไม่เจอ = คืนค่าว่างทั้งคู่
     CLASS-METHODS find_document
       IMPORTING iv_company_code                TYPE ztar_i002_pymt-company_code
                 iv_reference                   TYPE ztar_i002_pymt-payment_document_no
                 iv_posting_date                TYPE ztar_i002_pymt-posting_date
-      RETURNING VALUE(rv_accounting_document)  TYPE ztar_i002_pymt-payment_accounting_document.
+      EXPORTING ev_accounting_document         TYPE ztar_i002_pymt-payment_accounting_document
+                ev_fiscal_year                 TYPE ztar_i002_pymt-payment_fiscal_year.
 
     "! ยอดรวม Special G/L Z open item ของ customer (เครดิตติดลบ) เคส advance ติดลบ
     CLASS-METHODS read_special_gl_open_amount
@@ -448,17 +453,24 @@ CLASS zcl_zare002_journal_entry IMPLEMENTATION.
 
     " เลขเอกสารจริงหาจาก reference — %pid ของ late numbering ใช้ไม่ได้นอก save phase
     DATA(ls_first) = VALUE #( it_entry[ 1 ] OPTIONAL ).
-    rs_result-accounting_document = find_document( iv_company_code = ls_first-%param-companycode
-                                                   iv_reference    = CONV #( ls_first-%param-documentreferenceid )
-                                                   iv_posting_date = ls_first-%param-postingdate ).
+
+    find_document( EXPORTING iv_company_code        = ls_first-%param-companycode
+                             iv_reference           = CONV #( ls_first-%param-documentreferenceid )
+                             iv_posting_date        = ls_first-%param-postingdate
+                   IMPORTING ev_accounting_document = rs_result-accounting_document
+                             ev_fiscal_year         = rs_result-fiscal_year ).
 
   ENDMETHOD.
 
 
   METHOD find_document.
 
-    " เอกสารล่าสุดที่ reference ตรง — ไม่ผูกปี เพราะปีบัญชีมาจาก posting date อยู่แล้ว
-    SELECT AccountingDocument
+    CLEAR: ev_accounting_document, ev_fiscal_year.
+
+    " เอกสารล่าสุดที่ reference ตรง
+    " เรียงจากมากไปน้อยเผื่อมีหลายใบ แล้วหยิบใบล่าสุดใบเดียว
+    SELECT AccountingDocument,
+           FiscalYear
       FROM i_journalentry
       WHERE CompanyCode            = @iv_company_code
         AND DocumentReferenceID    = @iv_reference
@@ -466,7 +478,7 @@ CLASS zcl_zare002_journal_entry IMPLEMENTATION.
         AND AccountingDocumentType = @gc_doc_type
         AND IsReversed             = ''
       ORDER BY AccountingDocument DESCENDING
-      INTO @rv_accounting_document
+      INTO ( @ev_accounting_document, @ev_fiscal_year )
       UP TO 1 ROWS.
     ENDSELECT.
 

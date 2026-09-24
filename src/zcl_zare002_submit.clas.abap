@@ -37,9 +37,9 @@ CLASS zcl_zare002_submit DEFINITION
         payment_document_no TYPE ztar_i002_pymt-payment_document_no,
         outcome             TYPE c LENGTH 1,
         accounting_document TYPE ztar_i002_pymt-payment_accounting_document,
+        fiscal_year         TYPE ztar_i002_pymt-payment_fiscal_year,
         message             TYPE string,
-      END OF ty_result,
-      tt_result TYPE STANDARD TABLE OF ty_result WITH EMPTY KEY.
+      END OF ty_result.
 
     "! ทำ 1 payment
     "! validate + post + บันทึก
@@ -69,6 +69,7 @@ CLASS zcl_zare002_submit DEFINITION
         advance_payment              TYPE ztar_i002_pymt-advance_payment,
         status                       TYPE ze_request_status,
         payment_accounting_document  TYPE ztar_i002_pymt-payment_accounting_document,
+        payment_fiscal_year          TYPE ztar_i002_pymt-payment_fiscal_year,
         clearing_accounting_document TYPE ztar_i002_pymt-clearing_accounting_document,
       END OF ty_header.
 
@@ -86,9 +87,11 @@ CLASS zcl_zare002_submit DEFINITION
       RETURNING VALUE(rv_message) TYPE string.
 
     "! บันทึกเลขเอกสาร (ถ้ามี) + message ลง header แล้ว COMMIT WORK
+    "! เลขเอกสารกับปีบัญชีต้องมาคู่กันเสมอ เก็บแยกกันไม่ได้
     METHODS save_result
       IMPORTING iv_payment_uuid        TYPE sysuuid_x16
                 iv_accounting_document TYPE ztar_i002_pymt-payment_accounting_document OPTIONAL
+                iv_fiscal_year         TYPE ztar_i002_pymt-payment_fiscal_year OPTIONAL
                 iv_message             TYPE string.
 
     "! text ของ message class — MESSAGE ... INTO
@@ -115,8 +118,10 @@ CLASS zcl_zare002_submit IMPLEMENTATION.
 
   METHOD process.
 
-    DATA ls_header TYPE ty_header.
-    DATA lt_item   TYPE zcl_zare002_journal_entry=>tt_item.
+    DATA ls_header                      TYPE ty_header.
+    DATA lt_item                        TYPE zcl_zare002_journal_entry=>tt_item.
+    DATA lv_payment_accounting_document TYPE ztar_i002_pymt-payment_accounting_document.
+    DATA lv_payment_fiscal_year         TYPE ztar_i002_pymt-payment_fiscal_year.
 
     CLEAR et_entry.
     rs_result-payment_uuid = iv_payment_uuid.
@@ -144,6 +149,7 @@ CLASS zcl_zare002_submit IMPLEMENTATION.
 
       rs_result-outcome             = gc_outcome_already.
       rs_result-accounting_document = ls_header-payment_accounting_document.
+      rs_result-fiscal_year         = ls_header-payment_fiscal_year.
       rs_result-message             = message_text( iv_number = '103'
                                                     iv_v1     = ls_header-payment_document_no
                                                     iv_v2     = ls_header-payment_accounting_document ).
@@ -165,10 +171,12 @@ CLASS zcl_zare002_submit IMPLEMENTATION.
     ENDIF.
 
     " 4. ป้องกัน post ซ้ำ รอบก่อนอาจ commit แล้วแต่บันทึกเลขไม่ทัน > ต้องเอาเลขเดิมมาใช้
-    DATA(lv_payment_accounting_document) = zcl_zare002_journal_entry=>find_document(
-                                             iv_company_code = ls_header-company_code
-                                             iv_reference    = ls_header-payment_document_no
-                                             iv_posting_date = ls_header-posting_date ).
+    zcl_zare002_journal_entry=>find_document(
+      EXPORTING iv_company_code        = ls_header-company_code
+                iv_reference           = ls_header-payment_document_no
+                iv_posting_date        = ls_header-posting_date
+      IMPORTING ev_accounting_document = lv_payment_accounting_document
+                ev_fiscal_year         = lv_payment_fiscal_year ).
 
     " เช็คว่าใบนี้เคย post ไปแล้วหรือยัง
     IF lv_payment_accounting_document IS NOT INITIAL.
@@ -177,12 +185,14 @@ CLASS zcl_zare002_submit IMPLEMENTATION.
       SELECT SINGLE @abap_true
         FROM ztar_i002_pymt
         WHERE payment_accounting_document = @lv_payment_accounting_document
+          AND payment_fiscal_year         = @lv_payment_fiscal_year
           AND payment_uuid               <> @iv_payment_uuid
         INTO @DATA(lv_used_elsewhere).
 
       IF lv_used_elsewhere = abap_false.
         rs_result-outcome             = gc_outcome_posted.
         rs_result-accounting_document = lv_payment_accounting_document.
+        rs_result-fiscal_year         = lv_payment_fiscal_year.
         rs_result-message             = message_text( iv_number = '109'
                                                       iv_v1     = ls_header-payment_document_no
                                                       iv_v2     = lv_payment_accounting_document ).
@@ -190,6 +200,7 @@ CLASS zcl_zare002_submit IMPLEMENTATION.
         IF iv_simulate = abap_false.
           save_result( iv_payment_uuid        = iv_payment_uuid
                        iv_accounting_document = lv_payment_accounting_document
+                       iv_fiscal_year         = lv_payment_fiscal_year
                        iv_message             = rs_result-message ).
         ENDIF.
 
@@ -229,6 +240,7 @@ CLASS zcl_zare002_submit IMPLEMENTATION.
 
     rs_result-outcome             = gc_outcome_posted.
     rs_result-accounting_document = ls_post-accounting_document.
+    rs_result-fiscal_year         = ls_post-fiscal_year.
     rs_result-message             = COND #( WHEN ls_post-accounting_document IS NOT INITIAL
                                             THEN message_text( iv_number = '109'
                                                                iv_v1     = ls_header-payment_document_no
@@ -240,6 +252,7 @@ CLASS zcl_zare002_submit IMPLEMENTATION.
 
     save_result( iv_payment_uuid        = iv_payment_uuid
                  iv_accounting_document = ls_post-accounting_document
+                 iv_fiscal_year         = ls_post-fiscal_year
                  iv_message             = rs_result-message ).
 
   ENDMETHOD.
@@ -267,6 +280,7 @@ CLASS zcl_zare002_submit IMPLEMENTATION.
              advance_payment,
              status,
              payment_accounting_document,
+             payment_fiscal_year,
              clearing_accounting_document
       WHERE payment_uuid = @iv_payment_uuid
       INTO CORRESPONDING FIELDS OF @es_header.
@@ -377,6 +391,7 @@ CLASS zcl_zare002_submit IMPLEMENTATION.
 
       UPDATE ztar_i002_pymt
         SET payment_accounting_document = @iv_accounting_document,
+            payment_fiscal_year         = @iv_fiscal_year,
             submit_message              = @lv_message,
             last_changed_by             = @lv_user,
             last_changed_at             = @lv_now,

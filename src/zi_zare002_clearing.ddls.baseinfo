@@ -3,6 +3,7 @@
 {
 "FROM":
 [
+"I_JOURNALENTRY",
 "ZTAR_I002_ITEM",
 "ZTAR_I002_PYMT"
 ],

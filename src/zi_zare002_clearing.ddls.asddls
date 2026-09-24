@@ -8,8 +8,15 @@
 // ใบที่ clear แล้วจะหลุดจาก view นี้เอง ไม่ต้องมีใครมาลบคิว
 define view entity ZI_ZARE002_CLEARING
   as select from ztar_i002_pymt as Payment
-    inner join   ztar_i002_item as Item
-      on Payment.payment_uuid = Item.payment_uuid
+    inner join ztar_i002_item as Item on Payment.payment_uuid = Item.payment_uuid
+
+    // ปีบัญชีของ invoice ไม่ได้เก็บไว้ในตาราง ต้องอ่านจากเอกสาร FI จริง
+    // ต้อง join ด้วย posting date ด้วย เพราะปีบัญชีเป็นส่วนหนึ่งของ key ของ I_JournalEntry
+    // เลขเอกสารเดียวกันเกิดซ้ำได้ในคนละปี ถ้า join แค่ company code กับเลขเอกสารจะได้หลายแถว
+    left outer join I_JournalEntry  as Invoice
+      on  Invoice.CompanyCode        = Payment.company_code
+      and Invoice.AccountingDocument = Item.accounting_document
+      and Invoice.PostingDate        = Item.invoice_posting_date
 {
       // key ของ view เป็น item uuid เพราะ 1 row คือ 1 item
   key Item.item_uuid                       as ItemUuid,
@@ -19,6 +26,11 @@ define view entity ZI_ZARE002_CLEARING
       @EndUserText.label: 'Payment Doc'
       Payment.payment_accounting_document  as PaymentAccountingDocument,
 
+      // ปีบัญชีของเอกสาร JE
+      // เลขเอกสารบัญชี unique แค่ภายใน company code และปีบัญชี BOT จึงต้องใช้คู่กันเสมอ
+      @EndUserText.label: 'Payment Doc Year'
+      Payment.payment_fiscal_year          as PaymentAccountingDocumentYear,
+      
       // เลขใบฝั่งต้นทาง ไว้ไล่เรื่องย้อนกลับเวลามีปัญหา
       @EndUserText.label: 'Payment Document No.'
       Payment.payment_document_no          as PaymentDocumentNo,
@@ -50,7 +62,13 @@ define view entity ZI_ZARE002_CLEARING
 
       // เลขเอกสาร invoice ที่ต้องเลือก clear ในคอลัมน์ Journal Entry ของหน้าจอ
       @EndUserText.label: 'Invoice Doc'
-      Item.accounting_document             as InvoiceAccountingDocument
+      Item.accounting_document             as InvoiceAccountingDocument,
+
+      // ปีบัญชีของ invoice ที่ BOT ต้องใช้เลือกเอกสารในหน้าจอ
+      // อ่านจากเอกสาร FI จริง ไม่ได้คำนวณจากวันที่ เพื่อให้ถูกแม้ปีบัญชีไม่ตรงปีปฏิทิน
+      // ว่างได้ถ้าหาเอกสารไม่เจอ หรือ user ที่เรียกไม่มีสิทธิ์อ่านเอกสาร FI
+      @EndUserText.label: 'Invoice Doc Year'
+      Invoice.FiscalYear                   as InvoiceAccountingDocumentYear
 }
 where
       Payment.payment_accounting_document  <> ''

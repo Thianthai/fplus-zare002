@@ -35,10 +35,15 @@ CLASS zcl_zare002_util DEFINITION
       gc_test_acctg_document  TYPE ztar_i002_item-accounting_document VALUE '6000000021',
       gc_test_billing_doc     TYPE ztar_i002_item-billing_document    VALUE 'O600000025',
       gc_test_invoice_amount  TYPE ztar_i002_item-invoice_amount      VALUE '10700.00',
-      gc_test_amount_paid     TYPE ztar_i002_item-amount_paid         VALUE '10700.00'.
+      gc_test_amount_paid     TYPE ztar_i002_item-amount_paid         VALUE '10700.00',
+
+      "! posting date จริงของ invoice ที่ item ชี้ไป
+      "! ต้องตรงกับเอกสาร FI จริง ไม่ใช่วันเดียวกับ payment
+      "! เพราะ view ของ API #4 หาปีบัญชีของ invoice ด้วยการ join เทียบ posting date
+      gc_test_invoice_date    TYPE ztar_i002_item-invoice_posting_date VALUE '20260909'.
 
     "! abap_true = สร้าง payload แล้วพิมพ์ ไม่ post · abap_false = post จริง (ได้เอกสารใหม่ทุกครั้งที่ F9)
-    CONSTANTS gc_submit_simulate TYPE abap_bool VALUE abap_true.
+    CONSTANTS gc_submit_simulate TYPE abap_bool VALUE abap_false.
 
     "! สร้างใบทดสอบใหม่ 1 ใบสำหรับลอง Submit
     "! clone โครงสร้างจากใบต้นแบบ แล้วทับด้วยค่าของเอกสารตัวอย่าง 5 ขา
@@ -72,14 +77,15 @@ CLASS zcl_zare002_util IMPLEMENTATION.
 *    reset_payment( out ).
 *    test_sfdc_bearer( out ).
 *    set_test_data( out ).
-*    submit_poc( out ).
+    submit_poc( out ).
 
   ENDMETHOD.
 
   METHOD class_constructor.
     " payment document ที่ utility จะทำงานด้วย (reset_payment / submit_poc)
     " แก้ list ใน class_constructor แล้วรันใหม่ (F9)
-    gt_payment_document_no = VALUE #( ( '1000002300' ) ).
+    gt_payment_document_no = VALUE #( ( '1000002301' ) ).
+*    gt_payment_document_no = VALUE #( ( '1000002300' ) ).
 *    gt_payment_document_no = VALUE #( ( '1000000002' ) ).
 *                                      ( '1000000102' ) ).
   ENDMETHOD.
@@ -289,7 +295,7 @@ CLASS zcl_zare002_util IMPLEMENTATION.
     ls_item-billing_note_no       = space.
     ls_item-accounting_document   = gc_test_acctg_document.
     ls_item-billing_document      = gc_test_billing_doc.
-    ls_item-invoice_posting_date  = gc_test_posting_date.
+    ls_item-invoice_posting_date  = gc_test_invoice_date.
     ls_item-currency              = gc_test_currency.
     ls_item-invoice_amount        = gc_test_invoice_amount.
     ls_item-amount_paid           = gc_test_amount_paid.
