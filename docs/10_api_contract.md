@@ -204,15 +204,17 @@ GET https://my442178-api.s4hana.cloud.sap/sap/opu/odata4/sap/zapi_zare002_o4/srv
   "@odata.context": "$metadata#ClearingItems",
   "value": [
     {
-      "ItemUuid": "fa163e19-5f2e-1fe1-ead4-6328cdb004a3",
-      "PaymentAccountingDocument": "3500000004",
-      "PaymentDocumentNo": "1000002300",
+      "ItemUuid": "fa163e19-5f2e-1fe1-adfe-fadf1490c4b9",
+      "PaymentAccountingDocument": "3500000006",
+      "PaymentAccountingDocumentYear": "2026",
+      "PaymentDocumentNo": "1000002301",
       "CompanyCode": "2000",
       "CustomerCode": "1000000014",
       "JournalEntryDate": "2026-09-22",
       "PostingDate": "2026-09-22",
       "JournalEntryType": "DS",
-      "InvoiceAccountingDocument": "6000000021"
+      "InvoiceAccountingDocument": "6000000021",
+      "InvoiceAccountingDocumentYear": "2026"
     }
   ]
 }
@@ -222,6 +224,7 @@ GET https://my442178-api.s4hana.cloud.sap/sap/opu/odata4/sap/zapi_zare002_o4/srv
 |---|---|---|
 | `ItemUuid` | Guid | key ของแถว ไม่ต้องใช้ทำอะไร |
 | `PaymentAccountingDocument` | string(10) | เลขเอกสาร JE ที่ SAP post ไว้ · เลือกบรรทัดนี้ในจอ และ **ส่งกลับมาใน API #3** |
+| `PaymentAccountingDocumentYear` | string(4) | ปีบัญชีของเอกสาร JE · ใช้คู่กับเลขเอกสารเสมอ และ **ส่งกลับมาใน API #3** |
 | `PaymentDocumentNo` | string(10) | เลขใบฝั่งต้นทาง ไว้ไล่เรื่องย้อนกลับ ไม่ต้องกรอกที่ไหน |
 | `CompanyCode` | string(4) | ช่อง **Company Code** ใน popup Clear Open Items |
 | `CustomerCode` | string(10) | ช่อง **Customer** ใน popup |
@@ -229,6 +232,7 @@ GET https://my442178-api.s4hana.cloud.sap/sap/opu/odata4/sap/zapi_zare002_o4/srv
 | `PostingDate` | Edm.Date | ช่อง **Posting Date** |
 | `JournalEntryType` | string(2) | ช่อง **Journal Entry Type** (คงที่ `DS`) |
 | `InvoiceAccountingDocument` | string(10) | เลขเอกสาร invoice ที่ต้องเลือก clear ในคอลัมน์ **Journal Entry** |
+| `InvoiceAccountingDocumentYear` | string(4) | ปีบัญชีของ invoice · ใช้คู่กับเลขเอกสารตอนเลือกในจอ · อ่านจากเอกสาร FI จริง ไม่ได้คำนวณจากวันที่ |
 
 ### กติกาของ view
 
@@ -236,6 +240,7 @@ GET https://my442178-api.s4hana.cloud.sap/sap/opu/odata4/sap/zapi_zare002_o4/srv
 - แสดงเฉพาะใบที่ **post JE แล้ว** และ **ยังไม่มีเลข clearing**
 - ใบที่ clear เสร็จและส่งผลกลับทาง API #3 แล้ว จะหายจาก view นี้เอง ไม่ต้องมีใครมาลบคิว
 - ใบที่ BOT clear ไม่สำเร็จจะยังอยู่ในคิว คืนถัดไปจะถูกดึงไปทำใหม่โดยอัตโนมัติ
+- **เลขเอกสารบัญชีต้องใช้คู่กับปีบัญชีเสมอ** เลขเดียวกันเกิดซ้ำได้ในคนละปี
 
 ### Query ที่ใช้ได้ (OData V4 มาตรฐาน)
 
@@ -279,5 +284,23 @@ GET .../ClearingItems?$count=true&$orderby=PaymentAccountingDocument
 
 ⬜ กำลังทำ (8B.6) · จะเขียนลงเอกสารนี้เมื่อเสร็จ
 
-โครงที่ตกลงไว้: BOT ส่งทีละใบ `{ CompanyCode, PaymentAccountingDocument, Status, ClearingDocument, Message }`
-ผ่าน `POST /sap/bc/http/sap/ZARE002_CLEARING`
+โครงที่ตกลงไว้ BOT ส่ง **ทีละใบ** ผ่าน `POST /sap/bc/http/sap/ZARE002_CLEARING`
+
+```json
+{
+  "CompanyCode": "2000",
+  "PaymentDocumentNo": "1000002301",
+  "PaymentAccountingDocument": "3500000006",
+  "PaymentAccountingDocumentYear": "2026",
+  "Status": "S",
+  "ClearingDocument": "3000000012",
+  "ClearingDocumentYear": "2026",
+  "Message": ""
+}
+```
+
+- 4 field แรกคือค่าที่ได้จาก API #4 ส่งกลับมาตรง ๆ
+- `Status` = `S` clear สำเร็จ · `E` ไม่สำเร็จ (ใส่เหตุผลใน `Message`)
+- `Status = E` ไม่ต้องมี `ClearingDocument` / `ClearingDocumentYear`
+- **ทุก field เป็น string** รวมถึงปี (`"2026"` ไม่ใช่ `2026`)
+- ใช้ communication user และ arrangement เดียวกับ API #4

@@ -106,6 +106,12 @@ item เดียว `amount_paid 10700` → สมดุล 0 ✓ เครื�
 จุดต่างเล็ก: assignment ของบรรทัด G/L — **แก้แล้ว 2026-09-22 ไม่ส่ง assignment เลย** ปล่อยให้ sort key ของแต่ละบัญชีเติมเอง
 (001 ว่าง · 002 `2002010000` · 003 `20260922`) · สเปกไม่ได้ระบุเรื่องนี้ ยึดเอกสารตัวอย่างเป็นหลัก (OQ-40 ปิด)
 
+**เก็บปีบัญชีเพิ่ม 2026-09-24**: ตาราง +`payment_fiscal_year` `clearing_fiscal_year` `clearing_message` ·
+`find_document` คืนปีมาจาก `I_JournalEntry` · API #4 expose `PaymentAccountingDocumentYear` และ
+`InvoiceAccountingDocumentYear` (join `I_JournalEntry` เทียบ company + เลขเอกสาร + posting date) ·
+ทดสอบผ่านด้วยเอกสาร `3500000006` ได้ปี `2026` ทั้งคู่ · **ข้อควรระวัง**: `invoice_posting_date` ในตารางต้องตรงกับ
+เอกสาร FI จริง ไม่งั้น join ไม่เจอและปีจะว่าง (เจอจริงตอน test data ตั้งวันผิด)
+
 **ช่องว่างของสเปก**: `Submit Logic.docx` ระบุแค่ company code · document date · posting date · doc type `DS` · branch `0000` ที่ header
 และ account type / Dr-Cr / G/L / amount ที่บรรทัด — house bank · business place · tax code `WP` · cost center ของ rounding ·
 baseline date · assignment ล้วนมาจากฟังก์ชันนอลและเอกสารตัวอย่าง ไม่ได้มาจากสเปก
