@@ -68,6 +68,46 @@ Fiori elements **List Report** บน OData V4 · **ไม่มี Object Page*
 ⚠️ ไม่มี default filter แปลว่า **รายการโตไม่มีเพดาน** ตามเวลาที่ ZARI002 ยิงข้อมูลเข้ามา
 ถ้าวันหน้าช้าให้ใส่ default date range ที่ `@UI.selectionVariant` — ไม่ต้องแก้ CDS
 
+## 5b. Filter และคอลัมน์สำหรับ Submit (8B.8 · 2026-09-25)
+
+### Filter bar
+
+| position | Filter | Element | ชนิด |
+|---|---|---|---|
+| 10 | Company Code | `CompanyCode` | |
+| 20 | Posting Date | `PostingDate` | |
+| 30 | Request Status | `Status` | |
+| 40 | Customer Code | `CustomerCode` | |
+| 50 | Payment Document No. | `PaymentDocumentNo` | |
+| 60 | **Submit Status** | `IsSubmitted` | dropdown Yes / No · Yes = มี Submit Document แล้ว |
+| 70 | **Submit Document** | `PaymentAccountingDocument` | |
+| 80 | **Clearing Status** | `IsCleared` | dropdown Yes / No · Yes = มี Clearing Document แล้ว |
+| 90 | **Clearing Document** | `ClearingAccountingDocument` | |
+
+`IsSubmitted` / `IsCleared` เป็น calculated element ใน `ZI_ZARE002_PYMT` cast เป็น `abap_boolean`
+FE V4 วาดเป็น dropdown Yes / No ให้เองจาก `Edm.Boolean` ไม่ต้องมี value help view หรือ domain
+
+**Submit Status = Yes + Clearing Status = No** = คิวที่รอ BOT clear (ชุดเดียวกับ API #4)
+
+### คอลัมน์ (ต่อจาก Status icon)
+
+| position | คอลัมน์ | Element | importance |
+|---|---|---|---|
+| 120 | Submit Document | `PaymentAccountingDocument` | HIGH |
+| 130 | Submit Message | `SubmitMessage` | LOW |
+| 140 | Clearing Document | `ClearingAccountingDocument` | HIGH |
+| 150 | Clearing Message | `ClearingMessage` | LOW |
+| 160 | Reject Reason | `RejectReason` | HIGH |
+
+label เดิม `Payment Doc` / `Clearing Doc` เปลี่ยนเป็น `Submit Document` / `Clearing Document`
+เพื่อไม่ให้สับสนกับคอลัมน์แรก Payment Document No.
+
+### ⚠️ ผู้ใช้ที่บันทึก variant ไว้ก่อน จะไม่เห็น filter ใหม่
+
+filter ที่เพิ่มทีหลังไม่โผล่เองใน variant ที่ผู้ใช้บันทึกไว้แล้ว (ชื่อ variant มีดาว `Standard*`)
+ต้องกด **Adapt Filters** แล้วติ๊กเพิ่มครั้งเดียว · ผู้ใช้ที่ใช้ Standard ล้วนเห็นเลย
+**ต้องแจ้งผู้ใช้ตอน go-live** (เจอจริงตอนทดสอบ 2026-09-25)
+
 ## 6. ปุ่ม Submit / Reject — เฟสนี้เปล่า
 
 | Action | Label | ชนิด | `invocationGrouping` |

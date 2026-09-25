@@ -242,7 +242,7 @@ object กลาง (8C.2 · 8C.3 · 8C.5 · 8C.6) อยู่ใน repo **`fp
 | 8B.5 | **API #4 BOT ดึงคิวเอง** (OData V4 Web API read-only) · entity set `ClearingItems` · 1 row ต่อ item ของใบที่ post JE แล้วแต่ยังไม่ clear · `$filter` posting date ได้ · ~~API #2 ABAP → BOT ตัดทิ้ง~~ | `ZI_ZARE002_CLEARING` · `ZAPI_ZARE002` · `ZAPI_ZARE002_O4` · `ZCS_PAYMENT_CLEARING` · `ZCA_PAYMENT_CLEARING` | ✅ (2026-09-23) |
 | 8B.6 | API #3 BOT → ABAP · สำเร็จ = stamp clearing doc + ปี + status C แล้วให้ **ZARI003** แจ้ง SFDC · ไม่สำเร็จ = เก็บ `clearing_message` ใบค้างคิวให้ทำใหม่ · ใบที่มี clearing แล้วไม่เขียนทับ | HTTP `ZARE002_CLEARING` · `ZCL_ZARE002_CLEARING_HTTP` (+5 test) · `ZCL_ZARE002_CLEARING_RESULT` · message 120–124 · scenario `ZCS_PAYMENT_CLEARING` | ✅ (2026-09-24) |
 | 8B.7 | validate `salesforce_id` / `salesforce_item_id` ว่าง = record ไม่สมบูรณ์ ห้าม Submit (113) ห้าม Reject (008) · แก้ `set_test_data` ให้เติม id | | ⬜ |
-| 8B.8 | filter บนหน้าจอ ARE002 มี Payment Doc แต่ยังไม่มี Clearing Doc | `ZI_ZARE002_PYMT` `ZC_ZARE002` (+ddlx) | ⬜ |
+| 8B.8 | filter 4 ช่อง (Submit Status / Submit Document / Clearing Status / Clearing Document) · คอลัมน์ Submit Message + Clearing Message · เปลี่ยน label เป็น Submit Document / Clearing Document | `ZI_ZARE002_PYMT` `ZC_ZARE002` (+ddlx) | ✅ `d7f637c` (2026-09-25) |
 | 8B.9 | ลบ comment ที่อ้าง API #2 ใน `handle_post` | `ZCL_ZARE002_SUBMIT_HTTP` | ⬜ |
 | 8B.10 | end-to-end + ลบ `submit_poc` | | ⬜ |
 
