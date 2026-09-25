@@ -39,7 +39,10 @@ CLASS zcl_zare002_submit DEFINITION
         accounting_document TYPE ztar_i002_pymt-payment_accounting_document,
         fiscal_year         TYPE ztar_i002_pymt-payment_fiscal_year,
         message             TYPE string,
-      END OF ty_result.
+      END OF ty_result,
+
+      "! ผลของหลาย payment ที่ API ตอบกลับไปทีเดียว
+      tt_result TYPE STANDARD TABLE OF ty_result WITH EMPTY KEY.
 
     "! ทำ 1 payment
     "! validate + post + บันทึก
@@ -62,6 +65,7 @@ CLASS zcl_zare002_submit DEFINITION
         posting_date                 TYPE ztar_i002_pymt-posting_date,
         gl_account                   TYPE ztar_i002_pymt-gl_account,
         payment_method               TYPE ztar_i002_pymt-payment_method,
+        salesforce_id                TYPE ztar_i002_pymt-salesforce_id,
         currency                     TYPE ztar_i002_pymt-currency,
         payment_amount               TYPE ztar_i002_pymt-payment_amount,
         fees                         TYPE ztar_i002_pymt-fees,
@@ -273,6 +277,7 @@ CLASS zcl_zare002_submit IMPLEMENTATION.
              posting_date,
              gl_account,
              payment_method,
+             salesforce_id,
              currency,
              payment_amount,
              fees,
@@ -315,14 +320,38 @@ CLASS zcl_zare002_submit IMPLEMENTATION.
       RETURN.
     ENDIF.
 
-    " 2. validate เคส payment_method = "Cheque" ต้อง post มือเอง โปรแกรมไม่รองรับ
+    " 2. validate record ไม่สมบูรณ์
+    " ใบที่ไม่มีเลขอ้างอิงของ Salesforce ส่งผลกลับไปไม่ได้ จึงห้ามทั้ง Submit และ Reject
+    " header ต้องมี salesforce_id
+    " ทุก item ต้องมี salesforce_item_id
+    IF is_header-salesforce_id IS INITIAL.
+      rv_message = message_text( iv_number = '113'
+                                 iv_v1     = is_header-payment_document_no
+                                 iv_v2     = `Salesforce ID` ).
+      RETURN.
+    ENDIF.
+
+    SELECT SINGLE @abap_true
+      FROM ztar_i002_item
+      WHERE payment_uuid       = @is_header-payment_uuid
+        AND salesforce_item_id = @space
+      INTO @DATA(lv_item_id_missing).
+
+    IF lv_item_id_missing = abap_true.
+      rv_message = message_text( iv_number = '113'
+                                 iv_v1     = is_header-payment_document_no
+                                 iv_v2     = `Salesforce item ID` ).
+      RETURN.
+    ENDIF.
+
+    " 3. validate เคส payment_method = "Cheque" ต้อง post มือเอง โปรแกรมไม่รองรับ
     IF is_header-payment_method = gc_method_cheque.
       rv_message = message_text( iv_number = '104'
                                  iv_v1     = is_header-payment_document_no ).
       RETURN.
     ENDIF.
 
-    " 3. validate mandatory
+    " 4. validate mandatory
     DATA(lv_missing) = COND string( WHEN it_item IS INITIAL THEN `items`
                                     WHEN is_header-gl_account IS INITIAL THEN `G/L account`
                                     WHEN is_header-currency IS INITIAL THEN `currency`
@@ -335,7 +364,7 @@ CLASS zcl_zare002_submit IMPLEMENTATION.
       RETURN.
     ENDIF.
 
-    " 4. validate balance ของทุกขาบัญชี
+    " 5. validate balance ของทุกขาบัญชี
     " payment_amount + fees - sum( amount_paid ) - rounding_diff - advance_payment = 0
     " payment_amount  ยอดสุทธิที่เข้าบัญชีธนาคารจริง (บรรทัด 001 เดบิต)
     " fees            ค่าธรรมเนียมที่ธนาคารหักไว้ ลูกค้าจ่ายมาเต็มแต่เข้าบัญชีไม่เต็ม (002 เดบิต)
@@ -352,7 +381,7 @@ CLASS zcl_zare002_submit IMPLEMENTATION.
       RETURN.
     ENDIF.
 
-    " 5. เงินรับล่วงหน้าติดลบ = ใบนี้ "ใช้" เงินที่ลูกค้าเคยจ่ายล่วงหน้าไว้มาหักกับ invoice
+    " 6. เงินรับล่วงหน้าติดลบ = ใบนี้ "ใช้" เงินที่ลูกค้าเคยจ่ายล่วงหน้าไว้มาหักกับ invoice
     " เงินรับล่วงหน้าถูกบันทึกไว้ตั้งแต่ payment ใบก่อน เป็นเครดิตลูกหนี้ Special G/L Z ที่ยังไม่ถูก clear
     " บรรทัด 005 ของใบก่อน ตอน advance_payment เป็นบวก และยังค้างเป็น open item อยู่จนถึงตอนนี้
     " ใบนี้จึงกลับข้างเป็นเดบิต Special G/L Z เพื่อล้างยอดค้างนั้น แล้วให้ BOT clear คู่กันทีหลัง

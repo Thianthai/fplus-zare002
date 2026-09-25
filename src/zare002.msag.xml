@@ -53,6 +53,12 @@
     <T100>
      <SPRSL>E</SPRSL>
      <ARBGB>ZARE002</ARBGB>
+     <MSGNR>008</MSGNR>
+     <TEXT>Payment &amp;1 is incomplete: &amp;2 is missing</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>ZARE002</ARBGB>
      <MSGNR>101</MSGNR>
      <TEXT>Payment &amp;1 not found</TEXT>
     </T100>
@@ -121,6 +127,12 @@
      <ARBGB>ZARE002</ARBGB>
      <MSGNR>112</MSGNR>
      <TEXT>Payments posted failed: Error &amp;1</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>ZARE002</ARBGB>
+     <MSGNR>113</MSGNR>
+     <TEXT>Payment &amp;1 is incomplete: &amp;2 is missing</TEXT>
     </T100>
     <T100>
      <SPRSL>E</SPRSL>

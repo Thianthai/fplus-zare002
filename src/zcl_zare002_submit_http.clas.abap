@@ -220,8 +220,6 @@ CLASS zcl_zare002_submit_http IMPLEMENTATION.
     LOOP AT lt_payment_uuid INTO DATA(lv_payment_uuid).
       DATA(ls_result) = lo_submit->process( lv_payment_uuid ).
 
-      " 8B.5: ใบที่ outcome P หรือ A → ส่งให้ BOT ทำ clearing ต่อตรงนี้
-
       APPEND ls_result TO lt_result.
     ENDLOOP.
 

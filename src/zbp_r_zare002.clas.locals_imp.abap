@@ -217,7 +217,35 @@ CLASS lhc_Item IMPLEMENTATION.
         CONTINUE.
       ENDIF.
 
-      " 5.3 validate payment ต้องมี reject reason อย่างน้อย 1 item
+      " 5.3 validate record ไม่สมบูรณ์
+      " ใบที่ไม่มีเลขอ้างอิงของ Salesforce ส่งผลกลับไปไม่ได้ จึงห้าม reject
+      " header ต้องมี salesforce_id
+      " ทุก item ต้องมี salesforce_item_id
+      DATA(lv_missing_sf) = COND string(
+        WHEN ls_payment-salesforce_id IS INITIAL
+          THEN `Salesforce ID`
+        WHEN line_exists( lt_all_item[ PaymentUuid      = ls_payment-payment_uuid
+                                       SalesforceItemId = '' ] )
+          THEN `Salesforce item ID` ).
+
+      IF lv_missing_sf IS NOT INITIAL.
+        lv_any_failed = abap_true.
+
+        LOOP AT lt_selected INTO ls_selected
+          WHERE PaymentUuid = ls_payment-payment_uuid.
+
+          APPEND VALUE #( %tky = ls_selected-%tky
+                          %msg = new_message( id       = gc_msgid
+                                              number   = '008'
+                                              severity = if_abap_behv_message=>severity-error
+                                              v1       = ls_payment-payment_document_no
+                                              v2       = lv_missing_sf ) ) TO reported-item.
+        ENDLOOP.
+
+        CONTINUE.
+      ENDIF.
+
+      " 5.4 validate payment ต้องมี reject reason อย่างน้อย 1 item
       DATA(lv_has_reason) = abap_false.
 
       LOOP AT lt_all_item INTO DATA(ls_item)

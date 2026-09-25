@@ -37,6 +37,12 @@ CLASS zcl_zare002_util DEFINITION
       gc_test_invoice_amount  TYPE ztar_i002_item-invoice_amount      VALUE '10700.00',
       gc_test_amount_paid     TYPE ztar_i002_item-amount_paid         VALUE '10700.00',
 
+      "! salesforce id ปลอมของใบทดสอบ
+      "! ใบที่ salesforce id ว่างเป็น record ไม่สมบูรณ์ Submit และ Reject ไม่ได้
+      "! Salesforce จะตอบ NOT_FOUND เพราะไม่มี record จริง ซึ่งไม่กระทบการทดสอบฝั่ง FI
+      gc_test_salesforce_id   TYPE ztar_i002_pymt-salesforce_id      VALUE 'a5jTEST00000000001',
+      gc_test_sf_item_id      TYPE ztar_i002_item-salesforce_item_id VALUE 'a2JTEST00000000001',
+
       "! posting date จริงของ invoice ที่ item ชี้ไป
       "! ต้องตรงกับเอกสาร FI จริง ไม่ใช่วันเดียวกับ payment
       "! เพราะ view ของ API #4 หาปีบัญชีของ invoice ด้วยการ join เทียบ posting date
@@ -254,12 +260,12 @@ CLASS zcl_zare002_util IMPLEMENTATION.
                             |{ cl_abap_context_info=>get_system_date( ) }_{ cl_abap_context_info=>get_system_time( ) }| ).
 
     " 4. ทับ header ด้วยค่าของเอกสารตัวอย่าง
-    " salesforce id ปล่อยว่าง ใบนี้ไม่ได้มาจาก SBPA จริง ไม่ควรส่งผลอะไรกลับไป
+    " salesforce id ใส่ค่าปลอมไว้ ใบที่ id ว่างถือว่า record ไม่สมบูรณ์ จะ Submit ไม่ได้
     " สถานะตั้งต้นเหมือนใบที่เพิ่งรับเข้ามา ยังไม่มีเอกสารและยังไม่มี message
     ls_header-payment_uuid                 = lv_payment_uuid.
     ls_header-payment_document_no          = lv_new_document_no.
     ls_header-request_id                   = lv_request_id.
-    ls_header-salesforce_id                = space.
+    ls_header-salesforce_id                = gc_test_salesforce_id.
     ls_header-number_of_items_in_payment   = 1.
     ls_header-company_code                 = gc_test_company_code.
     ls_header-posting_date                 = gc_test_posting_date.
@@ -290,7 +296,7 @@ CLASS zcl_zare002_util IMPLEMENTATION.
     " reject_reason ปล่อยว่าง ใบนี้จะเอาไปทดสอบ Submit ไม่ใช่ Reject
     ls_item-item_uuid             = lv_item_uuid.
     ls_item-payment_uuid          = lv_payment_uuid.
-    ls_item-salesforce_item_id    = space.
+    ls_item-salesforce_item_id    = gc_test_sf_item_id.
     ls_item-customer_code         = gc_test_customer_code.
     ls_item-billing_note_no       = space.
     ls_item-accounting_document   = gc_test_acctg_document.
