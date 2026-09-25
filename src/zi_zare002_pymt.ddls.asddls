@@ -72,12 +72,34 @@ define view entity ZI_ZARE002_PYMT
       salesforce_message          as SalesforceMessage,
 
       // field สำหรับ Submit
-      @EndUserText.label: 'Payment Doc'
+
+      // เลขเอกสารรับชำระที่ Submit post ไว้
+      @EndUserText.label: 'Submit Document'
       payment_accounting_document  as PaymentAccountingDocument,
-      @EndUserText.label: 'Clearing Doc'
+
+      // เลขเอกสาร clearing ที่ BOT ส่งกลับมา
+      @EndUserText.label: 'Clearing Document'
       clearing_accounting_document as ClearingAccountingDocument,
+
+      // ข้อความล่าสุดของขั้น Submit
       @EndUserText.label: 'Submit Message'
       submit_message               as SubmitMessage,
+
+      // ข้อความล่าสุดของขั้น clearing ที่ได้จาก BOT
+      @EndUserText.label: 'Clearing Message'
+      clearing_message             as ClearingMessage,
+
+      // filter แบบ Yes และ No บนหน้าจอ
+      // Yes คือ post เอกสารรับชำระแล้ว
+      // cast เป็น abap_boolean เพื่อให้ FE วาด filter เป็น dropdown Yes และ No เอง
+      @EndUserText.label: 'Submit Status'
+      cast( case when payment_accounting_document <> '' then 'X' else ' ' end
+            as abap_boolean )      as IsSubmitted,
+
+      // Yes คือได้เลขเอกสาร clearing จาก BOT แล้ว
+      @EndUserText.label: 'Clearing Status'
+      cast( case when clearing_accounting_document <> '' then 'X' else ' ' end
+            as abap_boolean )      as IsCleared,
       
       @Semantics.user.createdBy: true
       created_by                  as CreatedBy,

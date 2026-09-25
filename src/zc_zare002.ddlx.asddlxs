@@ -59,12 +59,26 @@ annotate entity ZC_ZARE002 with
   @UI.hidden: true
   StatusCriticality;
 
-  @UI.lineItem: [ { position: 120, importance: #HIGH } ]
+  @UI.lineItem:       [ { position: 120, importance: #HIGH } ]
+  @UI.selectionField: [ { position: 70 } ]
   PaymentAccountingDocument;
 
-  @UI.lineItem: [ { position: 130, importance: #HIGH } ]
+  @UI.lineItem: [ { position: 130, importance: #LOW } ]
+  SubmitMessage;
+
+  @UI.lineItem:       [ { position: 140, importance: #HIGH } ]
+  @UI.selectionField: [ { position: 90 } ]
   ClearingAccountingDocument;
-  
-  @UI.lineItem: [ { position: 140, importance: #HIGH } ]
+
+  @UI.lineItem: [ { position: 150, importance: #LOW } ]
+  ClearingMessage;
+
+  @UI.selectionField: [ { position: 60 } ]
+  IsSubmitted;
+
+  @UI.selectionField: [ { position: 80 } ]
+  IsCleared;
+
+  @UI.lineItem: [ { position: 160, importance: #HIGH } ]
   RejectReason;
 }

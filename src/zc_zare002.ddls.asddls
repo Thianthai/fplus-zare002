@@ -40,6 +40,9 @@ define root view entity ZC_ZARE002
       _Payment.PaymentAccountingDocument  as PaymentAccountingDocument,
       _Payment.ClearingAccountingDocument as ClearingAccountingDocument,
       _Payment.SubmitMessage              as SubmitMessage,
+      _Payment.ClearingMessage            as ClearingMessage,
+      _Payment.IsSubmitted                as IsSubmitted,
+      _Payment.IsCleared                  as IsCleared,
       
       /* ---------- item : ZTAR_I002_ITEM ---------- */
       PaymentUuid,
