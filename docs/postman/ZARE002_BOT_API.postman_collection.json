@@ -1,0 +1,148 @@
+{
+  "info": {
+    "name": "ZARE002 - BOT API (#4 Pending clearing / #3 Clearing result)",
+    "description": "ยิงแบบเดียวกับที่ BOT ยิงจริง: host -api + Basic auth ด้วย communication user ของ arrangement ZCA_PAYMENT_CLEARING\n\nก่อนใช้: กรอก collection variable commUser และ commPassword (อย่า commit รหัสลง repo)\n\nรายละเอียด contract: docs/10_api_contract.md",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "basic",
+    "basic": [
+      { "key": "username", "value": "{{commUser}}", "type": "string" },
+      { "key": "password", "value": "{{commPassword}}", "type": "string" }
+    ]
+  },
+  "variable": [
+    { "key": "host", "value": "https://my442178-api.s4hana.cloud.sap" },
+    { "key": "odataBase", "value": "{{host}}/sap/opu/odata4/sap/zapi_zare002_o4/srvd_a2x/sap/zapi_zare002/0001" },
+    { "key": "clearingUrl", "value": "{{host}}/sap/bc/http/sap/ZARE002_CLEARING" },
+    { "key": "commUser", "value": "" },
+    { "key": "commPassword", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "API #4 - Pending clearing (OData V4 read-only)",
+      "item": [
+        {
+          "name": "4.1 ทุกใบที่ค้าง",
+          "request": {
+            "method": "GET",
+            "header": [ { "key": "Accept", "value": "application/json" } ],
+            "url": {
+              "raw": "{{odataBase}}/ClearingItems",
+              "host": [ "{{odataBase}}" ],
+              "path": [ "ClearingItems" ]
+            }
+          }
+        },
+        {
+          "name": "4.2 ช่วงวันที่ (ต้นเดือนถึงสิ้นเดือน)",
+          "request": {
+            "method": "GET",
+            "header": [ { "key": "Accept", "value": "application/json" } ],
+            "url": {
+              "raw": "{{odataBase}}/ClearingItems?$filter=PostingDate ge 2026-09-01 and PostingDate le 2026-09-30",
+              "host": [ "{{odataBase}}" ],
+              "path": [ "ClearingItems" ],
+              "query": [
+                { "key": "$filter", "value": "PostingDate ge 2026-09-01 and PostingDate le 2026-09-30" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "4.3 นับจำนวน + เรียงตามเอกสาร (รูปแบบที่แนะนำให้ BOT ใช้)",
+          "request": {
+            "method": "GET",
+            "header": [ { "key": "Accept", "value": "application/json" } ],
+            "url": {
+              "raw": "{{odataBase}}/ClearingItems?$count=true&$orderby=PaymentAccountingDocument",
+              "host": [ "{{odataBase}}" ],
+              "path": [ "ClearingItems" ],
+              "query": [
+                { "key": "$count", "value": "true" },
+                { "key": "$orderby", "value": "PaymentAccountingDocument" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "4.4 ทดสอบ paging - ถ้ามีมากกว่า 1 แถวต้องเห็น @odata.nextLink",
+          "request": {
+            "method": "GET",
+            "header": [ { "key": "Accept", "value": "application/json" } ],
+            "url": {
+              "raw": "{{odataBase}}/ClearingItems?$top=1&$count=true",
+              "host": [ "{{odataBase}}" ],
+              "path": [ "ClearingItems" ],
+              "query": [
+                { "key": "$top", "value": "1" },
+                { "key": "$count", "value": "true" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "4.5 metadata",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{odataBase}}/$metadata",
+              "host": [ "{{odataBase}}" ],
+              "path": [ "$metadata" ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "API #3 - Clearing result (HTTP service)",
+      "item": [
+        {
+          "name": "3.1 GET ตัวอย่างโครงสร้าง (ไม่เขียนข้อมูล)",
+          "request": {
+            "method": "GET",
+            "header": [ { "key": "Accept", "value": "application/json" } ],
+            "url": { "raw": "{{clearingUrl}}", "host": [ "{{clearingUrl}}" ] }
+          }
+        },
+        {
+          "name": "3.2 body ขาด field - ต้องได้ 400 (ไม่เขียนข้อมูล)",
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"RequestId\": \"20260925_100000\",\n  \"CompanyCode\": \"2000\",\n  \"ClearingStatus\": \"S\"\n}"
+            },
+            "url": { "raw": "{{clearingUrl}}", "host": [ "{{clearingUrl}}" ] }
+          }
+        },
+        {
+          "name": "3.3 ส่งซ้ำเลขเดิมของใบที่ clear แล้ว - ต้องได้ SapStatus C ไม่เขียนทับ",
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"RequestId\": \"20260925_100100\",\n  \"CompanyCode\": \"2000\",\n  \"PaymentDocumentNo\": \"1000002301\",\n  \"PaymentAccountingDocument\": \"3500000006\",\n  \"PaymentAccountingDocYear\": \"2026\",\n  \"ClearingDocument\": \"3000000012\",\n  \"ClearingDocumentYear\": \"2026\",\n  \"ClearingStatus\": \"S\",\n  \"ClearingMessage\": \"\"\n}"
+            },
+            "url": { "raw": "{{clearingUrl}}", "host": [ "{{clearingUrl}}" ] }
+          }
+        },
+        {
+          "name": "3.4 BOT แจ้ง clear ไม่สำเร็จ - เขียน clearing_message ของใบนั้น (ใบยังอยู่ในคิว)",
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"RequestId\": \"20260925_100200\",\n  \"CompanyCode\": \"2000\",\n  \"PaymentDocumentNo\": \"1000002300\",\n  \"PaymentAccountingDocument\": \"3500000004\",\n  \"PaymentAccountingDocYear\": \"2026\",\n  \"ClearingDocument\": \"\",\n  \"ClearingDocumentYear\": \"\",\n  \"ClearingStatus\": \"E\",\n  \"ClearingMessage\": \"Open item not found for customer 1000000014\"\n}"
+            },
+            "url": { "raw": "{{clearingUrl}}", "host": [ "{{clearingUrl}}" ] }
+          }
+        }
+      ]
+    }
+  ]
+}
