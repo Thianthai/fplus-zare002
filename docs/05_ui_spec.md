@@ -102,6 +102,12 @@ FE V4 วาดเป็น dropdown Yes / No ให้เองจาก `Edm.B
 label เดิม `Payment Doc` / `Clearing Doc` เปลี่ยนเป็น `Submit Document` / `Clearing Document`
 เพื่อไม่ให้สับสนกับคอลัมน์แรก Payment Document No.
 
+### Record ไม่สมบูรณ์ (8B.7)
+
+ใบที่ `salesforce_id` ว่าง หรือมี item ใดที่ `salesforce_item_id` ว่าง ส่งผลกลับ Salesforce ไม่ได้
+backend ปฏิเสธทั้ง Submit (113) และ Reject (008) ด้วยข้อความ `Payment <no> is incomplete: <field> is missing`
+**ปุ่มบนจอไม่ได้ถูกปิดจาก backend** เพราะ frontend extension คุมปุ่มเองแล้ว (ผู้ใช้สั่ง 2026-09-25)
+
 ### ⚠️ ผู้ใช้ที่บันทึก variant ไว้ก่อน จะไม่เห็น filter ใหม่
 
 filter ที่เพิ่มทีหลังไม่โผล่เองใน variant ที่ผู้ใช้บันทึกไว้แล้ว (ชื่อ variant มีดาว `Standard*`)
