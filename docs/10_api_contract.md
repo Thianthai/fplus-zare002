@@ -169,7 +169,7 @@ const { Status, Message, Success, Error: errorCount, Results } = await response.
 | No | ข้อความ | เกิดเมื่อ |
 |---|---|---|
 | 101 | `Payment &1 not found` | `PaymentUuid` ไม่มีในระบบ |
-| 102 | `Payment &1 already processed (status &2)` | ใบถูก reject หรือ complete แล้ว หรือมีครบทั้ง Payment Doc และ Clearing Doc |
+| 102 | `Payment &1 has already been rejected` | ใบถูก reject แล้ว |
 | 103 | `Payment &1 already posted (document &2), clearing pending` | `Outcome = A` |
 | 104 | `Payment &1: cheque must be posted manually` | `payment_method = Cheque` |
 | 105 | `Payment &1: missing &2` | ไม่มี item / ไม่มี G/L account / ไม่มี currency / ไม่มี customer code |
@@ -177,6 +177,8 @@ const { Status, Message, Success, Error: errorCount, Results } = await response.
 | 107 | `Special G/L open item balance is not enough` | ใช้เงินรับล่วงหน้าแต่ยอดค้างไม่ตรงกับที่ขอใช้ |
 | 108 | `Payment &1: &2&3&4` | FI ปฏิเสธการ post ข้อความที่ตามมาเป็นของ FI เอง |
 | 109 | `Payment &1 posted: document &2` | `Outcome = P` |
+| 113 | `Payment &1 is incomplete: &2 is missing` | ใบไม่มี Salesforce ID หรือมี item ที่ไม่มี Salesforce item ID |
+| 114 | `Payment &1 has already been completed` | ใบปิดงานแล้ว มีครบทั้ง Submit Document และ Clearing Document |
 | 110 | `Payments posted successfully: Success &1` | `Message` ระดับบนสุด สำเร็จทั้งหมด |
 | 111 | `Payments posted successfully: Success &1 / Error &2` | `Message` ระดับบนสุด สำเร็จบางส่วน |
 | 112 | `Payments posted failed: Error &1` | `Message` ระดับบนสุด ไม่สำเร็จเลย |
