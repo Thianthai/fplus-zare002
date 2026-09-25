@@ -83,14 +83,20 @@ CLASS zcl_zare002_util IMPLEMENTATION.
 *    reset_payment( out ).
 *    test_sfdc_bearer( out ).
 *    set_test_data( out ).
-    submit_poc( out ).
+*    submit_poc( out ).
+
+      UPDATE ztar_i002_pymt
+        SET payment_fiscal_year = '2026'
+        WHERE payment_uuid = 'FA163E195F2E1FE1ADD46328CDAFE4A3'.
+
+      COMMIT WORK.
 
   ENDMETHOD.
 
   METHOD class_constructor.
     " payment document ที่ utility จะทำงานด้วย (reset_payment / submit_poc)
     " แก้ list ใน class_constructor แล้วรันใหม่ (F9)
-    gt_payment_document_no = VALUE #( ( '1000002301' ) ).
+*    gt_payment_document_no = VALUE #( ( '1000002301' ) ).
 *    gt_payment_document_no = VALUE #( ( '1000002300' ) ).
 *    gt_payment_document_no = VALUE #( ( '1000000002' ) ).
 *                                      ( '1000000102' ) ).

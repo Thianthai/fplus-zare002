@@ -310,13 +310,21 @@ CLASS zcl_zare002_submit IMPLEMENTATION.
 
   METHOD validate.
 
-    " 1. validate เคส reject แล้ว / complete แล้ว / มีครบ 2 doc (payment + clearing)
-    IF is_header-status = gc_status_rejected
-    OR is_header-status = gc_status_complete
-    OR ( is_header-payment_accounting_document IS NOT INITIAL AND is_header-clearing_accounting_document IS NOT INITIAL ).
+    " 1. validate ใบที่ทำไปแล้ว แยกข้อความตามเคสให้ผู้ใช้อ่านเข้าใจเลยโดยไม่ต้องรู้รหัสสถานะ
+    " ใบที่ถูก reject ไปแล้ว
+    IF is_header-status = gc_status_rejected.
       rv_message = message_text( iv_number = '102'
-                                 iv_v1     = is_header-payment_document_no
-                                 iv_v2     = is_header-status ).
+                                 iv_v1     = is_header-payment_document_no ).
+      RETURN.
+    ENDIF.
+
+    " ใบที่ปิดงานแล้ว
+    " มีทั้งเอกสารรับชำระและเอกสาร clearing หรือสถานะเป็น Complete
+    IF is_header-status = gc_status_complete
+    OR ( is_header-payment_accounting_document IS NOT INITIAL
+         AND is_header-clearing_accounting_document IS NOT INITIAL ).
+      rv_message = message_text( iv_number = '114'
+                                 iv_v1     = is_header-payment_document_no ).
       RETURN.
     ENDIF.
 
