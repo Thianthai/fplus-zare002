@@ -161,6 +161,8 @@
 - **`cl_sxml_string_reader=>create( )` auto-detect format** — ส่ง HTML/XML เข้าไปมันจะ parse
   เป็น XML สำเร็จ ไม่ raise (เจอจริง 2026-09-20 จาก unit test) → ห้ามพึ่ง exception เป็นตัวบอกว่า
   body ไม่ใช่ JSON ที่คาด ต้องเช็คเองว่าเจอ member ที่ต้องการหรือไม่
+- **`DATA(x) = <คำนวณยอดเงิน type P>` ได้ P(8,0) ทศนิยมหาย** (warning เจอจริง 2026-09-25 ใน `set_test_data`)
+  → ห่อด้วย `CONV <type ของ field จำนวนเงิน>( … )` หรือประกาศ `DATA x TYPE …` ก่อนเสมอ · ห้ามปล่อย inline กับการคำนวณเงิน
 - **offset/length (`lv_x+10(1)`) ใช้กับตัวแปร `string` ไม่ได้** (เจอจริง 2026-09-24 ใน unit test:
   `Offsets or lengths cannot be specified for fields of type STRING`) → ใช้ `substring( val = … off = … len = … )`
   · ใช้ได้เฉพาะ type char-like เช่น `d` / `c` / `n`
