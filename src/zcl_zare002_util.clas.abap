@@ -49,7 +49,7 @@ CLASS zcl_zare002_util DEFINITION
       gc_test_invoice_date    TYPE ztar_i002_item-invoice_posting_date VALUE '20260909'.
 
     "! abap_true = สร้าง payload แล้วพิมพ์ ไม่ post · abap_false = post จริง (ได้เอกสารใหม่ทุกครั้งที่ F9)
-    CONSTANTS gc_submit_simulate TYPE abap_bool VALUE abap_false.
+    CONSTANTS gc_submit_simulate TYPE abap_bool VALUE abap_true.
 
     "! สร้างใบทดสอบใหม่ 1 ใบสำหรับลอง Submit
     "! clone โครงสร้างจากใบต้นแบบ แล้วทับด้วยค่าของเอกสารตัวอย่าง 5 ขา
@@ -84,12 +84,6 @@ CLASS zcl_zare002_util IMPLEMENTATION.
 *    test_sfdc_bearer( out ).
 *    set_test_data( out ).
 *    submit_poc( out ).
-
-      UPDATE ztar_i002_pymt
-        SET payment_fiscal_year = '2026'
-        WHERE payment_uuid = 'FA163E195F2E1FE1ADD46328CDAFE4A3'.
-
-      COMMIT WORK.
 
   ENDMETHOD.
 
@@ -337,12 +331,12 @@ CLASS zcl_zare002_util IMPLEMENTATION.
 
     COMMIT WORK.
 
-    " สมดุลที่คาดไว้ ควรเป็น 0 ถ้าค่าคงที่ข้างบนถูกต้อง
-    DATA(lv_balance) = ls_header-payment_amount
-                     + ls_header-fees
-                     - ls_item-amount_paid
-                     - ls_header-rounding_diff
-                     - ls_header-advance_payment.
+    " ระบุ type ให้ชัด ไม่งั้นผลคำนวณ type P ถูกเดาเป็น P(8,0) แล้วทศนิยมหาย
+    DATA(lv_balance) = CONV ztar_i002_pymt-payment_amount( ls_header-payment_amount
+                                                         + ls_header-fees
+                                                         - ls_item-amount_paid
+                                                         - ls_header-rounding_diff
+                                                         - ls_header-advance_payment ).
 
     out->write( |Test payment { lv_new_document_no } created| ).
     out->write( |  company { ls_header-company_code } posting { ls_header-posting_date } | &&

@@ -73,3 +73,7 @@ define view entity ZI_ZARE002_CLEARING
 where
       Payment.payment_accounting_document  <> ''
   and Payment.clearing_accounting_document =  ''
+      // ใบที่ถูก reject แล้วห้ามส่งให้ BOT clear แม้จะมีเลขเอกสารรับชำระค้างอยู่
+      // ตามปกติเกิดไม่ได้ เพราะ Reject ปฏิเสธใบที่ post แล้ว
+      // กันไว้เผื่อข้อมูลถูกแก้จากภายนอก
+  and Payment.status                       <> 'R'
