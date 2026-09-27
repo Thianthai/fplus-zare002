@@ -197,6 +197,7 @@ GET https://my442178-api.s4hana.cloud.sap/sap/opu/odata4/sap/zapi_zare002_o4/srv
 
 - Communication Arrangement **`ZCA_PAYMENT_CLEARING`** (scenario `ZCS_PAYMENT_CLEARING`) × Communication System `SBPA_DEV`
 - Authentication: **Basic** ด้วย communication user ของ BOT
+  — ทดสอบด้วย communication user ตัวจริงของ BOT แล้ว (2026-09-27) อ่านได้ครบทุก field รวม `InvoiceAccountingDocYear` ที่ต้อง join `I_JournalEntry`
 - อ่านอย่างเดียว ไม่มี POST / PATCH / DELETE
 
 ### Response
@@ -370,6 +371,8 @@ Content-Type: application/json
 4. **ส่งเลข clearing ใหม่ทับใบที่มีเลขอยู่แล้วไม่ได้** จะได้ `SapStatus E` และของเดิมไม่ถูกแตะ
 5. ใบที่หาไม่เจอจาก 3 field ที่ใช้ค้นหา ได้ `SapStatus E`
 6. ใบที่ส่งผลสำเร็จแล้วจะ **หายจาก API #4** ทันที
+7. **API #3 ไม่เช็ค status `R`** — ตัดสินใจแล้ว 2026-09-27 ว่าไม่ต้องมี message `125`
+   เพราะ API #4 กรองใบ R ออกตั้งแต่ต้น BOT จึงไม่ได้ใบ R ไปทำ clearing
 
 ### ตัวอย่างเคส clear ไม่สำเร็จ
 
