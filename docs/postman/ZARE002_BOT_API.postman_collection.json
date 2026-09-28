@@ -14,7 +14,7 @@
   "variable": [
     { "key": "host", "value": "https://my442178-api.s4hana.cloud.sap" },
     { "key": "odataBase", "value": "{{host}}/sap/opu/odata4/sap/zapi_zare002_o4/srvd_a2x/sap/zapi_zare002/0001" },
-    { "key": "clearingUrl", "value": "{{host}}/sap/bc/http/sap/ZARE002_CLEARING" },
+    { "key": "clearingUrl", "value": "{{host}}/sap/bc/http/sap/ZARI003_CLEARING" },
     { "key": "commUser", "value": "" },
     { "key": "commPassword", "value": "" }
   ],

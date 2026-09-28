@@ -286,16 +286,20 @@ GET .../ClearingItems?$count=true&$orderby=PaymentAccountingDocument
 
 ## API #3 — Clearing result (BOT → ABAP)
 
-BOT ส่งผลการ clear กลับมา **ทีละใบ** ผ่าน `POST /sap/bc/http/sap/ZARE002_CLEARING`
+BOT ส่งผลการ clear กลับมา **ทีละใบ** ผ่าน `POST /sap/bc/http/sap/ZARI003_CLEARING`
+
+> **ย้ายไป package `ZARI003` แล้ว (2026-09-28)** — URL เดิม `ZARE002_CLEARING` ถูกลบแล้ว BOT ต้องเปลี่ยนมาใช้ URL นี้
+> class `ZCL_ZARI003_CLEARING_HTTP` / `ZCL_ZARI003_CLEARING_RESULT` · message `ZARI003` 005–009 (เดิม `ZARE002` 120–124) · logic และ request/response เหมือนเดิมทุกอย่าง
 
 ### Endpoint
 
 ```
-POST https://my442178-api.s4hana.cloud.sap/sap/bc/http/sap/ZARE002_CLEARING
+POST https://my442178-api.s4hana.cloud.sap/sap/bc/http/sap/ZARI003_CLEARING
 Content-Type: application/json
 ```
 
-- Authentication: **Basic** ด้วย communication user เดิม (arrangement `ZCA_PAYMENT_CLEARING` ตัวเดียวกับ API #4)
+- Communication Arrangement **`ZCA_CLEARING_RESULT`** (scenario `ZCS_CLEARING_RESULT`) × `SBPA_DEV` — แยกจาก API #4 แต่ใช้ communication user ตัวเดียวกัน
+- Authentication: **Basic** ด้วย communication user ของ BOT
 - ไม่ต้องใช้ CSRF token
 - `GET` ที่ URL เดียวกันคืนตัวอย่าง request/response ให้ดูโครงสร้าง
 
