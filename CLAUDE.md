@@ -134,7 +134,12 @@
   ไล่เทียบ BDEF ทั้งไฟล์)
 - **`@UI.presentationVariant` ต้องมี `visualizations: [ { type: #AS_LINEITEM } ]`** ไม่งั้น FE V4
   ไม่หยิบมาเป็น default sort ของ List Report (เจอจริง 2026-09-16 — แถวเรียงตาม insert order)
-- **คอลัมน์ที่อยากได้แต่ icon สี** — อย่าเขียนทับ field ข้อมูลด้วย `''` (filter จะพัง)
+- **ข้อความของ fixed value ใน domain → CDS `DDCDS_CUSTOMER_DOMAIN_VALUE_T( p_domain_name: '…' )`** (released)
+  · key ของ view ต้องคง `domain_name` + `value_position` ไว้ ไม่งั้น warning key ไม่ตรง source (เจอจริง 2026-09-29)
+  · **อย่า cast `value_low` (CHAR 10) ลงเป็น data element สั้นกว่า** — warning loss of data · ใช้ `value_low` ตรง ๆ เทียบกับ CHAR 1 ได้ปกติ
+  · กรอง `language = $session.system_language` แล้วใช้เป็น association `[0..1]` + value help (`@ObjectModel.resultSet.sizeCategory: #XS` = dropdown)
+- *(เลิกใช้ 2026-09-29 — Status เปลี่ยนเป็นข้อความจาก domain ผ่าน `ZI_ZARE002_STATUS_VH` · เก็บไว้เป็นบทเรียน)*
+  **คอลัมน์ที่อยากได้แต่ icon สี** — อย่าเขียนทับ field ข้อมูลด้วย `''` (filter จะพัง)
   ให้เพิ่ม element literal `''` แยก แล้วใส่ `@UI.lineItem` + `criticality` ที่ตัวนั้น
   ส่วน field จริงเหลือ `@UI.selectionField` และ**ห้าม `@UI.hidden`** (จะหายจาก filter bar)
 - **⚠️ ก่อนวิเคราะห์ behavior pool ต้อง `git show origin/main:src/<bdef>` อ่าน BDEF ตัวล่าสุดเสมอ**

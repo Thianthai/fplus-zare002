@@ -26,7 +26,7 @@ Fiori elements **List Report** บน OData V4 · **ไม่มี Object Page*
 | ชื่อ app / header | `@UI.headerInfo: { typeName: 'Payment Item', typeNamePlural: 'Items' }` |
 | คอลัมน์ | `@UI.lineItem: [{ position: 10, importance: #HIGH }]` — เรียง 10, 20, 30 … ตาม `04_field_mapping.md` |
 | filter bar | `@UI.selectionField: [{ position: 10 }]` |
-| icon สถานะ | `@UI.lineItem: [{ position: 110, criticality: 'StatusCriticality' }]` บน **`StatusIcon`** (ค่า `''` เสมอ → FE วาดแต่ icon) · `Status` ตัวจริงมีแค่ `@UI.selectionField` ห้าม `@UI.hidden` ไม่งั้นหายจาก filter |
+| คอลัมน์ Status | **ข้อความจาก domain** (2026-09-29 `f010aa5`) — `Status` มี `@UI.lineItem` position 110 + `@UI.textArrangement: #TEXT_ONLY` · text จาก `ZI_ZARE002_STATUS_VH` (`DDCDS_CUSTOMER_DOMAIN_VALUE_T` ตามภาษาที่ login) · filter เป็น dropdown (`sizeCategory #XS`) · ~~icon สี `StatusIcon` + `StatusCriticality`~~ ลบแล้ว |
 | ช่องพิมพ์ยาว | ~~`@UI.multiLineText: true`~~ **ห้ามใส่** — ทำให้ FE inline edit ไม่ทำงาน (ตัดออก 2026-09-16) |
 | ปุ่ม toolbar | `@UI.lineItem: [{ type: #FOR_ACTION, dataAction: 'Submit', label: 'Submit' }]` |
 | **ห้ามใส่** | `@UI.facet` — จะทำให้เกิด Object Page |

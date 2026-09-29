@@ -44,7 +44,8 @@ baseline ที่ tenant serialize มาแล้ว (commit `7936197`) — ob
 
 | Object | Type | ไฟล์ | Phase | Status |
 |--------|------|------|-------|--------|
-| `ZI_ZARE002_PYMT` | Interface view บน `ztar_i002_pymt` (1:1) · + `StatusCriticality` `StatusIcon` · **ไม่มี `SapPaymentMethod`** (2026-09-17) · ⚠️ `PaymentMethod` ขาด label — ใส่ `'Payment Method'` กลับรอบหน้า | `src/zi_zare002_pymt.ddls.asddls` | 1 | ✅ |
+| `ZI_ZARE002_PYMT` | Interface view บน `ztar_i002_pymt` (1:1) · + `StatusText` ผ่าน `_StatusText` · ~~`StatusCriticality` `StatusIcon`~~ ลบแล้ว `f010aa5` · **ไม่มี `SapPaymentMethod`** (2026-09-17) · ⚠️ `PaymentMethod` ขาด label — ใส่ `'Payment Method'` กลับรอบหน้า | `src/zi_zare002_pymt.ddls.asddls` | 3 | ✅ |
+| `ZI_ZARE002_STATUS_VH` | CDS — ข้อความของ `ZD_REQUEST_STATUS` จาก `DDCDS_CUSTOMER_DOMAIN_VALUE_T` (ภาษาที่ login) · text ของคอลัมน์ Status + dropdown ของ filter | `src/zi_zare002_status_vh.ddls.asddls` | 8E | ✅ `f010aa5` (2026-09-29) |
 | `ZI_ZARE002_ITEM` | Interface view บน `ztar_i002_item` (1:1) + assoc `_Payment` `_BusinessPartner` | `src/zi_zare002_item.ddls.asddls` | 1 | ✅ |
 | `ZI_ZARE002_BP` | Interface view บน `I_BusinessPartner` — ต่อ `OrganizationBPName1..4` เป็น `CustomerName` | `src/zi_zare002_bp.ddls.asddls` | 1 | ✅ |
 | `ZR_ZARE002` | **Root view entity** — projection บน `ZI_ZARE002_ITEM` | `src/zr_zare002.ddls.asddls` | 2 | ✅ |
@@ -68,7 +69,7 @@ baseline ที่ tenant serialize มาแล้ว (commit `7936197`) — ob
 | `ZUI_ZARE002` | Service definition (UI) | `src/zui_zare002.srvd.srvdsrv` | 3 | ✅ |
 | `ZUI_ZARE002_O4` | Service binding (UI, OData V4) | `src/zui_zare002_o4.srvb.xml` | 3 | ✅ |
 
-`ZI_ZARE002_PYMT` ได้ element `StatusCriticality` เพิ่มที่ Phase 3.0 (`case` → `abap.int1`)
+`ZI_ZARE002_PYMT` ได้ element `StatusCriticality` เพิ่มที่ Phase 3.0 (`case` → `abap.int1`) — **ลบแล้ว 2026-09-29** แทนด้วยข้อความจาก domain
 
 **ไม่ทำ Web API service** — RICEFW นี้เป็น UI ล้วน ไม่มี consumer ภายนอก
 

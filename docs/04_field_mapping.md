@@ -16,7 +16,7 @@
 | 8 | Accounting Document | `ZTAR_I002_ITEM` | `accounting_document` | `AccountingDocument` | item | ✘ |
 | 9 | Billing Document | `ZTAR_I002_ITEM` | `billing_document` | `BillingDocument` | item | ✘ |
 | 10 | Invoice Amount | `ZTAR_I002_ITEM` | `invoice_amount` | `InvoiceAmount` | item | ✘ |
-| 11 | Status (icon) | — | — | `StatusIcon` = `''` | `_Payment` | ✘ |
+| 11 | Status | `status` | `ZD_REQUEST_STATUS` | `Status` แสดงข้อความ (`StatusText` จาก `ZI_ZARE002_STATUS_VH`) | `_Payment` | ✘ |
 | 12 | Reject Reason | `ZTAR_I002_ITEM` | `reject_reason` | `RejectReason` | item | **✔** |
 
 > **`RejectReason` เป็น field เดียวที่แก้ได้ทั้งหน้าจอ** — ที่เหลือ `field ( readonly )` ทั้งหมด
@@ -29,8 +29,7 @@
 | `PaymentUuid` | ใช้ผูก association `_Payment` |
 | `Currency` | `@Semantics.amount.currencyCode` ของ `InvoiceAmount` — ขาดไม่ได้ ไม่งั้น activate ไม่ผ่าน |
 | `Status` | ค่าจริง `N/C/R/E` — ใช้ **filter** อย่างเดียว ไม่เป็นคอลัมน์ (OQ-16) |
-| `StatusCriticality` | calculated element ใน `ZI_ZARE002_PYMT` ให้ `@UI.criticality` วาด icon 3 สี |
-| `StatusIcon` | literal `''` ใน `ZI_ZARE002_PYMT` — คอลัมน์ที่ถือ criticality แต่ไม่มีข้อความ → icon อย่างเดียว |
+| `StatusText` | ข้อความของ `status` จาก fixed value ของ domain ผ่าน `_StatusText` (`ZI_ZARE002_STATUS_VH`) — แทน `StatusCriticality` / `StatusIcon` ที่ลบแล้ว 2026-09-29 |
 | `LocalLastChangedAt` | `etag master` |
 | `LastChangedAt` | `total etag` ของ draft — **ยังไม่มีใน table ต้องขอเพิ่ม** |
 | `CreatedBy` `CreatedAt` `LastChangedBy` | admin field |
@@ -118,15 +117,15 @@ ZC_ZARE002:     _BusinessPartner.CustomerName as CustomerName    // path ธร�
 
 `status` ผูก domain `ZD_REQUEST_STATUS` (ของ ZARI002)
 
-| ค่า | ความหมาย | ใครเขียน / ตอนไหน | `@UI.criticality` |
+| ค่า | ข้อความใน domain (แสดงบนจอ) | ใครเขียน / ตอนไหน | ~~`@UI.criticality`~~ (ลบแล้ว 2026-09-29) |
 |---|---|---|---|
 | `N` | New | ZARI002 insert ใบใหม่ | `0` → **ไม่แสดง icon โดยตั้งใจ** |
-| `S` | Submitted — post JE แล้วรอ BOT clear | `ZCL_ZARE002_SUBMIT->save_result` (เพิ่ม 2026-09-29 `caf0216`) | `5` ฟ้า |
+| `S` | `Submitted - Not Cleared` — post JE แล้วรอ BOT clear | `ZCL_ZARE002_SUBMIT->save_result` (เพิ่ม 2026-09-29 `caf0216`) | `5` ฟ้า |
 | `C` | Cleared (เดิม Complete) | ZARI003 API #3 BOT clear สำเร็จ | `3` เขียว |
 | `R` | Rejected | saver ของปุ่ม Reject หลัง SFDC รับ | `1` แดง |
 | `E` | Error | **ไม่มีใครเขียน** (OQ-41) | `5` ฟ้า (ตก `else`) |
 
-> ผู้ใช้กำหนด 2026-09-29: มีแค่ 4 state — New ไม่มี icon · Rejected แดง · Cleared เขียว · **อื่น ๆ ฟ้า (Information)**
+> **2026-09-29 `f010aa5`: เลิกใช้ icon สีแล้ว** คอลัมน์ Status แสดงข้อความของ domain ตรง ๆ (`#TEXT_ONLY`) · คอลัมน์ criticality ข้างบนเก็บไว้เป็นประวัติ
 
 ## 6. หน่วยเงิน
 
