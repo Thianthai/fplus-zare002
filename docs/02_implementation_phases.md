@@ -285,6 +285,8 @@ Submit ผ่าน → `S` รอ BOT clear → API #3 สำเร็จ → `
 | H-2 | ~~เปิดการยิง SFDC ของ Reject กลับ (เอา stub ออก)~~ | ✅ `7653f57` |
 | H-3 | ~~แจ้งทีม BOT ว่า URL ของ API #3 เปลี่ยนเป็น `ZARI003_CLEARING`~~ | ✅ 2026-09-29 |
 | H-4 | transport **ZARI003 ขึ้นก่อนหรือพร้อม ZARE002** (Reject เรียก `ZCL_ZARI003_SFDC_RESULT`) | ⬜ ตอน transport |
+| H-5 | ลบ `ZCL_ZARI002_SPIKE` + `ZCL_ZARI002_UTIL` (ZARI002) พร้อม H-1 | ⬜ |
+| H-6 | checklist ขึ้น TEST → `docs/11_transport_to_test.md` (ลำดับ ZBCUTILITY → ZARI002 → ZARI003 → ZARE002 · arrangement · ค่า hardcode) | ✅ ตรวจแล้ว 2026-09-29 |
 
 ชื่อ 8B.2–8B.6 เป็น tentative — confirm ทีละขั้นก่อนส่ง code
 
