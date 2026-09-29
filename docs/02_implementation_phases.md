@@ -202,7 +202,7 @@ spec จากผู้ใช้ 2026-09-17 (IN #3 Payment Result): หลัง
 | 8.5 | Message class | MSAG | `ZARE002` — `001` แก้เป็นต่อ payment · `004` (>25) `005` (SFDC error) `006` (unreachable) | ✅ `9799508` |
 | 8.6 | Behavior pool | CLAS | `lhc_Item->rejectItem` validate ทุกใบ (reason ≥ 1 item/ใบ) → composite → success เท่านั้นจึง buffer · `error_index` → แถวต้นเหตุ · `lsc_Item` เพิ่ม `salesforce_status = S` | ✅ `9799508` |
 | 8.7 | Unit test | | 10 test เขียว: payload ×5 (รวม truncate batch id) · parse ×4 · date — ไม่ต่อ SFDC | ✅ |
-| 8.8 | ทดสอบ (รีวิวใหม่ 2026-09-21 — ข้อเดิม "20 ตัว → STRING_TOO_LONG" ตกไปเพราะตัด batch id เหลือ 15) · **SFDC call ปิดชั่วคราวใน `rejectItem` (stub success) เพื่อทดสอบฝั่ง SAP ก่อน — เปิดกลับก่อน 3/8/9 และก่อน handover** | (1) happy path ใบ 5 item กรอก 1 → 003 · icon แดง · reason read-only · ปุ่ม disable · (2) DB: `status R` · `salesforce_status S` · `salesforce_message` ว่าง · `last_changed_by/at` · ไม่มี draft ค้าง · (3) SFDC: `Rejected` · reason · batch id 15 ตัวแรก · response date +0700 [ต้องเปิด SFDC call + OQ-35] · (4) filter บัง 1 ใน 2 item → R ทั้ง 2 · (5) ไม่กรอก → 001 · ยัง N · (6) ติ๊กใบไม่กรอก + ใบกรอก → ทั้งคู่ไม่ R · (7) ยิงซ้ำใบ R ผ่าน OData → 002 · (8) id ปลอม → 005 NOT_FOUND · ยัง N · กดซ้ำได้ [ผ่านบางส่วน 2026-09-21 · ต้องเปิด SFDC call] · (9) password `SFDC_DEV` ผิดชั่วคราว → 006/005 TOKEN_ · ยัง N [ต้องเปิด SFDC call] · (10) เกิน 25 → 004 (ถ้ามีใบ) | 🟨 กำลังทดสอบฝั่ง SAP |
+| 8.8 | ทดสอบ (รีวิวใหม่ 2026-09-21 — ข้อเดิม "20 ตัว → STRING_TOO_LONG" ตกไปเพราะตัด batch id เหลือ 15) · **SFDC call ปิดชั่วคราวใน `rejectItem` (stub success) เพื่อทดสอบฝั่ง SAP ก่อน — เปิดกลับก่อน 3/8/9 และก่อน handover** | (1) happy path ใบ 5 item กรอก 1 → 003 · icon แดง · reason read-only · ปุ่ม disable · (2) DB: `status R` · `salesforce_status S` · `salesforce_message` ว่าง · `last_changed_by/at` · ไม่มี draft ค้าง · (3) SFDC: `Rejected` · reason · batch id 15 ตัวแรก · response date +0700 [ต้องเปิด SFDC call + OQ-35] · (4) filter บัง 1 ใน 2 item → R ทั้ง 2 · (5) ไม่กรอก → 001 · ยัง N · (6) ติ๊กใบไม่กรอก + ใบกรอก → ทั้งคู่ไม่ R · (7) ยิงซ้ำใบ R ผ่าน OData → 002 · (8) id ปลอม → 005 NOT_FOUND · ยัง N · กดซ้ำได้ [ผ่านบางส่วน 2026-09-21 · ต้องเปิด SFDC call] · (9) password `SFDC_DEV` ผิดชั่วคราว → 006/005 TOKEN_ · ยัง N [ต้องเปิด SFDC call] · (10) เกิน 25 → 004 (ถ้ามีใบ) | ✅ ปิด 2026-09-29 — stub เอาออกแล้ว ยิง SFDC จริงผ่าน `ZCL_ZARI003_SFDC_RESULT` (`7653f57`) · ผู้ใช้ทดสอบกับ SFDC จริงผ่าน · เหลือรับ issue จากฟังก์ชันนอล |
 
 ลำดับ: 8.1 → 8.2 → 8.3 (ADT + Fiori ก่อน) → 8.5 → 8.4 + 8.7 → check_connection → 8.6 → 8.8
 
@@ -244,7 +244,16 @@ object กลาง (8C.2 · 8C.3 · 8C.5 · 8C.6) อยู่ใน repo **`fp
 | 8B.7 | validate `salesforce_id` / `salesforce_item_id` ว่าง = record ไม่สมบูรณ์ ห้าม Submit (113) ห้าม Reject (008) · `set_test_data` เติม id ปลอม · ปุ่มบนจอไม่แตะ (frontend จัดการแล้ว) | `ZCL_ZARE002_SUBMIT` `ZBP_R_ZARE002` `ZCL_ZARE002_UTIL` message 008/113 | ✅ `9880818` (2026-09-25) |
 | 8B.8 | filter 4 ช่อง (Submit Status / Submit Document / Clearing Status / Clearing Document) · คอลัมน์ Submit Message + Clearing Message · เปลี่ยน label เป็น Submit Document / Clearing Document | `ZI_ZARE002_PYMT` `ZC_ZARE002` (+ddlx) | ✅ `d7f637c` (2026-09-25) |
 | 8B.9 | ลบ comment ที่อ้าง API #2 ใน `handle_post` | `ZCL_ZARE002_SUBMIT_HTTP` | ✅ `9880818` |
-| 8B.10 | end-to-end + ลบ `submit_poc` | | ⬜ |
+| 8B.10 | end-to-end | Submit → API #4 → API #3 (`ZARI003_CLEARING` · POST ผ่านแล้ว 2026-09-29) → SFDC Completed · Reject → SFDC Rejected | ✅ ปิด 2026-09-29 — รอรับ issue จากฟังก์ชันนอล / SBPA · ทีม BOT รับทราบ URL ใหม่ของ API #3 แล้ว |
+
+### ⚠️ ก่อน handover (ต้องทำ)
+
+| # | งาน | สถานะ |
+|---|---|---|
+| H-1 | **ลบ `ZCL_ZARE002_UTIL` ทั้ง class** (รวม `submit_poc` · `set_test_data` · `reset_payment` · `test_sfdc_bearer`) | ⬜ |
+| H-2 | ~~เปิดการยิง SFDC ของ Reject กลับ (เอา stub ออก)~~ | ✅ `7653f57` |
+| H-3 | ~~แจ้งทีม BOT ว่า URL ของ API #3 เปลี่ยนเป็น `ZARI003_CLEARING`~~ | ✅ 2026-09-29 |
+| H-4 | transport **ZARI003 ขึ้นก่อนหรือพร้อม ZARE002** (Reject เรียก `ZCL_ZARI003_SFDC_RESULT`) | ⬜ ตอน transport |
 
 ชื่อ 8B.2–8B.6 เป็น tentative — confirm ทีละขั้นก่อนส่ง code
 
