@@ -195,7 +195,7 @@ BOT ดึงรายการที่ post JE แล้วแต่ยัง�
 GET https://my442178-api.s4hana.cloud.sap/sap/opu/odata4/sap/zapi_zare002_o4/srvd_a2x/sap/zapi_zare002/0001/ClearingItems
 ```
 
-- Communication Arrangement **`ZCA_PAYMENT_CLEARING`** (scenario `ZCS_PAYMENT_CLEARING`) × Communication System `SBPA_DEV`
+- Communication Arrangement **`ZCA_CLEARING_ITEM`** (scenario `ZCS_CLEARING_ITEM`) × Communication System `SBPA_DEV`
 - Authentication: **Basic** ด้วย communication user ของ BOT
   — ทดสอบด้วย communication user ตัวจริงของ BOT แล้ว (2026-09-27) อ่านได้ครบทุก field รวม `InvoiceAccountingDocYear` ที่ต้อง join `I_JournalEntry`
 - อ่านอย่างเดียว ไม่มี POST / PATCH / DELETE

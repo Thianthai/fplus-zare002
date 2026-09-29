@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "ZARE002 - BOT API (#4 Pending clearing / #3 Clearing result)",
-    "description": "ยิงแบบเดียวกับที่ BOT ยิงจริง: host -api + Basic auth ด้วย communication user ของ arrangement ZCA_PAYMENT_CLEARING\n\nก่อนใช้: กรอก collection variable commUser และ commPassword (อย่า commit รหัสลง repo)\n\nรายละเอียด contract: docs/10_api_contract.md",
+    "description": "ยิงแบบเดียวกับที่ BOT ยิงจริง: host -api + Basic auth ด้วย communication user ของ arrangement ZCA_CLEARING_ITEM\n\nก่อนใช้: กรอก collection variable commUser และ commPassword (อย่า commit รหัสลง repo)\n\nรายละเอียด contract: docs/10_api_contract.md",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "auth": {

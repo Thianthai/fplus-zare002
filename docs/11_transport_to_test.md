@@ -1,6 +1,6 @@
 # 11 — Transport ขึ้น TEST (ZBCUTILITY + ZARI002 + ZARI003 + ZARE002)
 
-ตรวจล่าสุด 2026-09-29 · commit ที่ตรวจ: zbcutility `760677d` · zari002 `e096e9e` · zari003 `5de5d47` · zare002 `7a0cb96`
+ตรวจล่าสุด 2026-09-29 · commit ที่ตรวจ: zbcutility `760677d` · zari002 `52ea5e7` · zari003 `1462f6c` · zare002 `6c420da` (ATC ผ่านแล้วตามที่ผู้ใช้แจ้ง)
 
 ## 1. ลำดับ
 
@@ -47,7 +47,7 @@ ZBCUTILITY  →  ZARI002  →  ZARI003  →  ZARE002
 |---|---|---|---|---|
 | `ZCS_SFDC_TOKEN` | ขาออก → Salesforce | `ZCA_SFDC_TOKEN` | SFDC ของ TEST | Basic (client id / secret) |
 | `ZCS_INCOMING_PYMT` | ขาเข้า SBPA → ZARI002 | ของ ZARI002 | SBPA ของ TEST | Basic |
-| `ZCS_PAYMENT_CLEARING` | ขาเข้า BOT → `ZAPI_ZARE002_O4` | `ZCA_PAYMENT_CLEARING` | SBPA ของ TEST | Basic |
+| `ZCS_CLEARING_ITEM` | ขาเข้า BOT → `ZAPI_ZARE002_O4` | `ZCA_CLEARING_ITEM` | SBPA ของ TEST | Basic |
 | `ZCS_CLEARING_RESULT` | ขาเข้า BOT → `ZARI003_CLEARING` | `ZCA_CLEARING_RESULT` | SBPA ของ TEST | Basic |
 | `ZCS_REJECT_BATCH` | ขาออก → SBPA | `ZCA_REJECT_BATCH` | SBPA ของ TEST | OAuth 2.0 client credentials (token endpoint XSUAA + client id / secret) |
 

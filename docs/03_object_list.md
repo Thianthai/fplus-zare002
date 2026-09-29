@@ -97,8 +97,8 @@ object type จริงบน tenant นี้ (ปิด OQ-11) และช�
 | `ZI_ZARE002_CLEARING` | CDS view entity — คิวของ BOT: 1 row ต่อ item ของใบที่ post JE แล้วแต่ยังไม่ clear | `src/zi_zare002_clearing.ddls.asddls` | 8B | ✅ (2026-09-23) |
 | `ZAPI_ZARE002` | Service Definition (Web API) — expose `ZI_ZARE002_CLEARING` as `ClearingItems` | `src/zapi_zare002.srvd.srvdsrv` | 8B | ✅ |
 | `ZAPI_ZARE002_O4` | Service Binding OData V4 Web API | `src/zapi_zare002_o4.srvb.xml` | 8B | ✅ published |
-| `ZCS_PAYMENT_CLEARING` | Communication Scenario inbound — ครอบ `ZAPI_ZARE002_O4` อย่างเดียว (inbound ของ API #3 เอาออกแล้ว `9b0d575`) | `src/zcs_payment_clearing.sco1.xml` | 8B | ✅ published locally |
-| Communication Arrangement `ZCA_PAYMENT_CLEARING` | × `SBPA_DEV` · inbound user ของ BOT | — ไม่ขึ้น git | 8B | ✅ |
+| `ZCS_CLEARING_ITEM` | Communication Scenario inbound — ครอบ `ZAPI_ZARE002_O4` อย่างเดียว · แทน `ZCS_PAYMENT_CLEARING` (สร้างใหม่แล้วลบตัวเดิม `6c420da` 2026-09-29 ให้คู่กับ `ZCS_CLEARING_RESULT`) | `src/zcs_clearing_item.sco1.xml` | 8B | ✅ published locally |
+| Communication Arrangement `ZCA_CLEARING_ITEM` | × `SBPA_DEV` · inbound user ของ BOT (ตัวเดิม) · แทน `ZCA_PAYMENT_CLEARING` ที่ลบแล้ว | — ไม่ขึ้น git | 8B | ✅ |
 | ~~API #3~~ `ZARE002_CLEARING` · `ZCL_ZARE002_CLEARING_HTTP` · `ZCL_ZARE002_CLEARING_RESULT` · message 120–124 | **ย้ายไป package `ZARI003`** เป็น `ZARI003_CLEARING` · `ZCL_ZARI003_CLEARING_*` · message `ZARI003` 005–009 · scenario `ZCS_CLEARING_RESULT` / arrangement `ZCA_CLEARING_RESULT` | — | 8B | 🗑️ `9b0d575` (2026-09-28) |
 | `ZCL_ZARE002_JOURNAL_ENTRY` | Class — สร้าง + post journal entry ของ 1 payment ผ่าน `I_JournalEntryTP~Post` (EML) · `build`/`check_balance`/`describe`/`derive_house_bank` pure · `post` (มี `COMMIT ENTITIES` ห้ามเรียกใน RAP) · `find_document` | `src/zcl_zare002_journal_entry.clas.abap` | 8B | ✅ `2ed2145` · 5 test |
 | `ZCL_ZARE002_JOURNAL_ENTRY` testclasses | builder อย่างเดียว ไม่ post | `src/zcl_zare002_journal_entry.clas.testclasses.abap` | 8B | ✅ 5 test เขียว |
