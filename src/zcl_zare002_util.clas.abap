@@ -92,11 +92,14 @@ CLASS zcl_zare002_util IMPLEMENTATION.
 *    submit_poc( out ).
 *    migrate_submitted_status( out ).
 
-      UPDATE ztar_i002_pymt
-        SET status = 'S', clearing_accounting_document = '', clearing_fiscal_year = '', clearing_message = ''
-        WHERE payment_uuid IN ( 'FA163E195F2E1FE1AEF8789699CF84FC', 'FA163E195F2E1FE1AEF87863689764FC' ).
+    " ปิดไว้ เพราะล้างเลขเอกสาร clearing ของ 2 ใบนี้ทันทีที่กด F9
+*      UPDATE ztar_i002_pymt
+*        SET status = 'S', clearing_accounting_document = '', clearing_fiscal_year = '', clearing_message = ''
+*        WHERE payment_uuid IN ( 'FA163E195F2E1FE1AEF8789699CF84FC', 'FA163E195F2E1FE1AEF87863689764FC' ).
+*
+*      COMMIT WORK.
 
-      COMMIT WORK.
+    out->write( |ZCL_ZARE002_UTIL: nothing is enabled in main| ).
 
   ENDMETHOD.
 
