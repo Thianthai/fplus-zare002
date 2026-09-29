@@ -92,6 +92,12 @@ CLASS zcl_zare002_util IMPLEMENTATION.
 *    submit_poc( out ).
 *    migrate_submitted_status( out ).
 
+      UPDATE ztar_i002_pymt
+        SET status = 'S', clearing_accounting_document = '', clearing_fiscal_year = '', clearing_message = ''
+        WHERE payment_uuid IN ( 'FA163E195F2E1FE1AEF8789699CF84FC', 'FA163E195F2E1FE1AEF87863689764FC' ).
+
+      COMMIT WORK.
+
   ENDMETHOD.
 
   METHOD class_constructor.

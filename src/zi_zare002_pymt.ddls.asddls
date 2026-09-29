@@ -2,6 +2,7 @@
 @EndUserText.label: 'Automatic Incoming Payments - Payment'
 define view entity ZI_ZARE002_PYMT
   as select from ztar_i002_pymt
+  association [0..1] to ZI_ZARE002_STATUS_VH as _StatusText on $projection.Status = _StatusText.Status
 {
       @EndUserText.label: 'Payment UUID'
   key payment_uuid                as PaymentUuid,
@@ -48,28 +49,15 @@ define view entity ZI_ZARE002_PYMT
       payment_amount              as PaymentAmount,
 
       // Status ของรายการ
+      @EndUserText.label: 'Status'
       status                      as Status,
 
-      // สีของ icon สถานะบนหน้าจอ
-      // N (New) ไม่แสดง icon
-      // R (Rejected) แดง
-      // C (Cleared) เขียว
-      // สถานะอื่นทั้งหมด เช่น S (Submitted) แสดงสีฟ้า
-      @EndUserText.label: 'Status Criticality'
-      cast(
-        case status
-          when 'N' then 0
-          when 'R' then 1
-          when 'C' then 3
-          else          5
-        end as abap.int1 )        as StatusCriticality,
-
-      // คอลัมน์ Status บนหน้าจอ — ว่างเสมอ เพื่อให้ FE วาดแต่ icon สีจาก StatusCriticality
-      // ค่าจริงของสถานะยังอยู่ที่ Status ใช้ filter ได้ตามปกติ
-      @EndUserText.label: 'Status'
-      ''                          as StatusIcon,
+      // ข้อความของ Status จาก domain ZD_REQUEST_STATUS ตามภาษาที่ login
+      @EndUserText.label: 'Status Text'
+      _StatusText.StatusText      as StatusText,
 
       // field สำหรับเก็บ Status ของการส่งไปให้ SFDC
+      @EndUserText.label: 'Salesforce Status'
       salesforce_status           as SalesforceStatus,
       @EndUserText.label: 'Salesforce Message'
       salesforce_message          as SalesforceMessage,
@@ -113,5 +101,7 @@ define view entity ZI_ZARE002_PYMT
       @Semantics.systemDateTime.lastChangedAt: true
       last_changed_at             as LastChangedAt,
       @Semantics.systemDateTime.localInstanceLastChangedAt: true
-      local_last_changed_at       as LocalLastChangedAt
+      local_last_changed_at       as LocalLastChangedAt,
+
+      _StatusText
 }

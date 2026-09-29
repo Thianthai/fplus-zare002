@@ -32,9 +32,10 @@ define root view entity ZC_ZARE002
       @Semantics.amount.currencyCode: 'PaymentCurrency'
       _Payment.PaymentAmount              as PaymentAmount,
 
+      @ObjectModel.text.element: [ 'StatusText' ]
+      @Consumption.valueHelpDefinition: [ { entity: { name: 'ZI_ZARE002_STATUS_VH', element: 'Status' } } ]
       _Payment.Status                     as Status,
-      _Payment.StatusCriticality          as StatusCriticality,
-      _Payment.StatusIcon                 as StatusIcon,
+      _Payment.StatusText                 as StatusText,
       _Payment.SalesforceStatus           as SalesforceStatus,
       _Payment.SalesforceMessage          as SalesforceMessage,
       _Payment.PaymentAccountingDocument  as PaymentAccountingDocument,

@@ -36,6 +36,7 @@
       <APP_ID>ZIAM_ZARE002_EXT</APP_ID>
       <SRVC_NAME>43F5ABB6AEBD2FFC7ABE402230568E</SRVC_NAME>
       <SRVC_TYPE>HT</SRVC_TYPE>
+      <TEXT>Automatic Incoming Payments - Submit Payments</TEXT>
       <TYPE_TEXT>HTTP Service</TYPE_TEXT>
      </item>
     </SERVICE>
