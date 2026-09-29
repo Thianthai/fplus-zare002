@@ -322,7 +322,7 @@ CLASS zcl_zare002_submit IMPLEMENTATION.
     ENDIF.
 
     " ใบที่ปิดงานแล้ว
-    " มีทั้งเอกสารรับชำระและเอกสาร clearing หรือสถานะเป็น Complete
+    " มีทั้งเอกสารรับชำระและเอกสาร clearing หรือสถานะเป็น Cleared
     IF is_header-status = gc_status_cleared
     OR ( is_header-payment_accounting_document IS NOT INITIAL
          AND is_header-clearing_accounting_document IS NOT INITIAL ).
