@@ -9,18 +9,24 @@ CLASS zcl_zare002_status_buffer DEFINITION
   PUBLIC SECTION.
 
     TYPES:
-      "! status ใหม่ที่ action ต้องการให้ saver stamp ลง ztar_i002_pymt
+      "! สิ่งที่ action ต้องการให้ saver stamp ลง ztar_i002_pymt
+      "! reject_batch_id คือเลขรอบของการกด Reject ทุกใบในรอบเดียวกันได้เลขเดียวกัน
+      "! reject_message คือข้อความ Reject สำเร็จ ภายหลังงาน background ของ ZARI003 จะเขียนทับด้วยผลการแจ้ง SBPA
       BEGIN OF ty_entry,
-        payment_uuid TYPE sysuuid_x16,
-        status       TYPE ze_request_status,
+        payment_uuid    TYPE sysuuid_x16,
+        status          TYPE ze_request_status,
+        reject_batch_id TYPE ztar_i002_pymt-reject_batch_id,
+        reject_message  TYPE ztar_i002_pymt-reject_message,
       END OF ty_entry,
       tt_entry TYPE SORTED TABLE OF ty_entry WITH UNIQUE KEY payment_uuid.
 
     "! payment นี้ต้องได้ status ใหม่ — เรียกจาก action handler (interaction phase)
     "! เรียกซ้ำ payment เดิม = ทับด้วยค่าล่าสุด
     CLASS-METHODS add
-      IMPORTING iv_payment_uuid TYPE sysuuid_x16
-                iv_status       TYPE ze_request_status.
+      IMPORTING iv_payment_uuid    TYPE sysuuid_x16
+                iv_status          TYPE ze_request_status
+                iv_reject_batch_id TYPE ztar_i002_pymt-reject_batch_id OPTIONAL
+                iv_reject_message  TYPE string OPTIONAL.
 
     "! คืนทุก entry ที่ค้างอยู่ — เรียกจาก saver (save phase)
     CLASS-METHODS get_all
@@ -45,10 +51,14 @@ CLASS ZCL_ZARE002_STATUS_BUFFER IMPLEMENTATION.
     READ TABLE gt_entry ASSIGNING FIELD-SYMBOL(<lfs_entry>)
          WITH TABLE KEY payment_uuid = iv_payment_uuid.
     IF sy-subrc = 0.
-      <lfs_entry>-status = iv_status.
+      <lfs_entry>-status          = iv_status.
+      <lfs_entry>-reject_batch_id = iv_reject_batch_id.
+      <lfs_entry>-reject_message  = iv_reject_message.
     ELSE.
-      INSERT VALUE ty_entry( payment_uuid = iv_payment_uuid
-                             status       = iv_status ) INTO TABLE gt_entry.
+      INSERT VALUE ty_entry( payment_uuid    = iv_payment_uuid
+                             status          = iv_status
+                             reject_batch_id = iv_reject_batch_id
+                             reject_message  = iv_reject_message ) INTO TABLE gt_entry.
     ENDIF.
   ENDMETHOD.
 

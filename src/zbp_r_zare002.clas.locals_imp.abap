@@ -14,6 +14,9 @@ CLASS lhc_Item DEFINITION INHERITING FROM cl_abap_behavior_handler.
     "! ตัดข้อความ error ของ SFDC ก่อนใส่ message (&2 ของ message number 005)
     CONSTANTS gc_sfdc_message_max TYPE i                 VALUE 50.
 
+    "! ส่วนต่างเวลาไทยกับ UTC หน่วยชั่วโมง ใช้สร้าง reject_batch_id
+    CONSTANTS gc_tz_offset_hours  TYPE i                 VALUE 7.
+
     "! payment_uuid แบบซ้ำได้ — ใช้ส่งเข้า read_rejected_payments
     TYPES tt_uuid        TYPE STANDARD TABLE OF sysuuid_x16 WITH EMPTY KEY.
 
@@ -73,6 +76,11 @@ CLASS lhc_Item DEFINITION INHERITING FROM cl_abap_behavior_handler.
     METHODS read_payment_state
       IMPORTING it_payment_uuid TYPE tt_uuid
       RETURNING VALUE(rt_state) TYPE tt_payment_state.
+
+    "! เลขรอบของการกด Reject รูปแบบ YYYYMMDD_hhmmss เวลาไทย
+    "! สร้างครั้งเดียวต่อการกด 1 ครั้ง ทุกใบในรอบนั้นใช้เลขเดียวกัน
+    METHODS build_reject_batch_id
+      RETURNING VALUE(rv_batch_id) TYPE ztar_i002_pymt-reject_batch_id.
 
 ENDCLASS.
 
@@ -284,10 +292,13 @@ CLASS lhc_Item IMPLEMENTATION.
     " 6. เตรียม record ให้ SFDC — ทุก item ของทุก payment
     " ลำดับใน lt_record = ลำดับใน lt_record_item เพื่อ map error_index กลับคืนแถวเดิม
     " ตัวประกอบ payload และตัวยิง SFDC เป็นของ ZARI003 ZARE002 แค่เตรียม record และแปลผลเป็น message
+    " batch id ที่ส่ง SFDC ใช้ reject_batch_id ของรอบนี้ เลขเดียวกับที่จะแจ้ง SBPA
+    " SFDC กับ SBPA จึงผูก record ของรอบเดียวกันได้
     DATA lt_record      TYPE zcl_zari003_sfdc_result=>tt_record.
     DATA lt_record_item LIKE lt_all_item.
 
-    DATA(lv_response_date) = zcl_zari003_sfdc_result=>build_response_date( ).
+    DATA(lv_response_date)   = zcl_zari003_sfdc_result=>build_response_date( ).
+    DATA(lv_reject_batch_id) = build_reject_batch_id( ).
 
     LOOP AT lt_payment INTO ls_payment.
       LOOP AT lt_all_item INTO ls_item WHERE PaymentUuid = ls_payment-payment_uuid.
@@ -295,7 +306,7 @@ CLASS lhc_Item IMPLEMENTATION.
                         header_sf_id  = ls_payment-salesforce_id
                         status        = zcl_zari003_sfdc_result=>gc_status_rejected
                         reject_reason = ls_item-RejectReason
-                        batch_id      = ls_payment-request_id
+                        batch_id      = lv_reject_batch_id
                         response_date = lv_response_date ) TO lt_record.
         APPEND ls_item TO lt_record_item.
       ENDLOOP.
@@ -362,11 +373,23 @@ CLASS lhc_Item IMPLEMENTATION.
     ENDIF.
 
     " 8. ส่งให้ SFDC สำเร็จ > write ลง buffer เพื่อให้ saver stamp header ตอน save phase
+    " จด batch id และข้อความ Reject สำเร็จไปด้วย saver จะเขียนลง reject_batch_id และ reject_message
     " MODIFY ด้านล่างเขียน RejectReason ด้วยค่าเดิมโดยตั้งใจ — บังคับให้ save phase เกิดขึ้นแน่นอน
     " ถ้าไม่ทำ framework อาจข้าม save เพราะ item ไม่มีอะไรเปลี่ยน แล้ว saver จะไม่ถูกเรียก (ห้ามลบออก)
     LOOP AT lt_payment INTO ls_payment.
-      zcl_zare002_status_buffer=>add( iv_payment_uuid = ls_payment-payment_uuid
-                                      iv_status       = gc_status_rejected ).
+      DATA(lv_item_count) = REDUCE i( INIT lv_n = 0
+                                      FOR ls_count IN lt_all_item
+                                      WHERE ( PaymentUuid = ls_payment-payment_uuid )
+                                      NEXT lv_n = lv_n + 1 ).
+
+      MESSAGE ID gc_msgid TYPE 'S' NUMBER '003'
+        WITH ls_payment-payment_document_no lv_item_count
+        INTO DATA(lv_reject_message).
+
+      zcl_zare002_status_buffer=>add( iv_payment_uuid    = ls_payment-payment_uuid
+                                      iv_status          = gc_status_rejected
+                                      iv_reject_batch_id = lv_reject_batch_id
+                                      iv_reject_message  = lv_reject_message ).
 
       MODIFY ENTITIES OF zr_zare002 IN LOCAL MODE
         ENTITY Item
@@ -375,11 +398,6 @@ CLASS lhc_Item IMPLEMENTATION.
                         WHERE ( PaymentUuid = ls_payment-payment_uuid )
                         ( %tky         = ls_update-%tky
                           RejectReason = ls_update-RejectReason ) ).
-
-      DATA(lv_item_count) = REDUCE i( INIT lv_n = 0
-                                      FOR ls_count IN lt_all_item
-                                      WHERE ( PaymentUuid = ls_payment-payment_uuid )
-                                      NEXT lv_n = lv_n + 1 ).
 
       READ TABLE lt_selected INTO ls_selected WITH KEY PaymentUuid = ls_payment-payment_uuid.
 
@@ -423,6 +441,26 @@ CLASS lhc_Item IMPLEMENTATION.
 
   ENDMETHOD.
 
+
+  METHOD build_reject_batch_id.
+
+    DATA lv_timestamp TYPE timestampl.
+    DATA lv_date      TYPE d.
+    DATA lv_time      TYPE t.
+
+    GET TIME STAMP FIELD lv_timestamp.
+
+    " เวลาไทย = UTC + 7 ชั่วโมง
+    lv_timestamp = cl_abap_tstmp=>add( tstmp = lv_timestamp
+                                       secs  = gc_tz_offset_hours * 3600 ).
+
+    CONVERT TIME STAMP lv_timestamp TIME ZONE 'UTC' INTO DATE lv_date TIME lv_time.
+
+    " type d และ t ใน string template ได้ YYYYMMDD และ hhmmss โดยไม่มีตัวคั่น
+    rv_batch_id = |{ lv_date }_{ lv_time }|.
+
+  ENDMETHOD.
+
 ENDCLASS.
 
 
@@ -435,6 +473,8 @@ CLASS lsc_Item DEFINITION INHERITING FROM cl_abap_behavior_saver.
 
     " หลัง managed runtime เขียน ztar_i002_item แล้ว > stamp header ตามที่ action จดไว้ใน buffer
     " ถึงตรงนี้ได้แปลว่า SFDC รับแล้ว (rejectItem ยิงก่อน) > salesforce_status = S ด้วย
+    " เขียน reject_batch_id และข้อความ Reject สำเร็จลง reject_message
+    " แล้วลงทะเบียนงานแจ้ง SBPA ของ ZARI003 ไว้ทำหลัง commit ครั้งเดียวต่อ batch
     " เขียนเฉพาะ field ด้วย UPDATE ... SET — ห้าม MODIFY ทั้ง row
     METHODS save_modified REDEFINITION.
 
@@ -460,12 +500,38 @@ CLASS lsc_Item IMPLEMENTATION.
     LOOP AT lt_entry INTO DATA(ls_entry).
       UPDATE ztar_i002_pymt
         SET status                = @ls_entry-status,
+            reject_batch_id       = @ls_entry-reject_batch_id,
+            reject_message        = @ls_entry-reject_message,
             salesforce_status     = 'S',
             salesforce_message    = @space,
             last_changed_by       = @lv_user,
             last_changed_at       = @lv_now,
             local_last_changed_at = @lv_now
         WHERE payment_uuid = @ls_entry-payment_uuid.
+    ENDLOOP.
+
+    " แจ้ง SBPA ครั้งเดียวต่อ batch
+    " กด Reject 1 ครั้งได้ batch เดียว แต่วนตาม batch ไว้เผื่อมีหลาย action ใน LUW เดียว
+    " schedule แค่ลงทะเบียนงาน background ไม่ยิง HTTP และไม่ COMMIT จึงเรียกใน save phase ได้
+    LOOP AT lt_entry INTO DATA(ls_group_entry)
+         GROUP BY ls_group_entry-reject_batch_id INTO DATA(lv_batch_id).
+
+      IF lv_batch_id IS INITIAL.
+        CONTINUE.
+      ENDIF.
+
+      DATA(lv_error) = zcl_zari003_reject_batch=>schedule( lv_batch_id ).
+
+      " ลงทะเบียนไม่ได้ เก็บเหตุผลแทนข้อความ Reject สำเร็จ ให้ user เห็นว่า SBPA ยังไม่ได้รับแจ้ง
+      " ตัว Reject ยังสำเร็จตามปกติ เพราะ SFDC รับไปแล้ว
+      IF lv_error IS NOT INITIAL.
+        DATA(lv_error_message) = CONV ztar_i002_pymt-reject_message( lv_error ).
+
+        UPDATE ztar_i002_pymt
+          SET reject_message = @lv_error_message
+          WHERE reject_batch_id = @lv_batch_id.
+      ENDIF.
+
     ENDLOOP.
 
   ENDMETHOD.

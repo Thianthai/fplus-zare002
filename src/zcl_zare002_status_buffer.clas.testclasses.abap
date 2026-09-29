@@ -18,6 +18,8 @@ CLASS ltc_status_buffer DEFINITION FINAL FOR TESTING
     METHODS add_same_uuid_twice    FOR TESTING.
     "! clear แล้ว get_all ต้องว่าง
     METHODS clear_empties_buffer   FOR TESTING.
+    "! batch id และข้อความ Reject ถูกเก็บคู่กับ payment และอ่านกลับได้
+    METHODS add_keeps_reject_batch FOR TESTING.
 
 ENDCLASS.
 
@@ -56,6 +58,19 @@ CLASS ltc_status_buffer IMPLEMENTATION.
     zcl_zare002_status_buffer=>clear( ).
 
     cl_abap_unit_assert=>assert_initial( zcl_zare002_status_buffer=>get_all( ) ).
+  ENDMETHOD.
+
+  METHOD add_keeps_reject_batch.
+    zcl_zare002_status_buffer=>add( iv_payment_uuid    = lc_uuid_a
+                                    iv_status          = 'R'
+                                    iv_reject_batch_id = '20260929_143000'
+                                    iv_reject_message  = `Payment 1000000001 rejected (2 items)` ).
+
+    DATA(lt_entry) = zcl_zare002_status_buffer=>get_all( ).
+    DATA(ls_entry) = lt_entry[ payment_uuid = lc_uuid_a ].
+
+    cl_abap_unit_assert=>assert_equals( act = ls_entry-reject_batch_id exp = '20260929_143000' ).
+    cl_abap_unit_assert=>assert_equals( act = ls_entry-reject_message  exp = 'Payment 1000000001 rejected (2 items)' ).
   ENDMETHOD.
 
 ENDCLASS.
