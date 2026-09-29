@@ -118,16 +118,15 @@ ZC_ZARE002:     _BusinessPartner.CustomerName as CustomerName    // path ธร�
 
 `status` ผูก domain `ZD_REQUEST_STATUS` (ของ ZARI002)
 
-| ค่า | ความหมาย | icon ใน mockup | `@UI.criticality` |
+| ค่า | ความหมาย | ใครเขียน / ตอนไหน | `@UI.criticality` |
 |---|---|---|---|
-| `N` | New — รอดำเนินการ | 🕐 นาฬิกาเหลือง | `0` (Neutral) → **ไม่แสดง icon โดยตั้งใจ** (ผู้ใช้เปลี่ยนจาก `2` เมื่อ 2026-09-29 `7653f57`) |
-| `C` | Complete | ✅ ติ๊กเขียว | `3` (Positive) |
-| `R` | Reject | ❌ กากบาทแดง | `1` (Negative) |
-| `E` | Error | ❌ กากบาทแดง | `1` (Negative) |
+| `N` | New | ZARI002 insert ใบใหม่ | `0` → **ไม่แสดง icon โดยตั้งใจ** |
+| `S` | Submitted — post JE แล้วรอ BOT clear | `ZCL_ZARE002_SUBMIT->save_result` (เพิ่ม 2026-09-29 `caf0216`) | `5` ฟ้า |
+| `C` | Cleared (เดิม Complete) | ZARI003 API #3 BOT clear สำเร็จ | `3` เขียว |
+| `R` | Rejected | saver ของปุ่ม Reject หลัง SFDC รับ | `1` แดง |
+| `E` | Error | **ไม่มีใครเขียน** (OQ-41) | `5` ฟ้า (ตก `else`) |
 
-> แถว New ช่อง Status ว่างโดยตั้งใจ (ผู้ใช้ยืนยัน 2026-09-29) — icon ขึ้นเฉพาะ C / R / E
->
-> mockup มี 3 icon แต่ domain มี 4 ค่า — `R` กับ `E` ใช้สีเดียวกัน (OQ-05)
+> ผู้ใช้กำหนด 2026-09-29: มีแค่ 4 state — New ไม่มี icon · Rejected แดง · Cleared เขียว · **อื่น ๆ ฟ้า (Information)**
 
 ## 6. หน่วยเงิน
 
