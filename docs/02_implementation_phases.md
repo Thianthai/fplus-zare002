@@ -254,9 +254,9 @@ Submit ผ่าน → `S` รอ BOT clear → API #3 สำเร็จ → `
 |---|---|---|---|
 | 8E.1 | domain + `S` Submitted · ข้อความ `C` → Cleared · `R` → Rejected | `ZD_REQUEST_STATUS` (ZARI002) | ✅ `fplus-zari002` `12d266f` |
 | 8E.2 | duplicate check นับ `N` + `S` — ⚠️ ไม่แก้ = ใบที่ SFDC ส่งซ้ำช่วงรอ clearing เข้ามาใหม่แล้ว post JE ซ้ำได้ (invoice ยังเปิด AR check ไม่ดัก) | `ZCL_ZARI002_PROCESSOR` | ✅ `fplus-zari002` `12d266f` |
-| 8E.3 | `save_result` เขียน `S` คู่เลขเอกสาร · `gc_status_complete` → `gc_status_cleared` (ผู้ใช้ rename) | `ZCL_ZARE002_SUBMIT` | ✅ `caf0216` |
+| 8E.3 | `save_result` เขียน `S` คู่เลขเอกสาร · `gc_status_complete` → `gc_status_cleared` (ผู้ใช้ rename) | `ZCL_ZARE002_SUBMIT` | ✅ `caf0216` · comment `8ea04b4` · ZARI003 rename เป็น `gc_status_cleared` `bb88592` |
 | 8E.4 | `StatusCriticality` 4 state: N 0 · R 1 · C 3 · อื่น 5 | `ZI_ZARE002_PYMT` | ✅ `caf0216` |
-| 8E.5 | ย้ายข้อมูลเก่า N ที่มี payment doc แต่ไม่มี clearing → S (ใช้ครั้งเดียว) | `ZCL_ZARE002_UTIL->migrate_submitted_status` | ✅ `caf0216` · รอผู้ใช้รันบน tenant |
+| 8E.5 | ย้ายข้อมูลเก่า N ที่มี payment doc แต่ไม่มี clearing → S (ใช้ครั้งเดียว) | `ZCL_ZARE002_UTIL->migrate_submitted_status` | ✅ `caf0216` · รันบน tenant แล้ว 2026-09-29 |
 
 ## Phase 8D — Reject batch id + แจ้ง SBPA (เริ่ม 2026-09-29)
 
