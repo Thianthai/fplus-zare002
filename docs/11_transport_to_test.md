@@ -1,6 +1,6 @@
 # 11 — Transport ขึ้น TEST (ZBCUTILITY + ZARI002 + ZARI003 + ZARE002)
 
-ตรวจล่าสุด 2026-09-29 · commit ที่ตรวจ: zbcutility `760677d` · zari002 `c7c5834` · zari003 `5de5d47` · zare002 `0671653`
+ตรวจล่าสุด 2026-09-29 · commit ที่ตรวจ: zbcutility `760677d` · zari002 `e096e9e` · zari003 `5de5d47` · zare002 `7a0cb96`
 
 ## 1. ลำดับ
 
@@ -31,11 +31,13 @@ ZBCUTILITY  →  ZARI002  →  ZARI003  →  ZARE002
 
 ## 3. ⚠️ Object ที่ต้องลบก่อนส่งมอบ (ยังไม่ลบรอบนี้ — ผู้ใช้สั่ง 2026-09-29)
 
+✅ **`main` ของทั้ง 3 ตัว comment ปิดแล้ว** (zare002 `7a0cb96` · zari002 `e096e9e`) — กด F9 แล้วแค่พิมพ์ว่าไม่มีอะไรเปิดใช้ ขึ้น TEST ได้อย่างปลอดภัย
+
 | Object | Package | หมายเหตุ |
 |---|---|---|
-| `ZCL_ZARE002_UTIL` | ZARE002 | ⚠️ `main` ยังมี `UPDATE ztar_i002_pymt` ที่ไม่ได้ comment (ล้าง clearing ของ 2 ใบ) — **อย่ากด F9 บน TEST** · ผู้ใช้จะแก้ใน push หน้า |
-| `ZCL_ZARI002_SPIKE` | ZARI002 | `DELETE FROM` ทั้ง 2 table แบบไม่มี `WHERE` — **อย่ารันบน TEST** |
-| `ZCL_ZARI002_UTIL` | ZARI002 | ลบ payment ตัวเดียวแบบ hardcode |
+| `ZCL_ZARE002_UTIL` | ZARE002 | `main` เคยมี `UPDATE` ล้าง clearing ของ 2 ใบ — comment แล้ว `7a0cb96` |
+| `ZCL_ZARI002_SPIKE` | ZARI002 | `purge_all` ลบทั้ง 2 table แบบไม่มี `WHERE` — `main` ไม่เรียกแล้ว `e096e9e` |
+| `ZCL_ZARI002_UTIL` | ZARI002 | `main` เคยลบ payment ตามเลขเอกสาร hardcode 5 ใบ — comment แล้ว `e096e9e` |
 
 ไม่มี object อื่นเรียกใช้ 3 ตัวนี้ ลบได้ทันทีเมื่อถึงเวลา
 
