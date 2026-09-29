@@ -273,7 +273,7 @@ Submit ผ่าน → `S` รอ BOT clear → API #3 สำเร็จ → `
 | 8D.2 | ตัวยิง SBPA (draft รอ spec OQ-45) + bgPF operation + message 010–013 | `ZCL_ZARI003_REJECT_BATCH` (+test) · `ZCL_ZARI003_REJECT_BATCH_BG` · `ZARI003` 010–014 | ✅ `fplus-zari003` `30ee98b` (2026-09-29) · 4 test เขียว |
 | 8D.3 | connectivity ขาออกไป SBPA | `ZARI003_REJECT_BATCH_REST` (path `/`) · `ZCS_REJECT_BATCH` (OAuth 2.0 client credentials) · `ZCA_REJECT_BATCH` × `SBPA_DEV` (ผู้ใช้ผูกเอง) | ✅ `30ee98b` · arrangement ผูกแล้ว (OAuth 2.0 client credentials) |
 | 8D.4 | Reject สร้าง batch id + saver เขียน 2 field + เรียก `schedule( )` | `ZBP_R_ZARE002` · `ZCL_ZARE002_STATUS_BUFFER` (+test) | ✅ `85e6935` (2026-09-29) · buffer 4 test |
-| 8D.5 | ทดสอบ: batch id เดียวกันทุกใบในรอบ · SFDC ได้ batch id ใหม่ · `reject_message` = 003 ก่อน แล้วเป็นผล SBPA หลัง bgPF | | ⬜ รอ API ของ SBPA |
+| 8D.5 | ทดสอบ: batch id เดียวกันทุกใบในรอบ · SFDC ได้ batch id ใหม่ · `reject_message` = 003 ก่อน แล้วเป็นผล SBPA หลัง bgPF | | ✅ ปิด 2026-09-29 — ผู้ใช้สั่งปิด SBPA จะทดสอบเองเมื่อ API พร้อม (OQ-45) · ฝั่งเรารอรับ issue |
 
 ข้อสงสัยที่เปิดไว้: OQ-42 (ส่งซ้ำ) · OQ-43 (เลขซ้ำในวินาทีเดียว) · OQ-44 (หน้า log ZARI002) · OQ-45 (spec SBPA)
 
