@@ -104,7 +104,7 @@ object type จริงบน tenant นี้ (ปิด OQ-11) และช�
 | `ZCL_ZARE002_SUBMIT` | Class — Submit 1 payment: validate (101–107) → post → บันทึก `payment_accounting_document` + `submit_message` · 1 payment = 1 LUW | `src/zcl_zare002_submit.clas.abap` | 8B | ✅ `2ed2145` |
 | `ZCL_ZARE002_SUBMIT_HTTP` | Class — handler ของ API #1 (`if_http_service_extension`) · parse/build response static ทดสอบได้ | `src/zcl_zare002_submit_http.clas.abap` | 8B | ✅ `2ed2145` · 4 test |
 | `ZARE002_SUBMIT` | HTTP Service — `/sap/bc/http/sap/ZARE002_SUBMIT` · ผูกใน IAM `ZIAM_ZARE002_EXT` | `src/zare002_submit.http.xml` | 8B | ✅ `2ed2145` |
-| `ZCL_ZARE002_SFDC_RESULT` | **รอลบ** — Reject เปลี่ยนไปใช้ `ZCL_ZARI003_SFDC_RESULT` แล้ว (`7653f57`) ไม่มี object ไหนเรียกอีก · ยังอยู่ใน repo ณ `7653f57` · Class — Composite API (25 subrequest/call) PATCH ผล payment ไป SFDC · `build_payload` / `parse_response` / `build_response_date` pure · `send` (client จาก `ZCL_UTILITY=>create_sfdc_client` · ping ย้ายไป `ZCL_UTILITY=>check_sfdc_connection`) | `src/zcl_zare002_sfdc_result.clas.abap` | 8A / 8C | ✅ token จาก `ZCL_UTILITY` ทุก call ผ่าน `ZCA_SFDC_TOKEN` + Bearer เอง · ping `/limits` · ชื่อ field จริง · batch id ตัด 15 (OQ-28) · 10 test เขียว |
+| ~~`ZCL_ZARE002_SFDC_RESULT`~~ | Class — Composite API PATCH ผล Reject ไป SFDC · **ลบแล้ว** — Reject ยิงผ่าน `ZCL_ZARI003_SFDC_RESULT=>send( )` แทน (`7653f57`) · test ย้ายไป ZARI003 | — | 8A / 8C | 🗑️ `10ef08e` (2026-09-29) |
 
 ## Action ที่ประกาศ
 
