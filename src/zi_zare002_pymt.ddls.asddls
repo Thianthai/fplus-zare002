@@ -54,7 +54,7 @@ define view entity ZI_ZARE002_PYMT
       @EndUserText.label: 'Status Criticality'
       cast(
         case status
-          when 'N' then 2   // New      — รอดำเนินการ
+          when 'N' then 0   // New      — รอดำเนินการ
           when 'C' then 3   // Complete
           when 'R' then 1   // Reject
           when 'E' then 1   // Error

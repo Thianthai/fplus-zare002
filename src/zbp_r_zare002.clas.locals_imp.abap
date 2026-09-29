@@ -283,16 +283,17 @@ CLASS lhc_Item IMPLEMENTATION.
 
     " 6. เตรียม record ให้ SFDC — ทุก item ของทุก payment
     " ลำดับใน lt_record = ลำดับใน lt_record_item เพื่อ map error_index กลับคืนแถวเดิม
-    DATA lt_record      TYPE zcl_zare002_sfdc_result=>tt_record.
+    " ตัวประกอบ payload และตัวยิง SFDC เป็นของ ZARI003 ZARE002 แค่เตรียม record และแปลผลเป็น message
+    DATA lt_record      TYPE zcl_zari003_sfdc_result=>tt_record.
     DATA lt_record_item LIKE lt_all_item.
 
-    DATA(lv_response_date) = zcl_zare002_sfdc_result=>build_response_date( ).
+    DATA(lv_response_date) = zcl_zari003_sfdc_result=>build_response_date( ).
 
     LOOP AT lt_payment INTO ls_payment.
       LOOP AT lt_all_item INTO ls_item WHERE PaymentUuid = ls_payment-payment_uuid.
         APPEND VALUE #( item_sf_id    = ls_item-SalesforceItemId
                         header_sf_id  = ls_payment-salesforce_id
-                        status        = zcl_zare002_sfdc_result=>gc_status_rejected
+                        status        = zcl_zari003_sfdc_result=>gc_status_rejected
                         reject_reason = ls_item-RejectReason
                         batch_id      = ls_payment-request_id
                         response_date = lv_response_date ) TO lt_record.
@@ -301,7 +302,7 @@ CLASS lhc_Item IMPLEMENTATION.
     ENDLOOP.
 
     " เช็คว่าถ้าเกิน limit ของ Composite API ให้ปฏิเสธทั้งหมด
-    IF lines( lt_record ) > zcl_zare002_sfdc_result=>gc_max_records.
+    IF lines( lt_record ) > zcl_zari003_sfdc_result=>gc_max_records.
       failed-item = VALUE #( FOR ls_fail IN lt_selected
                              ( %tky               = ls_fail-%tky
                                %action-rejectItem = if_abap_behv=>mk-on
@@ -320,11 +321,8 @@ CLASS lhc_Item IMPLEMENTATION.
 
     " 7. ยิง SFDC ก่อน write ลง DB
     " ถ้า SFDC ไม่รับ = ไม่มีอะไร write ลง DB เปิดให้ user กด Reject ซ้ำได้
-    " ปิดการยิง SFDC ชั่วคราวเพื่อทดสอบฝั่ง SAP — บรรทัดล่างจำลองว่า SFDC รับทุก record
-    " เปิดบรรทัดจริงกลับและลบบรรทัดจำลองก่อน handover
-*   DATA(ls_send) = NEW zcl_zare002_sfdc_result( )->send( lt_record ).
-    DATA(ls_send) = VALUE zcl_zare002_sfdc_result=>ty_result( success      = abap_true
-                                                              record_count = lines( lt_record ) ).
+    " เรียก send เท่านั้น ห้ามเรียก send_payment_result เพราะ method นั้น COMMIT เอง ซึ่ง RAP ไม่อนุญาต
+    DATA(ls_send) = NEW zcl_zari003_sfdc_result( )->send( lt_record ).
 
     IF ls_send-success = abap_false.
       failed-item = VALUE #( FOR ls_fail IN lt_selected
@@ -341,8 +339,8 @@ CLASS lhc_Item IMPLEMENTATION.
       ENDIF.
 
       IF ls_send-http_status = 0
-         OR ls_send-error_code = zcl_zare002_sfdc_result=>gc_err_not_reachable
-         OR ls_send-error_code = zcl_zare002_sfdc_result=>gc_err_parse.
+         OR ls_send-error_code = zcl_zari003_sfdc_result=>gc_err_not_reachable
+         OR ls_send-error_code = zcl_zari003_sfdc_result=>gc_err_parse.
         " ต่อไม่ถึง / อื่นๆ
         APPEND VALUE #( %tky = ls_culprit-%tky
                         %msg = new_message( id       = gc_msgid
