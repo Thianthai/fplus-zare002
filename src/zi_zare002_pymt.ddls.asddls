@@ -50,15 +50,18 @@ define view entity ZI_ZARE002_PYMT
       // Status ของรายการ
       status                      as Status,
 
-      // สีของ icon สถานะบนหน้าจอ — 1 แดง · 2 เหลือง · 3 เขียว · 0 เทา
+      // สีของ icon สถานะบนหน้าจอ
+      // N (New) ไม่แสดง icon
+      // R (Rejected) แดง
+      // C (Cleared) เขียว
+      // สถานะอื่นทั้งหมด เช่น S (Submitted) แสดงสีฟ้า
       @EndUserText.label: 'Status Criticality'
       cast(
         case status
-          when 'N' then 0   // New      — รอดำเนินการ
-          when 'C' then 3   // Complete
-          when 'R' then 1   // Reject
-          when 'E' then 1   // Error
-          else          0
+          when 'N' then 0
+          when 'R' then 1
+          when 'C' then 3
+          else          5
         end as abap.int1 )        as StatusCriticality,
 
       // คอลัมน์ Status บนหน้าจอ — ว่างเสมอ เพื่อให้ FE วาดแต่ icon สีจาก StatusCriticality

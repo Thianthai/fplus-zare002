@@ -71,6 +71,12 @@ CLASS zcl_zare002_util DEFINITION
     METHODS submit_poc
       IMPORTING out TYPE REF TO if_oo_adt_classrun_out.
 
+    "! ใช้ครั้งเดียวหลังเพิ่ม status S
+    "! ใบที่ post JE แล้วแต่ยังไม่มีเอกสาร clearing และยังเป็น N ให้เปลี่ยนเป็น S
+    "! ใบ R และ C ไม่แตะ
+    METHODS migrate_submitted_status
+      IMPORTING out TYPE REF TO if_oo_adt_classrun_out.
+
 ENDCLASS.
 
 
@@ -84,6 +90,7 @@ CLASS zcl_zare002_util IMPLEMENTATION.
 *    test_sfdc_bearer( out ).
 *    set_test_data( out ).
 *    submit_poc( out ).
+*    migrate_submitted_status( out ).
 
   ENDMETHOD.
 
@@ -205,6 +212,30 @@ CLASS zcl_zare002_util IMPLEMENTATION.
                   |doc { ls_result-accounting_document } - { ls_result-message }| ).
 
     ENDLOOP.
+
+  ENDMETHOD.
+
+  METHOD migrate_submitted_status.
+
+    DATA lv_now TYPE abp_lastchange_tstmpl.
+
+    GET TIME STAMP FIELD lv_now.
+    DATA(lv_user) = cl_abap_context_info=>get_user_technical_name( ).
+
+    UPDATE ztar_i002_pymt
+      SET status                = 'S',
+          last_changed_by       = @lv_user,
+          last_changed_at       = @lv_now,
+          local_last_changed_at = @lv_now
+      WHERE status                        = 'N'
+        AND payment_accounting_document  <> @space
+        AND clearing_accounting_document  = @space.
+
+    DATA(lv_count) = sy-dbcnt.
+
+    COMMIT WORK.
+
+    out->write( |{ lv_count } payment(s) changed from N to S| ).
 
   ENDMETHOD.
 

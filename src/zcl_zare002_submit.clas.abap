@@ -14,21 +14,22 @@ CLASS zcl_zare002_submit DEFINITION
       "! P = post รอบนี้
       "! A = post ไว้แล้ว รอ clearing
       "! E = ไม่ผ่าน
-      gc_outcome_posted  TYPE c LENGTH 1 VALUE 'P',
-      gc_outcome_already TYPE c LENGTH 1 VALUE 'A',
-      gc_outcome_error   TYPE c LENGTH 1 VALUE 'E',
+      gc_outcome_posted   TYPE c LENGTH 1 VALUE 'P',
+      gc_outcome_already  TYPE c LENGTH 1 VALUE 'A',
+      gc_outcome_error    TYPE c LENGTH 1 VALUE 'E',
 
-      gc_msgid           TYPE symsgid           VALUE 'ZARE002',
-      gc_status_rejected TYPE ze_request_status VALUE 'R',
-      gc_status_complete TYPE ze_request_status VALUE 'C',
+      gc_msgid            TYPE symsgid           VALUE 'ZARE002',
+      gc_status_rejected  TYPE ze_request_status VALUE 'R',
+      gc_status_cleared   TYPE ze_request_status VALUE 'C',
+      gc_status_submitted TYPE ze_request_status VALUE 'S',
 
       "! ค่าใน payment_method ที่ต้อง post มือ (ZARI002 เก็บเป็นคำ)
-      gc_method_cheque   TYPE ztar_i002_pymt-payment_method VALUE 'Cheque',
+      gc_method_cheque    TYPE ztar_i002_pymt-payment_method VALUE 'Cheque',
 
       "! ความยาวสูงสุดของ message จาก FI ที่เก็บได้
       "! แบ่งใส่ &2&3&4 ของ message number 108 ส่วนละ 50 ตัว
       "! 150 + ข้อความนำหน้า "Payment <no>: " = ไม่เกิน 200 ตัวของ submit_message
-      gc_message_max     TYPE i VALUE 150.
+      gc_message_max      TYPE i VALUE 150.
 
     TYPES:
       "! ผลของ 1 payment — caller เอาไปตอบ Fiori ตรงๆ
@@ -92,6 +93,8 @@ CLASS zcl_zare002_submit DEFINITION
 
     "! บันทึกเลขเอกสาร (ถ้ามี) + message ลง header แล้ว COMMIT WORK
     "! เลขเอกสารกับปีบัญชีต้องมาคู่กันเสมอ เก็บแยกกันไม่ได้
+    "! มีเลขเอกสารแปลว่า post ผ่าน จึงตั้ง status เป็น S รอ BOT clear ไปพร้อมกัน
+    "! ไม่มีเลขเอกสารแปลว่าไม่ผ่าน status คงเดิม
     METHODS save_result
       IMPORTING iv_payment_uuid        TYPE sysuuid_x16
                 iv_accounting_document TYPE ztar_i002_pymt-payment_accounting_document OPTIONAL
@@ -320,7 +323,7 @@ CLASS zcl_zare002_submit IMPLEMENTATION.
 
     " ใบที่ปิดงานแล้ว
     " มีทั้งเอกสารรับชำระและเอกสาร clearing หรือสถานะเป็น Complete
-    IF is_header-status = gc_status_complete
+    IF is_header-status = gc_status_cleared
     OR ( is_header-payment_accounting_document IS NOT INITIAL
          AND is_header-clearing_accounting_document IS NOT INITIAL ).
       rv_message = message_text( iv_number = '114'
@@ -426,9 +429,12 @@ CLASS zcl_zare002_submit IMPLEMENTATION.
 
     IF iv_accounting_document IS NOT INITIAL.
 
+      " post ผ่าน -> S รอ BOT clear
+      " ถึงตรงนี้ได้แปลว่าผ่าน validate แล้ว ใบจึงไม่ใช่ R หรือ C แน่นอน
       UPDATE ztar_i002_pymt
         SET payment_accounting_document = @iv_accounting_document,
             payment_fiscal_year         = @iv_fiscal_year,
+            status                      = @gc_status_submitted,
             submit_message              = @lv_message,
             last_changed_by             = @lv_user,
             last_changed_at             = @lv_now,
