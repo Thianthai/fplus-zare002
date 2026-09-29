@@ -40,7 +40,6 @@ CLASS lhc_Item DEFINITION INHERITING FROM cl_abap_behavior_handler.
         payment_document_no         TYPE ztar_i002_pymt-payment_document_no,
         status                      TYPE ze_request_status,
         salesforce_id               TYPE ztar_i002_pymt-salesforce_id,
-        request_id                  TYPE ztar_i002_pymt-request_id,
         payment_accounting_document TYPE ztar_i002_pymt-payment_accounting_document,
       END OF ty_payment,
       tt_payment TYPE STANDARD TABLE OF ty_payment WITH EMPTY KEY.
@@ -162,7 +161,6 @@ CLASS lhc_Item IMPLEMENTATION.
            PaymentDocumentNo         AS payment_document_no,
            Status                    AS status,
            SalesforceId              AS salesforce_id,
-           RequestId                 AS request_id,
            PaymentAccountingDocument AS payment_accounting_document
       FROM zi_zare002_pymt
       WHERE PaymentUuid IN @lr_payment_uuid
