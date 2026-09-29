@@ -190,6 +190,9 @@
   · `"!` ใช้ได้เฉพาะหน้า declaration ใน body ใช้ `"` ธรรมดา
   · **`METHODS … REDEFINITION` (เช่น `save_modified` / `cleanup_finalize` ใน `lsc_Item`) ใส่ `"!` ไม่ได้**
   — warning `ABAP Doc comment is in the wrong position` · ใช้ `"` ธรรมดา
+- **ห้ามใช้ชื่อเรียกชั่วคราว `API #1`–`API #4` (หรือ "API ดึงคิว" ฯลฯ) ใน ABAP ทุกชนิด** (ผู้ใช้สั่ง 2026-09-29) — เป็นชื่อที่ใช้คุยกันเท่านั้น
+  ให้ระบุ RICEFW + class / service จริงแทน เช่น `HTTP service ZARE002_SUBMIT (ZCL_ZARE002_SUBMIT_HTTP)` · `ZI_ZARE002_CLEARING` · `ZARI003_CLEARING`
+  · ใช้ได้เฉพาะใน `docs/` และในแชท · รวมถึงเลข OQ / เลข phase ก็ห้ามอยู่ใน comment เหมือนกัน
 - **Comment ห้ามอ้างเลขเอกสาร / เลข object ของ test data** (ผู้ใช้สั่ง 2026-09-22 ใช้ทุก session)
   เลขพวกนี้มีแค่ใน tenant ทดสอบ พอขึ้น test/production แล้วไร้ความหมาย · เขียนเหตุผลกลาง ๆ แทน
   เช่น "ระบบเติมจาก sort key ของบัญชีเอง" ไม่ใช่ "ตามเอกสารตัวอย่าง 3500000001"
