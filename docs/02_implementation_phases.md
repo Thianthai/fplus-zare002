@@ -269,7 +269,7 @@ Submit ผ่าน → `S` รอ BOT clear → API #3 สำเร็จ → `
 
 | # | งาน | Object | Status |
 |---|---|---|---|
-| 8D.1 | table +2 field ลำดับ `reject_batch_id` → `submit_message` → `clearing_message` → `reject_message` (`CHAR 25` / `CHAR 200`) | `ZTAR_I002_PYMT` (ZARI002) | ⬜ |
+| 8D.1 | table +2 field ลำดับ `reject_batch_id` → `submit_message` → `clearing_message` → `reject_message` (`CHAR 25` / `CHAR 200`) | `ZTAR_I002_PYMT` (ZARI002) | ✅ `fplus-zari002` `44b5281` (2026-09-29) |
 | 8D.2 | ตัวยิง SBPA (draft รอ spec OQ-45) + bgPF operation + message 010–013 | `ZCL_ZARI003_REJECT_BATCH` (+test) · `ZCL_ZARI003_REJECT_BATCH_BG` · `ZARI003` 010–013 | ⬜ |
 | 8D.3 | connectivity ขาออกไป SBPA | `ZARI003_REJECT_BATCH_REST` (path `/`) · `ZCS_REJECT_BATCH` (OAuth 2.0 client credentials) · `ZCA_REJECT_BATCH` × `SBPA_DEV` (ผู้ใช้ผูกเอง) | ⬜ |
 | 8D.4 | Reject สร้าง batch id + saver เขียน 2 field + เรียก `schedule( )` | `ZBP_R_ZARE002` · `ZCL_ZARE002_STATUS_BUFFER` (+test) | ⬜ |
