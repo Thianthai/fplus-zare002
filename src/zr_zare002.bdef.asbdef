@@ -15,12 +15,14 @@ with additional save
   update;
 
   // draft ต้องการ create/delete ไว้สร้าง-ทิ้ง draft instance เอง
-  // internal = framework ใช้ได้ แต่ไม่โผล่ใน OData → FE สร้าง/ลบ item ไม่ได้อยู่ดี
+  // internal = framework ใช้ได้ แต่ไม่โผล่ใน OData
+  // FE จึงสร้างหรือลบ item ไม่ได้อยู่ดี
   internal create;
   internal delete;
 
   // RejectReason เป็น field เดียวที่แก้ได้ทั้ง BO
-  // และแก้ได้เฉพาะ payment ที่ยังไม่ถูก reject (OQ-13) → get_instance_features
+  // และแก้ได้เฉพาะ payment ที่ยังไม่ถูก reject และยังไม่ post
+  // เงื่อนไขอยู่ที่ get_instance_features
   field ( features : instance ) RejectReason;
 
   field ( readonly : update ) ItemUuid;
@@ -51,10 +53,12 @@ with additional save
   draft action Discard;
   draft determine action Prepare;
 
-  // ปุ่มบน toolbar — dim ทั้งคู่เมื่อ payment ถูก reject แล้ว (OQ-23)
-  // เลือก item ใดก็ตาม = ทำกับทุก item ของ payment นั้น (OQ-04)
-  action ( features : instance ) submitItem;                    // ยังว่าง
-  action ( features : instance ) rejectItem result [1] $self;   // ยิง SFDC ก่อน stamp (8A)
+  // ปุ่มบน toolbar เปิดปิดตามสถานะของ payment ดูที่ get_instance_features
+  // เลือก item ใดก็ตาม = ทำกับทุก item ของ payment นั้น
+  // submitItem ไม่มี logic โดยตั้งใจ การ post JE อยู่ที่ HTTP service ZARE002_SUBMIT (ZCL_ZARE002_SUBMIT_HTTP)
+  // rejectItem ยิง SFDC ก่อน แล้ว saver ค่อย stamp status
+  action ( features : instance ) submitItem;
+  action ( features : instance ) rejectItem result [1] $self;
 
   mapping for ztar_i002_item
     {

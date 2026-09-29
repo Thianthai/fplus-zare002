@@ -1,6 +1,8 @@
 "! สร้างและ post journal entry ของ 1 payment ผ่าน BO interface I_JournalEntryTP (spec Submit ข้อ 3)
-"! build เป็น pure method ทดสอบได้โดยไม่ post · post/find_document แตะระบบจริง
-"! ต้องเรียกนอก RAP (HTTP service / console) เพราะมี COMMIT ENTITIES · ไม่โยน exception คืน structure
+"! build เป็น pure method ทดสอบได้โดยไม่ post
+"! post และ find_document แตะระบบจริง
+"! ต้องเรียกนอก RAP (HTTP service / console) เพราะมี COMMIT ENTITIES
+"! ไม่โยน exception คืนผลเป็น structure
 CLASS zcl_zare002_journal_entry DEFINITION
   PUBLIC
   FINAL
@@ -25,7 +27,7 @@ CLASS zcl_zare002_journal_entry DEFINITION
       END OF ty_payment,
 
       "! item ของ payment — 1 item = 1 บรรทัดลูกหนี้
-      "! billing_document ไม่ได้ใช้ในเอกสารบัญชี เก็บไว้ส่งให้ BOT ตอน clearing (8B.5)
+      "! billing_document ไม่ได้ใช้ในเอกสารบัญชี เก็บไว้ส่งให้ BOT ตอน clearing
       BEGIN OF ty_item,
         customer_code       TYPE ztar_i002_item-customer_code,
         accounting_document TYPE ztar_i002_item-accounting_document,

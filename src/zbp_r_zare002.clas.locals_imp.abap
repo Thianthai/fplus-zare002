@@ -57,7 +57,8 @@ CLASS lhc_Item DEFINITION INHERITING FROM cl_abap_behavior_handler.
       IMPORTING keys REQUEST requested_features FOR Item
       RESULT result.
 
-    "! ปุ่ม Submit — ยังว่าง รอเฟส post FI (8B)
+    "! ปุ่ม Submit ไม่มี logic โดยตั้งใจ
+    "! การ post JE อยู่ที่ HTTP service ZARE002_SUBMIT (ZCL_ZARE002_SUBMIT_HTTP)
     METHODS submitItem FOR MODIFY
       IMPORTING keys FOR ACTION Item~submitItem.
 
@@ -139,7 +140,8 @@ CLASS lhc_Item IMPLEMENTATION.
 
 
   METHOD submitItem.
-    " ยังไม่มี logic โดยตั้งใจ — รอ spec post FI (Phase 8B)
+    " ไม่มี logic โดยตั้งใจ
+    " การ post JE อยู่ที่ HTTP service ZARE002_SUBMIT (ZCL_ZARE002_SUBMIT_HTTP)
   ENDMETHOD.
 
 

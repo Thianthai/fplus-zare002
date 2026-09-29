@@ -1,5 +1,6 @@
 "! กระดาษโน้ตระหว่าง action (interaction phase) กับ saver (save phase) ของ ZR_ZARE002
-"! RAP ห้าม action เขียน DB และ header ไม่อยู่ใน BO → action จดที่นี่ saver อ่านแล้ว UPDATE ztar_i002_pymt
+"! RAP ห้าม action เขียน DB และ header ไม่อยู่ใน BO
+"! action จึงจดที่นี่ แล้ว saver อ่านไป UPDATE ztar_i002_pymt
 "! static เพราะเป็นจุดเดียวที่ทั้งสองฝั่งมองเห็นร่วมกันใน LUW เดียว
 CLASS zcl_zare002_status_buffer DEFINITION
   PUBLIC

@@ -7,18 +7,21 @@ CLASS ltc_journal_entry DEFINITION FINAL FOR TESTING
 
     "! payment ครบ 5 ขา — เช็คจำนวนบรรทัด เครื่องหมาย และสมดุล
     METHODS full_payment_has_five_lines FOR TESTING.
-    "! fees / rounding / advance เป็น 0 → เหลือ bank + ลูกหนี้
+    "! fees / rounding / advance เป็น 0 -> เหลือ bank + ลูกหนี้
     METHODS zero_lines_are_skipped       FOR TESTING.
     "! CN (amount_paid ติดลบ) ต้องเป็นเดบิต (บวก) ฝั่ง API
     METHODS credit_note_is_debit          FOR TESTING.
     "! สมดุลไม่ลงตัวคืนผลต่าง
     METHODS unbalanced_returns_difference FOR TESTING.
 
-    "! payment ตั้งต้น: bank 10,779.50 · fees 20 · rounding -0.50 · advance 100 · item 10,700
+    "! payment ตั้งต้น
+    "! bank 10,779.50 fees 20 rounding -0.50 advance 100 item 10,700
     METHODS sample_payment
       RETURNING VALUE(rs_payment) TYPE zcl_zare002_journal_entry=>ty_payment.
 
-    "! bank 11011211 ได้ SCB01/SA001 · bank charge ได้ WP + 0000 · G/L อื่นไม่มี house bank
+    "! G/L bank ได้ house bank SCB01/SA001
+    "! bank charge ได้ tax code WP และ business place 0000
+    "! G/L อื่นไม่มี house bank
     METHODS house_bank_and_tax_on_lines FOR TESTING.
 
 ENDCLASS.

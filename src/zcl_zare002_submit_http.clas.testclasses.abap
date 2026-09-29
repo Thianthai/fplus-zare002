@@ -4,11 +4,12 @@ CLASS ltc_submit_http DEFINITION FINAL FOR TESTING
   RISK LEVEL HARMLESS.
 
   PRIVATE SECTION.
-    "! uuid 36 มีขีด และ 32 ไม่มีขีด → x16 ตัวเดียวกัน · ซ้ำถูกตัด
+    "! uuid 36 ตัวมีขีด และ 32 ตัวไม่มีขีด ได้ x16 ตัวเดียวกัน
+    "! uuid ซ้ำถูกตัดเหลือตัวเดียว
     METHODS parse_accepts_both_formats FOR TESTING.
-    "! body ไม่ใช่ JSON / Payments ว่าง → error
+    "! body ไม่ใช่ JSON หรือ Payments ว่าง -> error
     METHODS parse_rejects_bad_body     FOR TESTING.
-    "! uuid ผิดรูปแบบ → error และไม่คืน list บางส่วน
+    "! uuid ผิดรูปแบบ -> error และไม่คืน list บางส่วน
     METHODS parse_rejects_bad_uuid     FOR TESTING.
     "! นับ Success (P+A) / Error (E) และ key เป็น PascalCase
     METHODS response_counts_outcomes   FOR TESTING.

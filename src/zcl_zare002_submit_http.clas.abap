@@ -1,4 +1,4 @@
-"! API ของปุ่ม Submit
+"! HTTP service ZARE002_SUBMIT ที่ปุ่ม Submit ของ ZARE002 เรียก
 "! Fiori ส่ง list PaymentUuid เข้ามา post ทีละใบผ่าน ZCL_ZARE002_SUBMIT และได้ผลลัพธิ์ตอบกลับต่อใบ
 "! 1 PaymentUuid ต่อ 1 LUW ใบที่ไม่ผ่านจะไม่กระทบใบอื่น
 "! tenant นี้ไม่บังคับ CSRF — GET x-csrf-token: fetch คืน null และ POST ผ่านโดยไม่มี token

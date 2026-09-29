@@ -1,7 +1,7 @@
 "! submit 1 payment
 "! validate + post JE + บันทึกเลขเอกสาร payment/message ลง ztar_i002_pymt
-"! 1 payment = 1 LUW — ต้องเรียกนอก RAP (HTTP service API)
-"! ยังไม่เรียก BOT และยังไม่บันทึก Status
+"! 1 payment = 1 LUW ต้องเรียกนอก RAP ปกติเรียกจาก ZCL_ZARE002_SUBMIT_HTTP
+"! post ผ่านแล้วตั้ง status เป็น S รอ BOT ดึงไป clear ผ่าน ZI_ZARE002_CLEARING
 CLASS zcl_zare002_submit DEFINITION
   PUBLIC
   FINAL

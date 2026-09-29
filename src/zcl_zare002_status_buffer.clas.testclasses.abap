@@ -6,6 +6,7 @@ CLASS ltc_status_buffer DEFINITION FINAL FOR TESTING
   PRIVATE SECTION.
 
     CONSTANTS:
+      "! payment uuid สมมุติ 2 ใบสำหรับทดสอบ
       lc_uuid_a TYPE sysuuid_x16 VALUE '000000000000000000000000000000A1',
       lc_uuid_b TYPE sysuuid_x16 VALUE '000000000000000000000000000000B2'.
 
