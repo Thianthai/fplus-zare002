@@ -56,7 +56,7 @@ baseline ที่ tenant serialize มาแล้ว (commit `7936197`) — ob
 | Object | Type | ไฟล์ | Phase | Status |
 |--------|------|------|-------|--------|
 | `ZR_ZARE002` | Behavior definition — managed · with draft · with additional save · update only · features : instance บน RejectReason + 2 action | `src/zr_zare002.bdef.asbdef` | 2 / 7 | ✅ |
-| `ZBP_R_ZARE002` | Behavior pool — **SFDC call ใน `rejectItem` ปิดชั่วคราว (stub success) เปิดกลับก่อน handover** · `lhc_Item` (global auth · instance features · rejectItem: validate → composite SFDC → buffer) + `lsc_Item` (save_modified → `UPDATE ztar_i002_pymt` status R + salesforce_status S · cleanup_finalize) | `src/zbp_r_zare002.clas.abap` | 2 / 7 / 8A | ✅ |
+| `ZBP_R_ZARE002` | Behavior pool — **`rejectItem` ยิง SFDC จริงผ่าน `ZCL_ZARI003_SFDC_RESULT=>send( )` แล้ว (stub เอาออก `7653f57` 2026-09-29)** · `lhc_Item` (global auth · instance features · rejectItem: validate → composite SFDC → buffer) + `lsc_Item` (save_modified → `UPDATE ztar_i002_pymt` status R + salesforce_status S · cleanup_finalize) | `src/zbp_r_zare002.clas.abap` | 2 / 7 / 8A | ✅ |
 | `ZC_ZARE002` | Behavior projection (`use update` · `use action` · `use draft` ถ้าอัปเกรด) | `src/zc_zare002.bdef.asbdef` | 3 | ✅ |
 
 `ZBP_C_ZARE002` (behavior pool ของ projection) **ยังไม่ต้องสร้าง** — สร้างเมื่อมี logic ที่ต้องอยู่ชั้น projection เท่านั้น
@@ -104,7 +104,7 @@ object type จริงบน tenant นี้ (ปิด OQ-11) และช�
 | `ZCL_ZARE002_SUBMIT` | Class — Submit 1 payment: validate (101–107) → post → บันทึก `payment_accounting_document` + `submit_message` · 1 payment = 1 LUW | `src/zcl_zare002_submit.clas.abap` | 8B | ✅ `2ed2145` |
 | `ZCL_ZARE002_SUBMIT_HTTP` | Class — handler ของ API #1 (`if_http_service_extension`) · parse/build response static ทดสอบได้ | `src/zcl_zare002_submit_http.clas.abap` | 8B | ✅ `2ed2145` · 4 test |
 | `ZARE002_SUBMIT` | HTTP Service — `/sap/bc/http/sap/ZARE002_SUBMIT` · ผูกใน IAM `ZIAM_ZARE002_EXT` | `src/zare002_submit.http.xml` | 8B | ✅ `2ed2145` |
-| `ZCL_ZARE002_SFDC_RESULT` | Class — Composite API (25 subrequest/call) PATCH ผล payment ไป SFDC · `build_payload` / `parse_response` / `build_response_date` pure · `send` (client จาก `ZCL_UTILITY=>create_sfdc_client` · ping ย้ายไป `ZCL_UTILITY=>check_sfdc_connection`) | `src/zcl_zare002_sfdc_result.clas.abap` | 8A / 8C | ✅ token จาก `ZCL_UTILITY` ทุก call ผ่าน `ZCA_SFDC_TOKEN` + Bearer เอง · ping `/limits` · ชื่อ field จริง · batch id ตัด 15 (OQ-28) · 10 test เขียว |
+| `ZCL_ZARE002_SFDC_RESULT` | **รอลบ** — Reject เปลี่ยนไปใช้ `ZCL_ZARI003_SFDC_RESULT` แล้ว (`7653f57`) ไม่มี object ไหนเรียกอีก · ยังอยู่ใน repo ณ `7653f57` · Class — Composite API (25 subrequest/call) PATCH ผล payment ไป SFDC · `build_payload` / `parse_response` / `build_response_date` pure · `send` (client จาก `ZCL_UTILITY=>create_sfdc_client` · ping ย้ายไป `ZCL_UTILITY=>check_sfdc_connection`) | `src/zcl_zare002_sfdc_result.clas.abap` | 8A / 8C | ✅ token จาก `ZCL_UTILITY` ทุก call ผ่าน `ZCA_SFDC_TOKEN` + Bearer เอง · ping `/limits` · ชื่อ field จริง · batch id ตัด 15 (OQ-28) · 10 test เขียว |
 
 ## Action ที่ประกาศ
 

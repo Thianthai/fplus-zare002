@@ -120,7 +120,7 @@ ZC_ZARE002:     _BusinessPartner.CustomerName as CustomerName    // path ธร�
 
 | ค่า | ความหมาย | icon ใน mockup | `@UI.criticality` |
 |---|---|---|---|
-| `N` | New — รอดำเนินการ | 🕐 นาฬิกาเหลือง | `2` (Warning) |
+| `N` | New — รอดำเนินการ | 🕐 นาฬิกาเหลือง | `0` (Neutral) — ผู้ใช้เปลี่ยนจาก `2` เมื่อ 2026-09-29 (`7653f57`) |
 | `C` | Complete | ✅ ติ๊กเขียว | `3` (Positive) |
 | `R` | Reject | ❌ กากบาทแดง | `1` (Negative) |
 | `E` | Error | ❌ กากบาทแดง | `1` (Negative) |

@@ -28,10 +28,10 @@
 | `rejectItem` ขั้น 5.2 reason ≥ 1 item | | OQ-19 · OQ-22 · OQ-31 (ปิด) |
 | `rejectItem` ขั้น 8 `MODIFY ENTITIES` ค่าเดิม | บังคับ save phase ให้ saver ถูกเรียก | OQ-24 (ปิด) |
 | `lsc_Item->save_modified` `salesforce_status = 'S'` | | OQ-21 (ปิด) |
-| `ZCL_ZARE002_SFDC_RESULT` `gc_batch_id_max = 15` | ตัด batch id ชั่วคราว | **OQ-28 (stopgap — ลบเมื่อ SFDC ขยาย)** |
-| `ZCL_ZARE002_SFDC_RESULT` `gc_fld_*` | ชื่อ field จาก describe | OQ-30 (ปิด) |
-| `ZCL_ZARE002_SFDC_RESULT` composite 25 | | OQ-29 (ปิด) |
-| `ZCL_ZARE002_SFDC_RESULT` `send` → `ZCL_UTILITY=>create_sfdc_client` | token cache ค้าง | OQ-34 (ปิด) |
+| `ZCL_ZARI003_SFDC_RESULT` (เดิม `ZCL_ZARE002_SFDC_RESULT`) `gc_batch_id_max = 15` | ตัด batch id ชั่วคราว | **OQ-28 (stopgap — ลบเมื่อ SFDC ขยาย)** |
+| `ZCL_ZARI003_SFDC_RESULT` (เดิม `ZCL_ZARE002_SFDC_RESULT`) `gc_fld_*` | ชื่อ field จาก describe | OQ-30 (ปิด) |
+| `ZCL_ZARI003_SFDC_RESULT` (เดิม `ZCL_ZARE002_SFDC_RESULT`) composite 25 | | OQ-29 (ปิด) |
+| `ZCL_ZARI003_SFDC_RESULT` (เดิม `ZCL_ZARE002_SFDC_RESULT`) `send` → `ZCL_UTILITY=>create_sfdc_client` | token cache ค้าง | OQ-34 (ปิด) |
 | `build_payload` ไม่ส่ง reason ว่าง | | OQ-32 (ปิด) |
 
 ## ที่ปิดไปแล้ว
