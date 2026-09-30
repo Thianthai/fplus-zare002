@@ -277,6 +277,17 @@ Submit ผ่าน → `S` รอ BOT clear → API #3 สำเร็จ → `
 
 ข้อสงสัยที่เปิดไว้: OQ-42 (ส่งซ้ำ) · OQ-43 (เลขซ้ำในวินาทีเดียว) · OQ-44 (หน้า log ZARI002) · OQ-45 (spec SBPA)
 
+## Phase 8F — SBPA query ใบที่ถูก Reject ด้วย reject batch id (ZARI003 · 2026-09-30)
+
+SBPA ได้ batch id จาก 8D แล้วยิงเข้ามาดึงรายการไปสรุป email · สัญญา → `10_api_contract.md` หัวข้อ Rejected items
+
+| # | งาน | Object | Status |
+|---|---|---|---|
+| 8F.1 | view 1 แถวต่อ item ใบ R ที่มี batch id | `ZI_ZARI003_REJECT_ITEM` | ✅ `fplus-zari003` `a888bcf` |
+| 8F.2 | Web API `RejectedItems` | `ZAPI_ZARI003` · `ZAPI_ZARI003_O4` (published) | ✅ `a888bcf` |
+| 8F.3 | inbound Basic · user ตัวเดิมของ `SBPA_DEV` | `ZCS_REJECT_ITEM` · `ZCA_REJECT_ITEM` | ✅ `a888bcf` · arrangement ผูกแล้ว |
+| 8F.4 | ทดสอบ | | ✅ ปิด — SBPA ทดสอบเอง ฝั่งเรารอรับ issue |
+
 ### ⚠️ ก่อน handover (ต้องทำ)
 
 | # | งาน | สถานะ |

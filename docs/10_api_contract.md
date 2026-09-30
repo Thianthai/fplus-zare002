@@ -393,3 +393,39 @@ Content-Type: application/json
   "ClearingMessage": "Open item not found for customer 1000000014"
 }
 ```
+
+---
+
+## Rejected items — SBPA query ใบที่ถูก Reject (OData V4 Web API · ZARI003)
+
+SBPA ได้ `reject_batch_id` จาก `ZCL_ZARI003_REJECT_BATCH` แล้วยิงเข้ามาดึงรายการของรอบนั้นไปสรุปส่ง email ให้ user (Phase 8F · 2026-09-30)
+
+### Endpoint
+
+```
+GET https://my442178-api.s4hana.cloud.sap/sap/opu/odata4/sap/zapi_zari003_o4/srvd_a2x/sap/zapi_zari003/0001/RejectedItems?$filter=RejectBatchId eq '20260930_143000'
+```
+
+- Communication Arrangement **`ZCA_REJECT_ITEM`** (scenario `ZCS_REJECT_ITEM`) × `SBPA_DEV` — inbound user ตัวเดียวกับ BOT
+- Authentication: **Basic** · อ่านอย่างเดียว
+- object: `ZI_ZARI003_REJECT_ITEM` → `ZAPI_ZARI003` (entity set `RejectedItems`) → `ZAPI_ZARI003_O4`
+
+### กติกา
+
+- **1 แถว = 1 item** · field ของ header ซ้ำทุก item ของใบเดียวกัน · group ตาม `PaymentDocumentNo`
+- มีเฉพาะใบ `Status = R` ที่มี `RejectBatchId` (ใบที่ Reject ก่อนมีฟีเจอร์นี้ไม่มีเลข จึงไม่โผล่)
+- **ต้องใส่ `$filter=RejectBatchId eq '…'` เสมอ** — ไม่บังคับที่ระบบ ถ้าไม่ใส่จะได้ใบ Reject ทุกรอบ (ผู้ใช้เลือก 2026-09-30)
+- ผู้ใช้ 2 คนกด Reject ในวินาทีเดียวกันได้ batch id เดียวกัน → query เดียวได้ใบของทั้งคู่ (OQ-43)
+- มี server-side paging เหมือน `ClearingItems` — ต้องวนตาม `@odata.nextLink`
+
+### Field
+
+| ส่วน | Element |
+|---|---|
+| key | `ItemUuid` |
+| filter | `RejectBatchId` |
+| header | `SalesforceId` `PaymentDocumentNo` `NumberOfItemsInPayment` `CompanyCode` `PostingDate` `GlAccount` `PaymentMethod` `ChequeNo` `IssueDate` `DueOn` `ChequeBankBranch` `PaymentCurrency` `RoundingDiff` `AdvancePayment` `Fees` `PaymentAmount` `Status` |
+| item | `SalesforceItemId` `CustomerCode` `BillingNoteNo` `AccountingDocument` `BillingDocument` `InvoicePostingDate` `Currency` `InvoiceAmount` `AmountPaid` `PartialAmount` `SaleSubmitDate` `RejectReason` |
+
+`PaymentCurrency` / `Currency` ไม่อยู่ใน list ที่ขอ แต่ CDS บังคับเพราะ field จำนวนเงินต้องอ้างสกุลเงิน · ไม่ส่ง `RejectMessage` / `StatusText` (ผู้ใช้ตัดสิน)
+
