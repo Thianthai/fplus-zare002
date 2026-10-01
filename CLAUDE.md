@@ -43,7 +43,8 @@
 - **Draft table ใช้ชื่อ `ZTAR_E002_ITEM_D` ไม่ใช่ `ZTAR_I002_ITEM_D`** — ถึงกฎกลางจะบอกว่า
   draft table = `<table>_D` แต่ active table ตัวจริงเป็นของ package `ZARI002`
   draft table เป็นของ **ZARE002** จึงใช้ namespace ของตัวเองให้ชัด (BDEF ระบุชื่อได้อิสระอยู่แล้ว)
-- **ไม่สร้าง data element / domain ใหม่** — reuse `ZE_REQUEST_STATUS` ของ ZARI002
+- **ไม่สร้าง data element / domain ใหม่ใน ZARE002** — reuse `ZE_REQUEST_STATUS` ของ ZARI002
+  · ถ้าจำเป็นต้องมี domain ใหม่ ให้สร้างใน **package ZARI002** (ผู้ใช้อนุมัติ 2026-10-01: `ZD_SUBMIT_STATUS` / `ZD_CLEARING_STATUS` + data element)
 - **class กลางข้าม RICEFW ชื่อ `ZCL_UTILITY`** (ผู้ใช้ตั้ง 2026-09-21) — ไม่มี prefix `<APP>` โดยตั้งใจ
   · method ตั้งชื่อบอกระบบปลายทาง (`get_sfdc_token` ไม่ใช่ `get_token`) · คนละบทบาทกับ
   `ZCL_ZARE002_UTIL` (ชั่วคราว ลบก่อน handover)
@@ -138,6 +139,9 @@
   · key ของ view ต้องคง `domain_name` + `value_position` ไว้ ไม่งั้น warning key ไม่ตรง source (เจอจริง 2026-09-29)
   · **อย่า cast `value_low` (CHAR 10) ลงเป็น data element สั้นกว่า** — warning loss of data · ใช้ `value_low` ตรง ๆ เทียบกับ CHAR 1 ได้ปกติ
   · กรอง `language = $session.system_language` แล้วใช้เป็น association `[0..1]` + value help (`@ObjectModel.resultSet.sizeCategory: #XS` = dropdown)
+- **association ที่ ON อ้าง field คำนวณ (`$projection.<case/cast>`) ใช้ path ใน view เดียวกันไม่ได้** (เจอจริง 2026-10-01:
+  `The association "_SubmitStatusText" cannot be used locally in the view`) → ประกาศ + expose ใน ZI แล้วอ่าน path ใน ZC แทน
+  (`_Payment._SubmitStatusText.SubmitStatusText`) · association ที่อ้าง field จริงของ table ใช้ local ได้ปกติ
 - *(เลิกใช้ 2026-09-29 — Status เปลี่ยนเป็นข้อความจาก domain ผ่าน `ZI_ZARE002_STATUS_VH` · เก็บไว้เป็นบทเรียน)*
   **คอลัมน์ที่อยากได้แต่ icon สี** — อย่าเขียนทับ field ข้อมูลด้วย `''` (filter จะพัง)
   ให้เพิ่ม element literal `''` แยก แล้วใส่ `@UI.lineItem` + `criticality` ที่ตัวนั้น

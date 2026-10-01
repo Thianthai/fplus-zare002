@@ -288,6 +288,14 @@ SBPA ได้ batch id จาก 8D แล้วยิงเข้ามาด�
 | 8F.3 | inbound Basic · user ตัวเดิมของ `SBPA_DEV` | `ZCS_REJECT_ITEM` · `ZCA_REJECT_ITEM` | ✅ `a888bcf` · arrangement ผูกแล้ว |
 | 8F.4 | ทดสอบ | | ✅ ปิด — SBPA ทดสอบเอง ฝั่งเรารอรับ issue |
 
+## Phase 8G — filter ของหน้าจอ (issue จากผู้ใช้ 2026-10-01)
+
+| # | งาน | Object | Status |
+|---|---|---|---|
+| 8G.1 | domain ใหม่ใน **ZARI002**: `ZD_SUBMIT_STATUS` (S Submitted / N Not Submitted) · `ZD_CLEARING_STATUS` (C Cleared / N Not Cleared) + `ZE_*` · `ZD_RESPONSE_STATUS` เพิ่มค่าว่าง = Not Sent | ZARI002 | ✅ `fplus-zari002` `758253c` |
+| 8G.2 | VH จาก domain ผ่าน `DDCDS_CUSTOMER_DOMAIN_VALUE_T` · SFDC ตัด `W` | `ZI_ZARE002_SUBMIT_STATUS_VH` · `ZI_ZARE002_CLEARING_STATUS_VH` · `ZI_ZARE002_SFDC_STATUS_VH` | ✅ `587d6db` |
+| 8G.3 | `IsSubmitted` / `IsCleared` เปลี่ยนจาก boolean Yes/No เป็นรหัส S/N · C/N + ข้อความ (คงชื่อ element ไว้เพราะ frontend / variant อ้างอยู่) · `SalesforceStatus` dropdown ผ่าน Adapt Filters เท่านั้น · default filter `CompanyCode = 2000` | `ZI_ZARE002_PYMT` · `ZC_ZARE002` + ddlx | ✅ `587d6db` |
+
 ### ⚠️ ก่อน handover (ต้องทำ)
 
 | # | งาน | สถานะ |

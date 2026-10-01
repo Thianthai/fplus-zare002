@@ -138,3 +138,15 @@ handler โดนเรียก 2 รอบแล้ว post ใบเดิม
 ⚠️ **ผลข้างเคียงของ `#CHANGE_SET` (เห็นจริง 2026-09-16)**: all-or-nothing — ติ๊กหลายใบแล้วมีใบใดตก
 validation ทั้ง change set ถูก rollback ไม่มีใบไหนถูก reject FE แจ้ง "No items were processed"
 ผู้ใช้กำลัง confirm ว่า requirement ต้องการแบบนี้หรือไม่ (OQ-26)
+
+## Filter ที่เปลี่ยน 2026-10-01 (Phase 8G)
+
+| Filter | ก่อน | หลัง |
+|---|---|---|
+| Company Code | ว่าง | **default `2000`** (`@Consumption.filter.defaultValue` · มีผลกับ variant มาตรฐาน) |
+| Submit Status (`IsSubmitted`) | Yes / No | **Submitted / Not Submitted** (S/N จาก `ZD_SUBMIT_STATUS`) |
+| Clearing Status (`IsCleared`) | Yes / No | **Cleared / Not Cleared** (C/N จาก `ZD_CLEARING_STATUS`) |
+| Salesforce Status | พิมพ์เอง (Adapt Filters) | dropdown **Not Sent / Success / Error** (ตัด Warning) · ยังเพิ่มผ่าน Adapt Filters เท่านั้น |
+
+variant ที่ user บันทึกค่า Yes/No ไว้ต้องเลือกค่าใหม่
+
