@@ -109,3 +109,14 @@ app นี้ Min UI5 **1.148.8** → ใช้ได้ · เงื่อน�
 
 พฤติกรรม backend ทั้งหมดอยู่ใน repo `fplus-zare002` — `docs/05_ui_spec.md` (UI) และ
 `docs/01_architecture.md` §3 (BO) · ถ้า OData ตอบไม่ตรงกับที่เขียนไว้ในหน้านี้ แจ้งฝั่ง ABAP
+
+## Variant แยก filter กับตาราง (2026-10-01)
+
+ผู้ใช้ขอให้ save view แยก filter bar กับตารางแบบแอป standard (เช่น Manage Customer Line Items)
+→ `manifest.json` ที่ `routing.targets.<List Report>.options.settings` ตั้ง **`"variantManagement": "Control"`**
+(ค่าเริ่มต้นคือ `"Page"` = variant เดียวทั้งหน้า) · ไม่ต้องแก้ backend
+
+- variant แบบ Page ที่ user บันทึกไว้แล้วไม่ถูกแปลงให้ ต้องบันทึกใหม่
+- default filter `Company Code = 2000` ยังทำงานตามเดิม
+
+**สถานะ**: แจ้งทีม frontend แก้แล้ว — ปิดเคสฝั่งเรา
