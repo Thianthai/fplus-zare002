@@ -298,11 +298,12 @@ SBPA ได้ batch id จาก 8D แล้วยิงเข้ามาด�
 
 ## Phase 8H — status E เมื่อ post JE ไม่ผ่าน (requirement ใหม่ 2026-10-01)
 
-ใบที่ FI ปฏิเสธตอน post → `E` · หลังจากนั้น **E ทำงานเหมือน N ทุกอย่าง** (Submit ซ้ำ → S · Reject → R) · validate ไม่ผ่าน / post ผ่านแต่ยังไม่เห็นเลข JE → status คงเดิม
+post JE ไม่ได้ → `E` ทั้งจาก **validate ไม่ผ่าน** (105 106 107 113 · เพิ่ม 8H.3) และ **FI ปฏิเสธ** (108) · **ยกเว้นใบ Cheque** (คง N) · 102 / 114 ไม่ทับ R / C · post ผ่านแต่ยังไม่เห็นเลข JE → คงเดิม · หลังจากนั้น **E ทำงานเหมือน N ทุกอย่าง** (Submit ซ้ำ → S · Reject → R)
 
 | # | งาน | Object | Status |
 |---|---|---|---|
 | 8H.1 | `save_result` + `iv_post_failed` · UPDATE `WHERE status IN ('N','E')` ไม่ทับ R/C/S | `ZCL_ZARE002_SUBMIT` | ✅ `d3c15cb` |
+| 8H.3 | validate ไม่ผ่านก็ stamp E ด้วย (ช่องโหว่ที่ผู้ใช้เจอ: ใบยอดไม่ balance ยังเป็น New) · ยกเว้นใบ Cheque ดูจาก `payment_method` · rename `iv_post_failed` → `iv_mark_error` | `ZCL_ZARE002_SUBMIT` | ✅ `50c6689` · ผู้ใช้ทดสอบผ่าน 2026-10-01 |
 | 8H.2 | duplicate check นับ `N` `S` `E` — ⚠️ ไม่ทำ = SFDC ส่งใบ E ซ้ำเข้ามาได้ มี 2 row ที่ Submit ได้ → post JE ซ้ำ · R ยังส่งซ้ำได้ | `ZCL_ZARI002_PROCESSOR` (+ test: R ส่งซ้ำได้ · E ได้ 010) | ✅ `fplus-zari002` `a9fbef1` |
 
 flow ใหม่: ใบ E แก้ต้นเหตุแล้ว Submit ซ้ำ หรือ Reject แล้วให้ SFDC ส่งใบแก้เข้ามาใหม่ (SFDC ส่งใบ E ซ้ำเองไม่ได้)
