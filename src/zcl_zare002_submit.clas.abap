@@ -96,14 +96,15 @@ CLASS zcl_zare002_submit DEFINITION
     "! บันทึกเลขเอกสาร (ถ้ามี) + message ลง header แล้ว COMMIT WORK
     "! เลขเอกสารกับปีบัญชีต้องมาคู่กันเสมอ เก็บแยกกันไม่ได้
     "! มีเลขเอกสารแปลว่า post ผ่าน จึงตั้ง status เป็น S รอ BOT clear ไปพร้อมกัน
-    "! iv_post_failed = abap_true แปลว่า FI ปฏิเสธตอน post จึงตั้ง status เป็น E
-    "! กรณีอื่นที่ไม่มีเลขเอกสาร เช่น validate ไม่ผ่าน status คงเดิม
+    "! iv_mark_error = abap_true แปลว่า post JE ไม่ได้ จึงตั้ง status เป็น E
+    "! ใช้ทั้งตอน validate ไม่ผ่านและตอน FI ปฏิเสธ
+    "! กรณีอื่นที่ไม่มีเลขเอกสาร status คงเดิม
     METHODS save_result
       IMPORTING iv_payment_uuid        TYPE sysuuid_x16
                 iv_accounting_document TYPE ztar_i002_pymt-payment_accounting_document OPTIONAL
                 iv_fiscal_year         TYPE ztar_i002_pymt-payment_fiscal_year OPTIONAL
                 iv_message             TYPE string
-                iv_post_failed         TYPE abap_bool DEFAULT abap_false.
+                iv_mark_error          TYPE abap_bool DEFAULT abap_false.
 
     "! text ของ message class — MESSAGE ... INTO
     "! placeholder ละไม่เกิน 50 digits
@@ -174,8 +175,12 @@ CLASS zcl_zare002_submit IMPLEMENTATION.
 
     IF rs_result-message IS NOT INITIAL.
       IF iv_simulate = abap_false.
+        " validate ไม่ผ่านแปลว่า post JE ไม่ได้ จึงตั้ง status เป็น E
+        " ใบ Cheque ไม่ตั้ง E เพราะต้อง post มือตามกติกา ไม่ใช่ข้อมูลผิด
+        " ใบ R และ C ไม่ถูกทับ เพราะ save_result เปลี่ยนได้เฉพาะใบ N และ E
         save_result( iv_payment_uuid = iv_payment_uuid
-                     iv_message      = rs_result-message ).
+                     iv_message      = rs_result-message
+                     iv_mark_error   = xsdbool( ls_header-payment_method <> gc_method_cheque ) ).
       ENDIF.
 
       RETURN.
@@ -245,7 +250,7 @@ CLASS zcl_zare002_submit IMPLEMENTATION.
 
       save_result( iv_payment_uuid = iv_payment_uuid
                    iv_message      = rs_result-message
-                   iv_post_failed  = abap_true ).
+                   iv_mark_error   = abap_true ).
 
       RETURN.
     ENDIF.
@@ -455,10 +460,10 @@ CLASS zcl_zare002_submit IMPLEMENTATION.
             local_last_changed_at = @lv_now
         WHERE payment_uuid = @iv_payment_uuid.
 
-      " FI ปฏิเสธตอน post -> E
+      " post JE ไม่ได้ ทั้งจาก validate ไม่ผ่านและ FI ปฏิเสธ -> E
       " ใบ E ทำงานเหมือนใบ N ทุกอย่าง กด Submit ซ้ำหรือ Reject ได้
       " เปลี่ยนได้เฉพาะใบที่ยังเป็น N หรือ E กันไม่ให้ทับ R C S
-      IF iv_post_failed = abap_true.
+      IF iv_mark_error = abap_true.
         UPDATE ztar_i002_pymt
           SET status = @gc_status_error
           WHERE payment_uuid = @iv_payment_uuid
