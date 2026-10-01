@@ -296,6 +296,17 @@ SBPA ได้ batch id จาก 8D แล้วยิงเข้ามาด�
 | 8G.2 | VH จาก domain ผ่าน `DDCDS_CUSTOMER_DOMAIN_VALUE_T` · SFDC ตัด `W` | `ZI_ZARE002_SUBMIT_STATUS_VH` · `ZI_ZARE002_CLEARING_STATUS_VH` · `ZI_ZARE002_SFDC_STATUS_VH` | ✅ `587d6db` |
 | 8G.3 | `IsSubmitted` / `IsCleared` เปลี่ยนจาก boolean Yes/No เป็นรหัส S/N · C/N + ข้อความ (คงชื่อ element ไว้เพราะ frontend / variant อ้างอยู่) · `SalesforceStatus` dropdown ผ่าน Adapt Filters เท่านั้น · default filter `CompanyCode = 2000` | `ZI_ZARE002_PYMT` · `ZC_ZARE002` + ddlx | ✅ `587d6db` |
 
+## Phase 8H — status E เมื่อ post JE ไม่ผ่าน (requirement ใหม่ 2026-10-01)
+
+ใบที่ FI ปฏิเสธตอน post → `E` · หลังจากนั้น **E ทำงานเหมือน N ทุกอย่าง** (Submit ซ้ำ → S · Reject → R) · validate ไม่ผ่าน / post ผ่านแต่ยังไม่เห็นเลข JE → status คงเดิม
+
+| # | งาน | Object | Status |
+|---|---|---|---|
+| 8H.1 | `save_result` + `iv_post_failed` · UPDATE `WHERE status IN ('N','E')` ไม่ทับ R/C/S | `ZCL_ZARE002_SUBMIT` | ✅ `d3c15cb` |
+| 8H.2 | duplicate check นับ `N` `S` `E` — ⚠️ ไม่ทำ = SFDC ส่งใบ E ซ้ำเข้ามาได้ มี 2 row ที่ Submit ได้ → post JE ซ้ำ · R ยังส่งซ้ำได้ | `ZCL_ZARI002_PROCESSOR` (+ test: R ส่งซ้ำได้ · E ได้ 010) | ✅ `fplus-zari002` `a9fbef1` |
+
+flow ใหม่: ใบ E แก้ต้นเหตุแล้ว Submit ซ้ำ หรือ Reject แล้วให้ SFDC ส่งใบแก้เข้ามาใหม่ (SFDC ส่งใบ E ซ้ำเองไม่ได้)
+
 ### ⚠️ ก่อน handover (ต้องทำ)
 
 | # | งาน | สถานะ |

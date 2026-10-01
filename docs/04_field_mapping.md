@@ -123,7 +123,7 @@ ZC_ZARE002:     _BusinessPartner.CustomerName as CustomerName    // path ธร�
 | `S` | `Submitted - Not Cleared` — post JE แล้วรอ BOT clear | `ZCL_ZARE002_SUBMIT->save_result` (เพิ่ม 2026-09-29 `caf0216`) | `5` ฟ้า |
 | `C` | Cleared (เดิม Complete) | ZARI003 API #3 BOT clear สำเร็จ | `3` เขียว |
 | `R` | Rejected | saver ของปุ่ม Reject หลัง SFDC รับ | `1` แดง |
-| `E` | Error | **ไม่มีใครเขียน** (OQ-41) | `5` ฟ้า (ตก `else`) |
+| `E` | Error | `ZCL_ZARE002_SUBMIT->save_result` เมื่อ **FI ปฏิเสธตอน post JE** (เพิ่ม 2026-10-01 `d3c15cb`) · ใบ E ทำงานเหมือน N (Submit ซ้ำ / Reject ได้) · validate ไม่ผ่านไม่เป็น E | `5` ฟ้า (ตก `else`) |
 
 > **2026-09-29 `f010aa5`: เลิกใช้ icon สีแล้ว** คอลัมน์ Status แสดงข้อความของ domain ตรง ๆ (`#TEXT_ONLY`) · คอลัมน์ criticality ข้างบนเก็บไว้เป็นประวัติ
 

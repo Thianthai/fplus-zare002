@@ -68,7 +68,7 @@ ZBCUTILITY  →  ZARI002  →  ZARI003  →  ZARE002
 
 - **Reject**: สำเร็จตามปกติ แต่ `reject_message` จะเป็น error 011 (path ของ SBPA ยังเป็น draft) หรือ 012 (ยังไม่ผูก `ZCA_REJECT_BATCH`) — ไม่กระทบอย่างอื่น (OQ-45)
 - **Reject Reason ค้างเมื่อ SFDC ปฏิเสธ** — ตั้งใจ (OQ-36 hold)
-- **status E ไม่มีใครเขียน** — รอคุย (OQ-41)
+- ~~status E ไม่มีใครเขียน~~ — ทำแล้วใน 8H (ยังไม่ได้ขึ้น TEST)
 
 ## 7. ของที่เพิ่มหลังขน TEST รอบแรก (ต้องขนรอบหน้า)
 
@@ -77,5 +77,8 @@ ZBCUTILITY  →  ZARI002  →  ZARI003  →  ZARE002
 | 8F | ZARI003 | `ZI_ZARI003_REJECT_ITEM` · `ZAPI_ZARI003` · `ZAPI_ZARI003_O4` · `ZCS_REJECT_ITEM` + arrangement `ZCA_REJECT_ITEM` บน TEST |
 | 8G | ZARI002 | `ZD_SUBMIT_STATUS` · `ZD_CLEARING_STATUS` · `ZE_SUBMIT_STATUS` · `ZE_CLEARING_STATUS` · `ZD_RESPONSE_STATUS` (แก้) |
 | 8G | ZARE002 | `ZI_ZARE002_SUBMIT_STATUS_VH` · `ZI_ZARE002_CLEARING_STATUS_VH` · `ZI_ZARE002_SFDC_STATUS_VH` · `ZI_ZARE002_PYMT` · `ZC_ZARE002` + ddlx |
+
+| 8H | ZARI002 | `ZCL_ZARI002_PROCESSOR` (duplicate นับ E) |
+| 8H | ZARE002 | `ZCL_ZARE002_SUBMIT` (stamp E) · `ZI_ZARE002_PYMT` (label Payment Amount (Net)) |
 
 ลำดับเดิม: ZARI002 → ZARI003 → ZARE002
