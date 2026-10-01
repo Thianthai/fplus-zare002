@@ -73,10 +73,25 @@ annotate entity ZC_ZARE002 with
   ClearingMessage;
 
   @UI.selectionField: [ { position: 60 } ]
+  @UI.textArrangement: #TEXT_ONLY
   IsSubmitted;
 
+  @UI.hidden: true
+  SubmitStatusText;
+
   @UI.selectionField: [ { position: 80 } ]
+  @UI.textArrangement: #TEXT_ONLY
   IsCleared;
+
+  @UI.hidden: true
+  ClearingStatusText;
+
+  // ไม่อยู่ใน filter bar เป็นค่าเริ่มต้น เพิ่มได้ผ่าน Adapt Filters
+  @UI.textArrangement: #TEXT_ONLY
+  SalesforceStatus;
+
+  @UI.hidden: true
+  SalesforceStatusText;
 
   @UI.lineItem: [ { position: 160, importance: #HIGH } ]
   RejectReason;
