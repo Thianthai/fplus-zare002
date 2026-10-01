@@ -48,7 +48,7 @@ define view entity ZI_ZARE002_PYMT
       @EndUserText.label: 'Fees'
       fees                          as Fees,
       @Semantics.amount.currencyCode: 'Currency'
-      @EndUserText.label: 'Payment Amount'
+      @EndUserText.label: 'Payment Amount (Net)'
       payment_amount                as PaymentAmount,
 
       // Status ของรายการ
