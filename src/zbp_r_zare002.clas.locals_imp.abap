@@ -14,9 +14,6 @@ CLASS lhc_Item DEFINITION INHERITING FROM cl_abap_behavior_handler.
     "! ตัดข้อความ error ของ SFDC ก่อนใส่ message (&2 ของ message number 005)
     CONSTANTS gc_sfdc_message_max TYPE i                 VALUE 50.
 
-    "! ส่วนต่างเวลาไทยกับ UTC หน่วยชั่วโมง ใช้สร้าง reject_batch_id
-    CONSTANTS gc_tz_offset_hours  TYPE i                 VALUE 7.
-
     "! payment_uuid แบบซ้ำได้ — ใช้ส่งเข้า read_rejected_payments
     TYPES tt_uuid        TYPE STANDARD TABLE OF sysuuid_x16 WITH EMPTY KEY.
 
@@ -77,7 +74,8 @@ CLASS lhc_Item DEFINITION INHERITING FROM cl_abap_behavior_handler.
       IMPORTING it_payment_uuid TYPE tt_uuid
       RETURNING VALUE(rt_state) TYPE tt_payment_state.
 
-    "! เลขรอบของการกด Reject รูปแบบ YYYYMMDD_hhmmss เวลาไทย
+    "! เลขรอบของการกด Reject รูปแบบ YYYYMMDD_hhmmss เวลา local
+    "! เวลา local ได้จาก ZCL_UTILITY=>get_local_datetime ซึ่งอ่าน timezone จาก parameter กลาง
     "! สร้างครั้งเดียวต่อการกด 1 ครั้ง ทุกใบในรอบนั้นใช้เลขเดียวกัน
     METHODS build_reject_batch_id
       RETURNING VALUE(rv_batch_id) TYPE ztar_i002_pymt-reject_batch_id.
@@ -447,14 +445,18 @@ CLASS lhc_Item IMPLEMENTATION.
     DATA lv_timestamp TYPE timestampl.
     DATA lv_date      TYPE d.
     DATA lv_time      TYPE t.
+    DATA lv_subrc     TYPE sysubrc.
 
-    GET TIME STAMP FIELD lv_timestamp.
+    zcl_utility=>get_local_datetime( IMPORTING ev_date  = lv_date
+                                               ev_time  = lv_time
+                                               ev_subrc = lv_subrc ).
 
-    " เวลาไทย = UTC + 7 ชั่วโมง
-    lv_timestamp = cl_abap_tstmp=>add( tstmp = lv_timestamp
-                                       secs  = gc_tz_offset_hours * 3600 ).
-
-    CONVERT TIME STAMP lv_timestamp TIME ZONE 'UTC' INTO DATE lv_date TIME lv_time.
+    " แปลงเป็นเวลา local ไม่สำเร็จ -> ใช้เวลา UTC แทน
+    " ไม่ปล่อยให้ batch id ว่าง เพราะ saver จะข้ามการแจ้ง SBPA
+    IF lv_subrc <> 0.
+      GET TIME STAMP FIELD lv_timestamp.
+      CONVERT TIME STAMP lv_timestamp TIME ZONE 'UTC' INTO DATE lv_date TIME lv_time.
+    ENDIF.
 
     " type d และ t ใน string template ได้ YYYYMMDD และ hhmmss โดยไม่มีตัวคั่น
     rv_batch_id = |{ lv_date }_{ lv_time }|.
