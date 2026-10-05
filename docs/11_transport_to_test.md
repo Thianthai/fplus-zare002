@@ -81,4 +81,8 @@ ZBCUTILITY  →  ZARI002  →  ZARI003  →  ZARE002
 | 8H | ZARI002 | `ZCL_ZARI002_PROCESSOR` (duplicate นับ E) |
 | 8H | ZARE002 | `ZCL_ZARE002_SUBMIT` (stamp E) · `ZI_ZARE002_PYMT` (label Payment Amount (Net)) |
 
-ลำดับเดิม: ZARI002 → ZARI003 → ZARE002
+| เวลา local | ZBCUTILITY | `ZCL_UTILITY=>get_local_datetime` (`7cf83d5` `c9832e1`) — ⚠️ เรียก `ZCL_PARAM` / `ZCX_PARAM` / table `ZTBC_PARAM` ซึ่ง**ไม่อยู่ใน repo zbcutility** · ต้องขนขึ้นก่อน และตั้ง parameter `BC/PARAM/TIMEZONE/LOCAL` บน TEST (ไม่ตั้งก็ใช้ `UTC+7` สำรอง) · **รอผู้ใช้บอก package** |
+| เวลา local | ZARE002 | `ZBP_R_ZARE002` (`eb5470c`) |
+| เวลา local | ZARI003 | `ZCL_ZARI003_SFDC_RESULT` (`a276fb0`) |
+
+ลำดับ: **package ของ `ZCL_PARAM` → ZBCUTILITY** → ZARI002 → ZARI003 → ZARE002

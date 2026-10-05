@@ -308,6 +308,17 @@ post JE ไม่ได้ → `E` ทั้งจาก **validate ไม่ผ
 
 flow ใหม่: ใบ E แก้ต้นเหตุแล้ว Submit ซ้ำ หรือ Reject แล้วให้ SFDC ส่งใบแก้เข้ามาใหม่ (SFDC ส่งใบ E ซ้ำเองไม่ได้)
 
+## เวลา local ผ่าน `ZCL_UTILITY=>get_local_datetime` (2026-10-05)
+
+เดิมบวก 7 ชั่วโมงเองใน 2 class → ย้ายไปใช้ method กลางของ ZBCUTILITY (timezone จาก parameter `BC/PARAM/TIMEZONE/LOCAL` · ไม่มีใช้ `UTC+7`)
+
+| จุด | Object | หมายเหตุ | Status |
+|---|---|---|---|
+| `reject_batch_id` | `ZBP_R_ZARE002` → `build_reject_batch_id` | แปลงไม่สำเร็จ → ใช้เวลา UTC แทน (ไม่ให้ batch id ว่าง) | ✅ `eb5470c` |
+| `BST_SAP_ResponseDate__c` | `ZCL_ZARI003_SFDC_RESULT=>build_response_date` | offset `+0700` ยังตายตัว (ผู้ใช้เลือก) · แปลงไม่สำเร็จ → UTC + `+0000` | ✅ `fplus-zari003` `a276fb0` |
+
+admin field (`last_changed_at` ฯลฯ) ยังเก็บ UTC ตามมาตรฐาน · วันที่จาก SFDC ไม่แปลง
+
 ### ⚠️ ก่อน handover (ต้องทำ)
 
 | # | งาน | สถานะ |
