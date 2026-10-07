@@ -319,6 +319,18 @@ flow ใหม่: ใบ E แก้ต้นเหตุแล้ว Submit �
 
 admin field (`last_changed_at` ฯลฯ) ยังเก็บ UTC ตามมาตรฐาน · วันที่จาก SFDC ไม่แปลง
 
+## Phase 8D (ต่อ) — ยิง API Trigger จริงของ SBPA (2026-10-07)
+
+| เรื่อง | ค่า |
+|---|---|
+| path | `/public/irpa/runtime/v1/apiTriggers/<TRIGGER_ID>/runs` |
+| header | Bearer (OAuth 2.0 client credentials ของ arrangement) + **`irpa-api-key`** |
+| body | `{"invocationContext":"${invocation_context}","input":{"RejectBatchID":"<batch id>"}}` — ชื่อ input `RejectBatchID` ตาม automation ของ SBPA |
+| config | Additional Properties ของ `ZCS_REJECT_BATCH`: `API_KEY` (`ZE_SBPA_API_KEY` CHAR 128 · Is Secure) · `TRIGGER_ID` (`ZE_SBPA_TRIGGER_ID` CHAR 36) → กรอกใน `ZCA_REJECT_BATCH` **ทุกระบบ** (SBPA ออก key / trigger id ใหม่แต่ละ environment) |
+| ไม่มีค่า | message `ZARI003` 015 ลง `reject_message` ไม่ยิง |
+
+Status: ✅ code `fplus-zari003` `a89823e` · unit test ผ่าน 5 ตัว · ⬜ **รอทดสอบยิงจริงบน DEV** — ถ้าได้ 015 ทั้งที่กรอกครบ = ABAP อ่าน property Is Secure ไม่ได้ → เอาติ๊กออก
+
 ### ⚠️ ก่อน handover (ต้องทำ)
 
 | # | งาน | สถานะ |

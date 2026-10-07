@@ -49,7 +49,7 @@ ZBCUTILITY  →  ZARI002  →  ZARI003  →  ZARE002
 | `ZCS_INCOMING_PYMT` | ขาเข้า SBPA → ZARI002 | ของ ZARI002 | SBPA ของ TEST | Basic |
 | `ZCS_CLEARING_ITEM` | ขาเข้า BOT → `ZAPI_ZARE002_O4` | `ZCA_CLEARING_ITEM` | SBPA ของ TEST | Basic |
 | `ZCS_CLEARING_RESULT` | ขาเข้า BOT → `ZARI003_CLEARING` | `ZCA_CLEARING_RESULT` | SBPA ของ TEST | Basic |
-| `ZCS_REJECT_BATCH` | ขาออก → SBPA | `ZCA_REJECT_BATCH` | SBPA ของ TEST | OAuth 2.0 client credentials (token endpoint XSUAA + client id / secret) |
+| `ZCS_REJECT_BATCH` | ขาออก → SBPA | `ZCA_REJECT_BATCH` | SBPA ของ TEST | OAuth 2.0 client credentials (token endpoint XSUAA + client id / secret) · **+ Additional Properties `API_KEY` / `TRIGGER_ID` ของ SBPA TEST** (2026-10-07) |
 | `ZCS_REJECT_ITEM` | ขาเข้า SBPA → `ZAPI_ZARI003_O4` (Phase 8F · ยังไม่ได้ขึ้น TEST รอบแรก) | `ZCA_REJECT_ITEM` | SBPA ของ TEST | Basic |
 
 อื่น ๆ: business role ที่รวม `ZBC_ZARE002` และ `ZBC_ZARI002` · URL ของ inbound ทั้ง 3 ตัวบน TEST ต้องแจ้ง SBPA / ทีม BOT ใหม่ (host เปลี่ยน)
