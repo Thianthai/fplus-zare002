@@ -88,6 +88,11 @@ define view entity ZI_ZARE002_PYMT
       @EndUserText.label: 'Clearing Message'
       clearing_message              as ClearingMessage,
 
+      // เลขรอบของการกด Reject ทุกใบที่ Reject ในการกดครั้งเดียวกันได้เลขเดียวกัน
+      // เลขเดียวกับที่ส่ง Salesforce และ SBPA ใช้ไล่ปัญหาย้อนกลับ
+      @EndUserText.label: 'Reject Batch ID'
+      reject_batch_id               as RejectBatchId,
+      
       // สถานะของขั้น Submit สำหรับ filter บนหน้าจอ
       // S คือ post เอกสารรับชำระแล้ว
       // N คือยังไม่ post

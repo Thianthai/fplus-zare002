@@ -46,6 +46,7 @@ define root view entity ZC_ZARE002
       _Payment.ClearingAccountingDocument             as ClearingAccountingDocument,
       _Payment.SubmitMessage                          as SubmitMessage,
       _Payment.ClearingMessage                        as ClearingMessage,
+      _Payment.RejectBatchId                          as RejectBatchId,
       @ObjectModel.text.element: [ 'SubmitStatusText' ]
       @Consumption.valueHelpDefinition: [ { entity: { name: 'ZI_ZARE002_SUBMIT_STATUS_VH', element: 'SubmitStatus' } } ]
       _Payment.IsSubmitted                            as IsSubmitted,

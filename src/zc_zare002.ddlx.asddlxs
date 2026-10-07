@@ -95,4 +95,8 @@ annotate entity ZC_ZARE002 with
 
   @UI.lineItem: [ { position: 160, importance: #HIGH } ]
   RejectReason;
+
+  @UI.lineItem:       [ { position: 170, importance: #MEDIUM } ]
+  @UI.selectionField: [ { position: 100 } ]
+  RejectBatchId;
 }
