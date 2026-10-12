@@ -217,7 +217,9 @@ GET https://my442178-api.s4hana.cloud.sap/sap/opu/odata4/sap/zapi_zare002_o4/srv
       "InvoiceAccountingDocument": "6000000021",
       "InvoiceAccountingDocYear": "2026",
       "PaymentAccountingDocument": "3500000006",
-      "PaymentAccountingDocYear": "2026"
+      "PaymentAccountingDocYear": "2026",
+      "PaymentCurrency": "THB",
+      "AdvancePayment": -100.00
     }
   ]
 }
@@ -236,6 +238,8 @@ GET https://my442178-api.s4hana.cloud.sap/sap/opu/odata4/sap/zapi_zare002_o4/srv
 | `InvoiceAccountingDocYear` | string(4) | ปีบัญชีของ invoice · ใช้คู่กับเลขเอกสารตอนเลือกในจอ · อ่านจากเอกสาร FI จริง ไม่ได้คำนวณจากวันที่ |
 | `PaymentAccountingDocument` | string(10) | เลขเอกสาร JE ที่ SAP post ไว้ · เลือกบรรทัดนี้ในจอ และ **ส่งกลับมาใน API #3** |
 | `PaymentAccountingDocYear` | string(4) | ปีบัญชีของเอกสาร JE · ใช้คู่กับเลขเอกสารเสมอ และ **ส่งกลับมาใน API #3** |
+| `PaymentCurrency` | string(5) | สกุลเงินของ `AdvancePayment` (เพิ่ม 2026-10-12 `99272be`) |
+| `AdvancePayment` | Edm.Decimal | เงินรับล่วงหน้าของใบ **มีเครื่องหมาย** · บวก = รับล่วงหน้าเพิ่ม · ลบ = ดึงเงินล่วงหน้าเก่ามาหัก invoice · 0 = ไม่มี · ค่าเดียวกันทุกแถวของใบ (เพิ่ม 2026-10-12 `99272be`) |
 
 ### กติกาของ view
 

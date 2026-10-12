@@ -87,4 +87,6 @@ ZBCUTILITY  →  ZARI002  →  ZARI003  →  ZARE002
 
 | 8I | ZARE002 | `ZCL_ZARE002_JOURNAL_ENTRY` · `ZCL_ZARE002_SUBMIT` · message 115 (one-time customer) |
 
+| API #4 | ZARE002 | `ZI_ZARE002_CLEARING` (+ `PaymentCurrency` · `AdvancePayment` · `99272be`) |
+
 ลำดับ: **ZBCPARAM → ZBCUTILITY** → ZARI002 → ZARI003 → ZARE002
