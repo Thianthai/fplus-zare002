@@ -28,11 +28,13 @@ CLASS zcl_zare002_journal_entry DEFINITION
 
       "! item ของ payment — 1 item = 1 บรรทัดลูกหนี้
       "! billing_document ไม่ได้ใช้ในเอกสารบัญชี เก็บไว้ส่งให้ BOT ตอน clearing
+      "! invoice_posting_date ใช้หาปีบัญชีของ invoice ตอนอ่านข้อมูลลูกค้า one-time
       BEGIN OF ty_item,
-        customer_code       TYPE ztar_i002_item-customer_code,
-        accounting_document TYPE ztar_i002_item-accounting_document,
-        billing_document    TYPE ztar_i002_item-billing_document,
-        amount_paid         TYPE ztar_i002_item-amount_paid,
+        customer_code        TYPE ztar_i002_item-customer_code,
+        accounting_document  TYPE ztar_i002_item-accounting_document,
+        invoice_posting_date TYPE ztar_i002_item-invoice_posting_date,
+        billing_document     TYPE ztar_i002_item-billing_document,
+        amount_paid          TYPE ztar_i002_item-amount_paid,
       END OF ty_item,
       tt_item TYPE STANDARD TABLE OF ty_item WITH EMPTY KEY,
 
@@ -49,7 +51,22 @@ CLASS zcl_zare002_journal_entry DEFINITION
       END OF ty_post_result,
 
       "! บรรทัด text สำหรับพิมพ์ payload ดูก่อน post (simulate)
-      tt_text TYPE STANDARD TABLE OF string WITH EMPTY KEY.
+      tt_text TYPE STANDARD TABLE OF string WITH EMPTY KEY,
+
+      "! ชื่อและที่อยู่ของลูกค้า one-time ที่ส่งไปกับเอกสาร
+      "! ชื่อ component ตรงกับ field ของ _OneTimeCustomerSupplier ใน action Post
+      "! ส่งเฉพาะ field ที่ spec กำหนด
+      BEGIN OF ty_one_time_customer,
+        name                      TYPE i_onetimeaccountcustomer-businesspartnername1,
+        name2                     TYPE i_onetimeaccountcustomer-businesspartnername2,
+        name3                     TYPE i_onetimeaccountcustomer-businesspartnername3,
+        name4                     TYPE i_onetimeaccountcustomer-businesspartnername4,
+        cityname                  TYPE i_onetimeaccountcustomer-cityname,
+        country                   TYPE i_onetimeaccountcustomer-country,
+        taxnumber3                TYPE i_onetimeaccountcustomer-taxid3,
+        postalcode                TYPE i_onetimeaccountcustomer-postalcode,
+        businesspartnerstreetname TYPE i_onetimeaccountcustomer-streetaddressname,
+      END OF ty_one_time_customer.
 
     TYPES:
       "! house bank id / account id (hbkid / hktid ไม่ released)
@@ -89,7 +106,10 @@ CLASS zcl_zare002_journal_entry DEFINITION
       "! G/L อีก 4 ตัว (11011212-15) ไม่บังคับ ไม่ต้องระบุ
       gc_gl_bank_scb          TYPE c LENGTH 10 VALUE '0011011211',
       gc_house_bank_scb       TYPE c LENGTH 5  VALUE 'SCB01',
-      gc_house_bank_acct_scb  TYPE c LENGTH 5  VALUE 'SA001'.
+      gc_house_bank_acct_scb  TYPE c LENGTH 5  VALUE 'SA001',
+
+      "! ลูกค้า one-time ดูจาก customer code ที่ขึ้นต้นด้วยค่านี้
+      gc_one_time_prefix      TYPE string      VALUE 'OT*'.
 
     "! payment_amount + fees - sum(amount_paid) - rounding_diff - advance_payment ต้องเป็น 0
     "! คืนผลต่าง (0 = balanced)
@@ -103,10 +123,29 @@ CLASS zcl_zare002_journal_entry DEFINITION
     "! เดบิต = บวก
     "! เครดิต = ลบ
     "! บรรทัดที่ยอด 0 = ไม่ส่ง
+    "! is_one_time มีค่า = ลูกค้าเป็น one-time จึงส่งชื่อและที่อยู่ไปกับเอกสารด้วย
     CLASS-METHODS build
       IMPORTING is_payment      TYPE ty_payment
                 it_item         TYPE tt_item
+                is_one_time     TYPE ty_one_time_customer OPTIONAL
       RETURNING VALUE(rt_entry) TYPE tt_entry.
+
+    "! ลูกค้าเป็น one-time หรือไม่ ดูจาก customer code ที่ขึ้นต้นด้วย OT
+    CLASS-METHODS is_one_time_customer
+      IMPORTING iv_customer       TYPE ztar_i002_item-customer_code
+      RETURNING VALUE(rv_result)  TYPE abap_bool.
+
+    "! ชื่อและที่อยู่ของลูกค้า one-time จาก invoice ที่ใบนี้มาชำระ
+    "! ลูกค้า one-time ไม่มีชื่อและที่อยู่ใน master ข้อมูลถูกเก็บไว้กับเอกสาร invoice
+    "! หาปีบัญชีของ invoice จาก posting date เพราะ table เก็บแค่เลขเอกสารกับวันที่
+    "! ไม่เจอ คืน abap_false
+    CLASS-METHODS read_one_time_customer
+      IMPORTING iv_company_code         TYPE ztar_i002_pymt-company_code
+                iv_customer             TYPE ztar_i002_item-customer_code
+                iv_invoice_document     TYPE ztar_i002_item-accounting_document
+                iv_invoice_posting_date TYPE ztar_i002_item-invoice_posting_date
+      EXPORTING es_one_time             TYPE ty_one_time_customer
+      RETURNING VALUE(rv_found)         TYPE abap_bool.
 
     "! แปลง payload เป็นบรรทัด text ไว้พิมพ์ตอน simulate
     CLASS-METHODS describe
@@ -352,6 +391,12 @@ CLASS zcl_zare002_journal_entry IMPLEMENTATION.
                           _aritems                     = lt_ar_item
                           _taxitems                    = lt_tax_item ) ) ).
 
+    " ลูกค้า one-time ต้องส่งชื่อและที่อยู่ไปกับเอกสาร เพราะไม่มีใน master
+    " API รับข้อมูล one-time ได้ชุดเดียวต่อเอกสาร ซึ่งพอดีเพราะ 1 payment มี customer เดียว
+    IF is_one_time IS NOT INITIAL.
+      rt_entry[ 1 ]-%param-_onetimecustomersupplier = CORRESPONDING #( is_one_time ).
+    ENDIF.
+
   ENDMETHOD.
 
 
@@ -510,6 +555,52 @@ CLASS zcl_zare002_journal_entry IMPLEMENTATION.
       ev_house_bank         = gc_house_bank_scb.
       ev_house_bank_account = gc_house_bank_acct_scb.
     ENDIF.
+
+  ENDMETHOD.
+
+
+  METHOD is_one_time_customer.
+
+    rv_result = xsdbool( iv_customer CP gc_one_time_prefix ).
+
+  ENDMETHOD.
+
+
+  METHOD read_one_time_customer.
+
+    CLEAR es_one_time.
+
+    rv_found = abap_false.
+
+    " join invoice เพื่อหาปีบัญชีจาก posting date
+    " เลขเอกสารเดียวกันเกิดซ้ำได้ในคนละปี ต้องได้ปีที่ถูกก่อนจะอ่านข้อมูล one-time
+    " กรองด้วย customer เผื่อ invoice มีหลายบรรทัด
+    SELECT SINGLE
+      FROM i_onetimeaccountcustomer AS OneTime
+        INNER JOIN i_journalentry AS Invoice
+          ON  Invoice~CompanyCode        = OneTime~CompanyCode
+          AND Invoice~AccountingDocument = OneTime~AccountingDocument
+          AND Invoice~FiscalYear         = OneTime~FiscalYear
+      FIELDS OneTime~BusinessPartnerName1 AS name,
+             OneTime~BusinessPartnerName2 AS name2,
+             OneTime~BusinessPartnerName3 AS name3,
+             OneTime~BusinessPartnerName4 AS name4,
+             OneTime~CityName             AS cityname,
+             OneTime~Country              AS country,
+             OneTime~TaxID3               AS taxnumber3,
+             OneTime~PostalCode           AS postalcode,
+             OneTime~StreetAddressName    AS businesspartnerstreetname
+      WHERE OneTime~CompanyCode        = @iv_company_code
+        AND OneTime~AccountingDocument = @iv_invoice_document
+        AND OneTime~Customer           = @iv_customer
+        AND Invoice~PostingDate        = @iv_invoice_posting_date
+      INTO CORRESPONDING FIELDS OF @es_one_time.
+
+    IF sy-subrc <> 0.
+      RETURN.
+    ENDIF.
+
+    rv_found = abap_true.
 
   ENDMETHOD.
 

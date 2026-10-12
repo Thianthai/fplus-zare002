@@ -140,6 +140,12 @@
      <MSGNR>114</MSGNR>
      <TEXT>Payment &amp;1 has already been completed</TEXT>
     </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>ZARE002</ARBGB>
+     <MSGNR>115</MSGNR>
+     <TEXT>Payment &amp;1: one-time customer &amp;2 has no address on invoice &amp;3</TEXT>
+    </T100>
    </T100>
   </asx:values>
  </asx:abap>

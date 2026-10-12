@@ -24,6 +24,13 @@ CLASS ltc_journal_entry DEFINITION FINAL FOR TESTING
     "! G/L อื่นไม่มี house bank
     METHODS house_bank_and_tax_on_lines FOR TESTING.
 
+    "! ลูกค้า one-time ได้ชื่อและที่อยู่ไปกับเอกสาร
+    METHODS one_time_customer_is_sent    FOR TESTING.
+    "! ลูกค้าปกติไม่มีข้อมูล one-time ในเอกสาร
+    METHODS regular_customer_no_one_time FOR TESTING.
+    "! customer code ที่ขึ้นต้นด้วย OT เท่านั้นที่เป็น one-time
+    METHODS one_time_prefix              FOR TESTING.
+
 ENDCLASS.
 
 
@@ -211,6 +218,40 @@ CLASS ltc_journal_entry IMPLEMENTATION.
     ls_payment-gl_account = '0011011003'.
     lt_entry = zcl_zare002_journal_entry=>build( is_payment = ls_payment it_item = lt_item ).
     cl_abap_unit_assert=>assert_initial( lt_entry[ 1 ]-%param-_glitems[ 1 ]-housebank ).
+  ENDMETHOD.
+
+  METHOD one_time_customer_is_sent.
+    DATA(lt_item) = VALUE zcl_zare002_journal_entry=>tt_item(
+                      ( customer_code = 'OT00000001' accounting_document = '6000000001' amount_paid = '10700.00' ) ).
+
+    DATA(lt_entry) = zcl_zare002_journal_entry=>build(
+                       is_payment  = sample_payment( )
+                       it_item     = lt_item
+                       is_one_time = VALUE #( name       = 'Walk-in Customer'
+                                              cityname   = 'BKK'
+                                              country    = 'TH'
+                                              taxnumber3 = '1234567890123' ) ).
+
+    DATA(ls_param) = lt_entry[ 1 ]-%param.
+
+    cl_abap_unit_assert=>assert_equals( act = ls_param-_onetimecustomersupplier-name       exp = 'Walk-in Customer' ).
+    cl_abap_unit_assert=>assert_equals( act = ls_param-_onetimecustomersupplier-country    exp = 'TH' ).
+    cl_abap_unit_assert=>assert_equals( act = ls_param-_onetimecustomersupplier-taxnumber3 exp = '1234567890123' ).
+  ENDMETHOD.
+
+  METHOD regular_customer_no_one_time.
+    DATA(lt_item) = VALUE zcl_zare002_journal_entry=>tt_item(
+                      ( customer_code = '1000000014' accounting_document = '6000000023' amount_paid = '10700.00' ) ).
+
+    DATA(lt_entry) = zcl_zare002_journal_entry=>build( is_payment = sample_payment( )
+                                                       it_item    = lt_item ).
+
+    cl_abap_unit_assert=>assert_initial( lt_entry[ 1 ]-%param-_onetimecustomersupplier ).
+  ENDMETHOD.
+
+  METHOD one_time_prefix.
+    cl_abap_unit_assert=>assert_true(  zcl_zare002_journal_entry=>is_one_time_customer( 'OT00000003' ) ).
+    cl_abap_unit_assert=>assert_false( zcl_zare002_journal_entry=>is_one_time_customer( '1000000014' ) ).
   ENDMETHOD.
 
 ENDCLASS.

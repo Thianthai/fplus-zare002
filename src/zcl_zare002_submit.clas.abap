@@ -30,7 +30,7 @@ CLASS zcl_zare002_submit DEFINITION
 
       "! ความยาวสูงสุดของ message จาก FI ที่เก็บได้
       "! แบ่งใส่ &2&3&4 ของ message number 108 ส่วนละ 50 ตัว
-      "! 150 + ข้อความนำหน้า "Payment <no>: " = ไม่เกิน 200 ตัวของ submit_message
+      "! 150 + ข้อความนำหน้า "Payment no: " = ไม่เกิน 200 ตัวของ submit_message
       gc_message_max      TYPE i VALUE 150.
 
     TYPES:
@@ -134,6 +134,7 @@ CLASS zcl_zare002_submit IMPLEMENTATION.
     DATA lt_item                        TYPE zcl_zare002_journal_entry=>tt_item.
     DATA lv_payment_accounting_document TYPE ztar_i002_pymt-payment_accounting_document.
     DATA lv_payment_fiscal_year         TYPE ztar_i002_pymt-payment_fiscal_year.
+    DATA ls_one_time                    TYPE zcl_zare002_journal_entry=>ty_one_time_customer.
 
     CLEAR et_entry.
     rs_result-payment_uuid = iv_payment_uuid.
@@ -186,6 +187,35 @@ CLASS zcl_zare002_submit IMPLEMENTATION.
       RETURN.
     ENDIF.
 
+    " 3.1 ลูกค้า one-time ต้องส่งชื่อและที่อยู่ไปกับเอกสาร เพราะไม่มีใน master
+    " อ่านจาก invoice ของ item แรก เพราะ API รับข้อมูล one-time ได้ชุดเดียวต่อเอกสาร
+    " ทุก item ของ payment เป็นลูกค้าเดียวกันอยู่แล้ว
+    " ไม่เจอข้อมูลแปลว่า post ไม่ได้ จึงตั้ง status เป็น E เหมือน validate ไม่ผ่าน
+    IF zcl_zare002_journal_entry=>is_one_time_customer( lt_item[ 1 ]-customer_code ) = abap_true.
+
+      IF zcl_zare002_journal_entry=>read_one_time_customer(
+           EXPORTING iv_company_code         = ls_header-company_code
+                     iv_customer             = lt_item[ 1 ]-customer_code
+                     iv_invoice_document     = lt_item[ 1 ]-accounting_document
+                     iv_invoice_posting_date = lt_item[ 1 ]-invoice_posting_date
+           IMPORTING es_one_time             = ls_one_time ) = abap_false.
+
+        rs_result-message = message_text( iv_number = '115'
+                                          iv_v1     = ls_header-payment_document_no
+                                          iv_v2     = lt_item[ 1 ]-customer_code
+                                          iv_v3     = lt_item[ 1 ]-accounting_document ).
+
+        IF iv_simulate = abap_false.
+          save_result( iv_payment_uuid = iv_payment_uuid
+                       iv_message      = rs_result-message
+                       iv_mark_error   = abap_true ).
+        ENDIF.
+
+        RETURN.
+      ENDIF.
+
+    ENDIF.
+
     " 4. ป้องกัน post ซ้ำ รอบก่อนอาจ commit แล้วแต่บันทึกเลขไม่ทัน > ต้องเอาเลขเดิมมาใช้
     zcl_zare002_journal_entry=>find_document(
       EXPORTING iv_company_code        = ls_header-company_code
@@ -225,8 +255,9 @@ CLASS zcl_zare002_submit IMPLEMENTATION.
     ENDIF.
 
     " 5. build
-    et_entry = zcl_zare002_journal_entry=>build( is_payment = CORRESPONDING #( ls_header )
-                                                 it_item    = lt_item ).
+    et_entry = zcl_zare002_journal_entry=>build( is_payment  = CORRESPONDING #( ls_header )
+                                                 it_item     = lt_item
+                                                 is_one_time = ls_one_time ).
 
     IF iv_simulate = abap_true.
       rs_result-message = `simulate: payload built, nothing posted`.
@@ -310,6 +341,7 @@ CLASS zcl_zare002_submit IMPLEMENTATION.
     SELECT FROM ztar_i002_item
       FIELDS customer_code,
              accounting_document,
+             invoice_posting_date,
              billing_document,
              amount_paid
       WHERE payment_uuid = @iv_payment_uuid
