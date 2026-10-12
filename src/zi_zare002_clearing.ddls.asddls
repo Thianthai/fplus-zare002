@@ -68,7 +68,21 @@ define view entity ZI_ZARE002_CLEARING
       // ปีบัญชีของเอกสาร JE
       // เลขเอกสารบัญชี unique แค่ภายใน company code และปีบัญชี BOT จึงต้องใช้คู่กันเสมอ
       @EndUserText.label: 'Payment Doc Year'
-      Payment.payment_fiscal_year          as PaymentAccountingDocYear
+      Payment.payment_fiscal_year          as PaymentAccountingDocYear,
+
+      // สกุลเงินของยอดระดับ header
+      // ต้องมีเพราะ field จำนวนเงินต้องอ้างสกุลเงินเสมอ
+      @EndUserText.label: 'Payment Currency'
+      Payment.currency                     as PaymentCurrency,
+
+      // เงินรับล่วงหน้าของใบ ค่าเดียวกันทุกแถวของใบเดียวกัน
+      // บวก คือรับเงินล่วงหน้าเพิ่ม
+      // ลบ คือดึงเงินล่วงหน้าที่เคยรับไว้มาหักกับ invoice
+      // ศูนย์ คือใบนี้ไม่มีเงินล่วงหน้า
+      // เครื่องหมายติดไปกับค่าใน OData เอง ไม่ต้องแปลง
+      @Semantics.amount.currencyCode: 'PaymentCurrency'
+      @EndUserText.label: 'Advance Payment'
+      Payment.advance_payment              as AdvancePayment
 }
 where
       Payment.payment_accounting_document  <> ''
