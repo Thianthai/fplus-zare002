@@ -331,6 +331,26 @@ admin field (`last_changed_at` ฯลฯ) ยังเก็บ UTC ตามม
 
 Status: ✅ code `fplus-zari003` `a89823e` · unit test ผ่าน 5 ตัว · ⬜ **รอทดสอบยิงจริงบน DEV** — ถ้าได้ 015 ทั้งที่กรอกครบ = ABAP อ่าน property Is Secure ไม่ได้ → เอาติ๊กออก
 
+## Phase 8I — One-time customer ตอน post JE (2026-10-12)
+
+spec ฟังก์ชันนอล: customer code ขึ้นต้น **`OT`** = one-time → อ่านชื่อ/ที่อยู่จาก `I_OneTimeAccountCustomer` (released C1) ของ **invoice ของ item แรก** (company code ของใบ · ปีบัญชีจาก `I_JournalEntry` ตาม invoice posting date · กรอง Customer) → ใส่ `_OneTimeCustomerSupplier` ใน header ของ `I_JournalEntryTP~Post` (structure · 1 ชุดต่อเอกสาร)
+
+| CDS field | API field |
+|---|---|
+| `BusinessPartnerName1`–`4` | `Name` `Name2`–`Name4` |
+| `CityName` · `Country` · `PostalCode` | ชื่อเดียวกัน |
+| `TaxID3` | `TaxNumber3` |
+| `StreetAddressName` | `BusinessPartnerStreetName` |
+
+ไม่เจอข้อมูล → message **115** + status **E** · ตัวอย่างทดสอบ: payment `0000000368` ลูกค้า `OT00000003` invoice `6000000004`
+
+| Object | Status |
+|---|---|
+| `ZCL_ZARE002_JOURNAL_ENTRY` (`ty_one_time_customer` · `is_one_time_customer` · `read_one_time_customer` · `build` + `is_one_time`) + 3 test | ✅ `800bd16` · unit test ผ่าน |
+| `ZCL_ZARE002_SUBMIT` (ขั้น 3.1 + อ่าน `invoice_posting_date`) · message 115 | ✅ `800bd16` |
+
+⚠️ OQ-46: Clear Incoming Payments ยังไม่รองรับบัญชี one-time (KBA 3776393) — ใบ one-time อาจค้างเป็น S
+
 ### ⚠️ ก่อน handover (ต้องทำ)
 
 | # | งาน | สถานะ |

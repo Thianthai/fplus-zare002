@@ -85,4 +85,6 @@ ZBCUTILITY  →  ZARI002  →  ZARI003  →  ZARE002
 | เวลา local | ZARE002 | `ZBP_R_ZARE002` (`eb5470c`) |
 | เวลา local | ZARI003 | `ZCL_ZARI003_SFDC_RESULT` (`a276fb0`) |
 
+| 8I | ZARE002 | `ZCL_ZARE002_JOURNAL_ENTRY` · `ZCL_ZARE002_SUBMIT` · message 115 (one-time customer) |
+
 ลำดับ: **ZBCPARAM → ZBCUTILITY** → ZARI002 → ZARI003 → ZARE002
