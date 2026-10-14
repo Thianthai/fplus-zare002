@@ -62,9 +62,14 @@ CLASS lhc_Item DEFINITION INHERITING FROM cl_abap_behavior_handler.
     "! ปุ่ม Reject
     "! 1) validate payment ต้องมี RejectReason อย่างน้อย 1 item
     "!    ใบไหนไม่ผ่าน = ทั้งชุดไม่ผ่าน และไม่ call SFDC เพราะ change set ฝั่ง SAP ถูก rollback ทั้งหมด
-    "! 2) PATCH ทุก item ไป SFDC ใน composite call เดียว
+    "!    ใบที่มี item เกินที่ SFDC รับได้ต่อ call ก็ไม่ผ่านทั้งชุดเช่นกัน
+    "! 2) PATCH item ไป SFDC ทีละใบ ผ่าน sObject Collections แบบ allOrNone
+    "!    1 ใบ = 1 call ข้อมูลของใบเดียวจึงเปลี่ยนทั้งใบหรือไม่เปลี่ยนเลย
     "! 3) SFDC รับแล้วเท่านั้นถึงจะ write ลง buffer เพื่อให้ saver stamp status = R
-    "!    ถ้า SFDC รับไม่สำเร็จ จะไม่มีอะไรถูก write ลง DB เพื่อให้ user กด Reject ซ้ำได้เสมอ (re-send)
+    "!    ใบที่ SFDC ไม่รับ จะไม่มีอะไรถูก write ลง DB เพื่อให้ user กด Reject ซ้ำได้เสมอ (re-send)
+    "!    SFDC ไม่รับทุกใบ -> error และ failed ทุกแถวที่เลือก
+    "!    SFDC รับบางใบ -> ใบที่ไม่รับได้แค่ warning และห้ามใส่ failed
+    "!    เพราะ failed ทำให้ change set rollback ทั้งชุด รวมใบที่ SFDC รับไปแล้วด้วย
     "! 4) reject ทุก item ของ payment นั้น
     METHODS rejectItem FOR MODIFY
       IMPORTING keys FOR ACTION Item~rejectItem RESULT result.
@@ -287,18 +292,65 @@ CLASS lhc_Item IMPLEMENTATION.
       RETURN.
     ENDIF.
 
-    " 6. เตรียม record ให้ SFDC — ทุก item ของทุก payment
-    " ลำดับใน lt_record = ลำดับใน lt_record_item เพื่อ map error_index กลับคืนแถวเดิม
+    " 6. เช็คจำนวน item ของทุกใบก่อนส่ง SFDC ใบแรก
+    " sObject Collections รับได้ไม่เกิน gc_max_records record ต่อ call และ 1 ใบต้องจบใน call เดียว
+    " ใบไหนเกินให้ปฏิเสธทั้งชุดแบบเดียวกับ validate
+    " ต้องเช็คให้ครบก่อนเริ่มส่ง เพราะ failed ทำให้ change set rollback ทั้งชุด รวมใบที่ส่ง SFDC ไปแล้ว
+    LOOP AT lt_payment INTO ls_payment.
+      DATA(lv_item_count) = REDUCE i( INIT lv_n = 0
+                                      FOR ls_count IN lt_all_item
+                                      WHERE ( PaymentUuid = ls_payment-payment_uuid )
+                                      NEXT lv_n = lv_n + 1 ).
+
+      IF lv_item_count > zcl_zari003_sfdc_result=>gc_max_records.
+        lv_any_failed = abap_true.
+
+        READ TABLE lt_selected INTO ls_selected WITH KEY PaymentUuid = ls_payment-payment_uuid.
+
+        APPEND VALUE #( %tky = ls_selected-%tky
+                        %msg = new_message( id       = gc_msgid
+                                            number   = '004'
+                                            severity = if_abap_behv_message=>severity-error
+                                            v1       = ls_payment-payment_document_no
+                                            v2       = |{ lv_item_count }| ) ) TO reported-item.
+      ENDIF.
+    ENDLOOP.
+
+    IF lv_any_failed = abap_true.
+      failed-item = VALUE #( FOR ls_fail IN lt_selected
+                             ( %tky               = ls_fail-%tky
+                               %action-rejectItem = if_abap_behv=>mk-on
+                               %fail-cause        = if_abap_behv=>cause-unspecific ) ).
+      RETURN.
+    ENDIF.
+
+    " 7. ยิง SFDC ทีละใบ ก่อน write ลง DB
+    " ลำดับใน lt_record = ลำดับใน lt_record_item เพื่อ map error_index กลับคืนแถวเดิมของใบนั้น
     " ตัวประกอบ payload และตัวยิง SFDC เป็นของ ZARI003 ZARE002 แค่เตรียม record และแปลผลเป็น message
     " batch id ที่ส่ง SFDC ใช้ reject_batch_id ของรอบนี้ เลขเดียวกับที่จะแจ้ง SBPA
-    " SFDC กับ SBPA จึงผูก record ของรอบเดียวกันได้
+    " ทุกใบในการกดครั้งเดียวกันใช้ batch id และ response date ชุดเดียวกัน
+    " send ขอ token ใหม่ทุก call เพราะไม่รู้ว่า token จะหมดอายุเมื่อไร
+    " เรียก send เท่านั้น ห้ามเรียก send_payment_result เพราะ method นั้น COMMIT เอง ซึ่ง RAP ไม่อนุญาต
+    " ใบที่ SFDC ไม่รับ เก็บ message ไว้ก่อน เพราะ severity ขึ้นกับว่ามีใบอื่นสำเร็จหรือไม่
+    TYPES:
+      BEGIN OF ty_sfdc_failed,
+        item   LIKE LINE OF lt_all_item,
+        number TYPE symsgno,
+        v1     TYPE string,
+        v2     TYPE string,
+      END OF ty_sfdc_failed.
+
     DATA lt_record      TYPE zcl_zari003_sfdc_result=>tt_record.
     DATA lt_record_item LIKE lt_all_item.
+    DATA lt_sfdc_failed TYPE STANDARD TABLE OF ty_sfdc_failed WITH EMPTY KEY.
+    DATA lt_sent        TYPE tt_payment.
 
     DATA(lv_response_date)   = zcl_zari003_sfdc_result=>build_response_date( ).
     DATA(lv_reject_batch_id) = build_reject_batch_id( ).
 
     LOOP AT lt_payment INTO ls_payment.
+      CLEAR: lt_record, lt_record_item.
+
       LOOP AT lt_all_item INTO ls_item WHERE PaymentUuid = ls_payment-payment_uuid.
         APPEND VALUE #( item_sf_id    = ls_item-SalesforceItemId
                         header_sf_id  = ls_payment-salesforce_id
@@ -308,42 +360,20 @@ CLASS lhc_Item IMPLEMENTATION.
                         response_date = lv_response_date ) TO lt_record.
         APPEND ls_item TO lt_record_item.
       ENDLOOP.
-    ENDLOOP.
 
-    " เช็คว่าถ้าเกิน limit ของ Composite API ให้ปฏิเสธทั้งหมด
-    IF lines( lt_record ) > zcl_zari003_sfdc_result=>gc_max_records.
-      failed-item = VALUE #( FOR ls_fail IN lt_selected
-                             ( %tky               = ls_fail-%tky
-                               %action-rejectItem = if_abap_behv=>mk-on
-                               %fail-cause        = if_abap_behv=>cause-unspecific ) ).
+      DATA(ls_send) = NEW zcl_zari003_sfdc_result( )->send( lt_record ).
 
-      READ TABLE lt_selected INTO ls_selected INDEX 1.
+      IF ls_send-success = abap_true.
+        APPEND ls_payment TO lt_sent.
+        CONTINUE.
+      ENDIF.
 
-      APPEND VALUE #( %tky = ls_selected-%tky
-                      %msg = new_message( id       = gc_msgid
-                                          number   = '004'
-                                          severity = if_abap_behv_message=>severity-error
-                                          v1       = |{ lines( lt_record ) }| ) ) TO reported-item.
-
-      RETURN.
-    ENDIF.
-
-    " 7. ยิง SFDC ก่อน write ลง DB
-    " ถ้า SFDC ไม่รับ = ไม่มีอะไร write ลง DB เปิดให้ user กด Reject ซ้ำได้
-    " เรียก send เท่านั้น ห้ามเรียก send_payment_result เพราะ method นั้น COMMIT เอง ซึ่ง RAP ไม่อนุญาต
-    DATA(ls_send) = NEW zcl_zari003_sfdc_result( )->send( lt_record ).
-
-    IF ls_send-success = abap_false.
-      failed-item = VALUE #( FOR ls_fail IN lt_selected
-                             ( %tky               = ls_fail-%tky
-                               %action-rejectItem = if_abap_behv=>mk-on
-                               %fail-cause        = if_abap_behv=>cause-unspecific ) ).
-
-      " message ชี้ไปที่ item แต่ถ้าระบุ item ไม่ได้จะเลือกแถวแรกเสมอ
+      " message ชี้ไปที่ item ของใบนั้น
+      " ถ้าระบุ item ไม่ได้ จะเลือกแถวแรกที่ติ๊กของใบนั้นแทน
       DATA(ls_culprit) = VALUE #( lt_record_item[ ls_send-error_index ] OPTIONAL ).
 
       IF ls_culprit IS INITIAL.
-        READ TABLE lt_selected INTO ls_selected INDEX 1.
+        READ TABLE lt_selected INTO ls_selected WITH KEY PaymentUuid = ls_payment-payment_uuid.
         ls_culprit-%tky = ls_selected-%tky.
       ENDIF.
 
@@ -351,34 +381,57 @@ CLASS lhc_Item IMPLEMENTATION.
          OR ls_send-error_code = zcl_zari003_sfdc_result=>gc_err_not_reachable
          OR ls_send-error_code = zcl_zari003_sfdc_result=>gc_err_parse.
         " ต่อไม่ถึง / อื่นๆ
-        APPEND VALUE #( %tky = ls_culprit-%tky
-                        %msg = new_message( id       = gc_msgid
-                                            number   = '006'
-                                            severity = if_abap_behv_message=>severity-error
-                                            v1       = |{ ls_send-http_status }| ) ) TO reported-item.
+        APPEND VALUE #( item   = ls_culprit
+                        number = '006'
+                        v1     = |{ ls_send-http_status }| ) TO lt_sfdc_failed.
       ELSE.
         " SFDC ปฏิเสธ — บอก errorCode + ข้อความ (ตัดแค่ 50 digits)
-        APPEND VALUE #( %tky = ls_culprit-%tky
-                        %msg = new_message( id       = gc_msgid
-                                            number   = '005'
-                                            severity = if_abap_behv_message=>severity-error
-                                            v1       = ls_send-error_code
-                                            v2       = substring( val = ls_send-error_message
-                                                                  len = nmin( val1 = strlen( ls_send-error_message )
-                                                                              val2 = gc_sfdc_message_max ) ) ) ) TO reported-item.
+        APPEND VALUE #( item   = ls_culprit
+                        number = '005'
+                        v1     = ls_send-error_code
+                        v2     = substring( val = ls_send-error_message
+                                            len = nmin( val1 = strlen( ls_send-error_message )
+                                                        val2 = gc_sfdc_message_max ) ) ) TO lt_sfdc_failed.
       ENDIF.
+    ENDLOOP.
+
+    " 8. แจ้งใบที่ SFDC ไม่รับ
+    " ไม่มีใบไหนสำเร็จเลย -> error และ failed ทุกแถวที่เลือก
+    " กรณีนี้ฝั่ง SFDC ไม่มีอะไรเปลี่ยน rollback ทั้งชุดได้ปลอดภัย
+    " มีบางใบสำเร็จ -> warning อย่างเดียว ห้ามใส่ failed
+    " ถ้าใส่ failed change set จะ rollback ทั้งชุด ใบที่ SFDC รับแล้วจะไม่ถูก save และสองฝั่งไม่ตรงกัน
+    DATA(lv_severity) = if_abap_behv_message=>severity-warning.
+
+    IF lt_sent IS INITIAL.
+      lv_severity = if_abap_behv_message=>severity-error.
+    ENDIF.
+
+    LOOP AT lt_sfdc_failed INTO DATA(ls_sfdc_failed).
+      APPEND VALUE #( %tky = ls_sfdc_failed-item-%tky
+                      %msg = new_message( id       = gc_msgid
+                                          number   = ls_sfdc_failed-number
+                                          severity = lv_severity
+                                          v1       = ls_sfdc_failed-v1
+                                          v2       = ls_sfdc_failed-v2 ) ) TO reported-item.
+    ENDLOOP.
+
+    IF lt_sent IS INITIAL.
+      failed-item = VALUE #( FOR ls_fail IN lt_selected
+                             ( %tky               = ls_fail-%tky
+                               %action-rejectItem = if_abap_behv=>mk-on
+                               %fail-cause        = if_abap_behv=>cause-unspecific ) ).
       RETURN.
     ENDIF.
 
-    " 8. ส่งให้ SFDC สำเร็จ > write ลง buffer เพื่อให้ saver stamp header ตอน save phase
+    " 9. ใบที่ SFDC รับแล้ว > write ลง buffer เพื่อให้ saver stamp header ตอน save phase
     " จด batch id และข้อความ Reject สำเร็จไปด้วย saver จะเขียนลง reject_batch_id และ reject_message
     " MODIFY ด้านล่างเขียน RejectReason ด้วยค่าเดิมโดยตั้งใจ — บังคับให้ save phase เกิดขึ้นแน่นอน
     " ถ้าไม่ทำ framework อาจข้าม save เพราะ item ไม่มีอะไรเปลี่ยน แล้ว saver จะไม่ถูกเรียก (ห้ามลบออก)
-    LOOP AT lt_payment INTO ls_payment.
-      DATA(lv_item_count) = REDUCE i( INIT lv_n = 0
-                                      FOR ls_count IN lt_all_item
-                                      WHERE ( PaymentUuid = ls_payment-payment_uuid )
-                                      NEXT lv_n = lv_n + 1 ).
+    LOOP AT lt_sent INTO ls_payment.
+      lv_item_count = REDUCE i( INIT lv_n = 0
+                                FOR ls_count IN lt_all_item
+                                WHERE ( PaymentUuid = ls_payment-payment_uuid )
+                                NEXT lv_n = lv_n + 1 ).
 
       MESSAGE ID gc_msgid TYPE 'S' NUMBER '003'
         WITH ls_payment-payment_document_no lv_item_count
@@ -407,7 +460,8 @@ CLASS lhc_Item IMPLEMENTATION.
                                           v2       = |{ lv_item_count }| ) ) TO reported-item.
     ENDLOOP.
 
-    " 9. คืน instance ที่ติ๊กกลับไปให้ Fiori Element โหลดแถวใหม่ (icon/readonly/button)
+    " 10. คืน instance ที่ติ๊กกลับไปให้ Fiori Element โหลดแถวใหม่ (icon/readonly/button)
+    " คืนทุกแถวรวมใบที่ SFDC ไม่รับด้วย ใบนั้นไม่มีอะไรเปลี่ยน FE จะได้ค่าเดิม
     READ ENTITIES OF zr_zare002 IN LOCAL MODE
       ENTITY Item
         ALL FIELDS WITH CORRESPONDING #( keys )

@@ -30,7 +30,7 @@
      <SPRSL>E</SPRSL>
      <ARBGB>ZARE002</ARBGB>
      <MSGNR>004</MSGNR>
-     <TEXT>Select at most 25 items per Reject (&amp;1 selected)</TEXT>
+     <TEXT>Payment &amp;1 has &amp;2 items, more than the 200 allowed per Reject</TEXT>
     </T100>
     <T100>
      <SPRSL>E</SPRSL>
