@@ -351,6 +351,33 @@ spec ฟังก์ชันนอล: customer code ขึ้นต้น **`O
 
 ⚠️ OQ-46: Clear Incoming Payments ยังไม่รองรับบัญชี one-time (KBA 3776393) — ใบ one-time อาจค้างเป็น S
 
+## Phase 8J — Reject ยิง SFDC ทีละ payment ผ่าน sObject Collections (OQ-47 · 2026-10-14)
+
+ปัญหา: Composite all-or-nothing ได้แค่ ≤ 25 subrequest ต่อ call → Reject จำกัด 25 item ต่อการกด และใบใหญ่อาจเปลี่ยนใน SFDC แค่บางส่วน · ทีม SFDC ตกลงให้ใช้ **sObject Collections** `PATCH /services/data/v66.0/composite/sobjects` · `allOrNone: true` · ≤ 200 record/call
+
+| ขั้นของ `rejectItem` | ก่อน | หลัง |
+|---|---|---|
+| 1–5 อ่าน + validate | ใบไหนไม่ผ่าน = fail ทั้งชุด | **เหมือนเดิม** (ผู้ใช้ยืนยัน) |
+| 6 เช็คจำนวน | รวมทุกใบ > 25 → fail ทั้งชุด (004) | **ทุกใบเช็คก่อนส่งใบแรก** ใบไหน > 200 item → fail ทั้งชุด (004 ใหม่: เลขใบ + จำนวน item) |
+| 7 ยิง SFDC | 1 call ทุกใบ | **1 call ต่อ 1 ใบ** · ขอ token ใหม่ทุก call (ไม่รู้ว่า token หมดอายุเมื่อไร) |
+| 8 ใบที่ SFDC ไม่รับ | error + failed ทุกแถว | **ไม่รับทุกใบ** → error (แดง) + failed ทุกแถว · **รับบางใบ** → ใบที่ไม่รับได้ **warning (เหลือง)** ไม่ใส่ failed |
+| 9 buffer + 003 | ทุกใบ | เฉพาะใบที่ SFDC รับ |
+| 10 คืนแถว | ทุกแถวที่ติ๊ก | เหมือนเดิม |
+
+**ทำไมเคสผสมห้ามใส่ failed**: ปุ่มเป็น `#CHANGE_SET` → `failed` แถวเดียว = rollback ทั้ง change set (เห็นจริง 2026-09-16) · ใบที่ SFDC รับไปแล้วจะค้าง N ฝั่ง SAP ขณะที่ SFDC เป็น Rejected · เช็ค 004 จึงต้องทำให้ครบก่อนเริ่มส่ง
+
+`reject_batch_id` / response date ยังเป็น 1 ชุดต่อการกด · ใบที่สำเร็จทั้งหมดใช้เลขเดียวกัน · SBPA ได้รับแจ้ง 1 ครั้ง · saver / buffer ไม่แตะ
+
+| Object | Status |
+|---|---|
+| ZARI003 `ZCL_ZARI003_SFDC_RESULT` (sObject Collections · `gc_max_records = 200`) + 11 test | ✅ `3fe7013` (repo zari003) |
+| `ZBP_R_ZARE002` → `rejectItem` step 6–10 + ABAP Doc · message 004 | ✅ `b9cbfb1` |
+
+⚠️ **ZARI003 `3fe7013` กับ ZARE002 `b9cbfb1` ต้องขนพร้อมกัน** — ZARI003 ตัวใหม่รับ 200 record แต่ ZARE002 ตัวเก่าส่งทุกใบรวมกันใน call เดียว (ไม่ all-or-nothing ต่อใบ)
+
+ทดสอบ (ฟังก์ชันนอล): 2 ใบปกติ → R ทั้งคู่ batch id เดียว · 2 ใบ ใบ B item ID ผิด → A = R (เขียว) B = N (เหลือง) SFDC ใบ B ไม่เปลี่ยน · ใบเดียว ID ผิด → แดง ไม่มีอะไรเปลี่ยน · ใบ > 25 item → ผ่าน
+ถ้าเคสผสม A กลับเป็น N → RAP ถือ warning เป็น failure ต้องทบทวน (ไม่คาดว่าเกิด)
+
 ### ⚠️ ก่อน handover (ต้องทำ)
 
 | # | งาน | สถานะ |

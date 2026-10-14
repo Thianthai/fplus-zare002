@@ -24,7 +24,7 @@ baseline ที่ tenant serialize มาแล้ว (commit `7936197`) — ob
 | Object | Type | ไฟล์ | Phase | Status |
 |--------|------|------|-------|--------|
 | `ZTAR_E002_ITEM_D` | Draft table ของ `ZR_ZARE002` — สร้างด้วย quick-fix จาก BDEF · include `SYCH_BDL_DRAFT_ADMIN_INC` เป็น `%ADMIN` ครบ | `src/ztar_e002_item_d.tabl.xml` | 4 | ✅ |
-| `ZARE002` | Message class — `001` reject reason missing (per item) · `002` already rejected · `003` rejected OK · `004` > 25 items · `005` SFDC success=false · `006` SFDC unreachable · `001–099` Reject · `100+` Submit | `src/zare002.msag.xml` | 7 / 8A | ✅ 001–006 |
+| `ZARE002` | Message class — `001` reject reason missing (per item) · `002` already rejected · `003` rejected OK · `004` payment > 200 items (8J) · `005` SFDC success=false · `006` SFDC unreachable · `001–099` Reject · `100+` Submit | `src/zare002.msag.xml` | 7 / 8A | ✅ 001–006 |
 
 **ไม่สร้าง data element / domain ใหม่** — reuse `ZE_REQUEST_STATUS` (package `ZARI002`)
 
@@ -57,7 +57,7 @@ baseline ที่ tenant serialize มาแล้ว (commit `7936197`) — ob
 | Object | Type | ไฟล์ | Phase | Status |
 |--------|------|------|-------|--------|
 | `ZR_ZARE002` | Behavior definition — managed · with draft · with additional save · update only · features : instance บน RejectReason + 2 action | `src/zr_zare002.bdef.asbdef` | 2 / 7 | ✅ |
-| `ZBP_R_ZARE002` | Behavior pool — **`rejectItem` ยิง SFDC จริงผ่าน `ZCL_ZARI003_SFDC_RESULT=>send( )` แล้ว (stub เอาออก `7653f57` 2026-09-29)** · `lhc_Item` (global auth · instance features · rejectItem: validate → composite SFDC → buffer) + `lsc_Item` (save_modified → `UPDATE ztar_i002_pymt` status R + salesforce_status S · cleanup_finalize) | `src/zbp_r_zare002.clas.abap` | 2 / 7 / 8A | ✅ |
+| `ZBP_R_ZARE002` | Behavior pool — **`rejectItem` ยิง SFDC จริงผ่าน `ZCL_ZARI003_SFDC_RESULT=>send( )` แล้ว (stub เอาออก `7653f57` 2026-09-29)** · `lhc_Item` (global auth · instance features · rejectItem: validate → SFDC ทีละ payment (sObject Collections · 8J `b9cbfb1`) → buffer) + `lsc_Item` (save_modified → `UPDATE ztar_i002_pymt` status R + salesforce_status S · cleanup_finalize) | `src/zbp_r_zare002.clas.abap` | 2 / 7 / 8A | ✅ |
 | `ZC_ZARE002` | Behavior projection (`use update` · `use action` · `use draft` ถ้าอัปเกรด) | `src/zc_zare002.bdef.asbdef` | 3 | ✅ |
 
 `ZBP_C_ZARE002` (behavior pool ของ projection) **ยังไม่ต้องสร้าง** — สร้างเมื่อมี logic ที่ต้องอยู่ชั้น projection เท่านั้น
