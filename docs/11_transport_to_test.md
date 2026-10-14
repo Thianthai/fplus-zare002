@@ -89,6 +89,7 @@ ZBCUTILITY  →  ZARI002  →  ZARI003  →  ZARE002
 
 | API #4 | ZARE002 | `ZI_ZARE002_CLEARING` (+ `PaymentCurrency` · `AdvancePayment` · `99272be`) |
 
+| Reject Batch ID | ZARE002 | `ZI_ZARE002_PYMT` · `ZC_ZARE002` + ddlx (`c238f5a`) |
 | 8J | ZARI003 | `ZCL_ZARI003_SFDC_RESULT` sObject Collections (`3fe7013`) — **ต้องขนพร้อม ZARE002 8J** |
 | 8J | ZARE002 | `ZBP_R_ZARE002` Reject ทีละ payment · message 004 (`b9cbfb1`) — **ต้องขนพร้อม ZARI003 8J** |
 

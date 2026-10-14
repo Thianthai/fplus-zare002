@@ -351,6 +351,10 @@ spec ฟังก์ชันนอล: customer code ขึ้นต้น **`O
 
 ⚠️ OQ-46: Clear Incoming Payments ยังไม่รองรับบัญชี one-time (KBA 3776393) — ใบ one-time อาจค้างเป็น S
 
+## คอลัมน์ + filter Reject Batch ID (issue 2026-10-12)
+
+`ZI_ZARE002_PYMT` (`reject_batch_id as RejectBatchId`) → `ZC_ZARE002` (`_Payment.RejectBatchId`) → ddlx: lineItem 170 `#MEDIUM` (ถัดจาก Reject Reason) · selectionField 100 | ✅ `c238f5a`
+
 ## Phase 8J — Reject ยิง SFDC ทีละ payment ผ่าน sObject Collections (OQ-47 · 2026-10-14)
 
 ปัญหา: Composite all-or-nothing ได้แค่ ≤ 25 subrequest ต่อ call → Reject จำกัด 25 item ต่อการกด และใบใหญ่อาจเปลี่ยนใน SFDC แค่บางส่วน · ทีม SFDC ตกลงให้ใช้ **sObject Collections** `PATCH /services/data/v66.0/composite/sobjects` · `allOrNone: true` · ≤ 200 record/call
