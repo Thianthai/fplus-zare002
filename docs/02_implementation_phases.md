@@ -382,6 +382,28 @@ spec ฟังก์ชันนอล: customer code ขึ้นต้น **`O
 ทดสอบ (ฟังก์ชันนอล): 2 ใบปกติ → R ทั้งคู่ batch id เดียว · 2 ใบ ใบ B item ID ผิด → A = R (เขียว) B = N (เหลือง) SFDC ใบ B ไม่เปลี่ยน · ใบเดียว ID ผิด → แดง ไม่มีอะไรเปลี่ยน · ใบ > 25 item → ผ่าน
 ถ้าเคสผสม A กลับเป็น N → RAP ถือ warning เป็น failure ต้องทบทวน (ไม่คาดว่าเกิด)
 
+## Phase 8K — payment_method รูปแบบใหม่จาก Salesforce (2026-10-20)
+
+ที่มา: ZARI002 เปลี่ยน `payment_method` จาก `Cheque` / `Cash` / `Transfer` เป็น `<ประเภทการขาย>-<วิธีจ่าย>` 6 ค่า (`CA-` = Cash Sales · `CR-` = อื่น ๆ) เก็บตามที่ SFDC ส่งมาโดยไม่แปลงตัวพิมพ์ · ขยาย field เป็น char(20) ใน `ZTAR_I002_PYMT` / `ZTAR_I002_HDRLOG` · row เก่ายังเป็นคำเดิม
+
+ปัญหาเดิม: `ZCL_ZARE002_SUBMIT` เทียบ `= 'Cheque'` ตรงตัว → `CA-Cheque` / `CR-Cheque` หลุดเข้า auto post และถูกตั้ง E
+
+| แก้ | รายละเอียด |
+|---|---|
+| `ZCL_ZARE002_SUBMIT=>is_cheque` (public static ใหม่) | ลบช่องว่าง + ตัวพิมพ์ใหญ่ → ถ้ามี `-` ใช้ส่วนหลังขีดตัวสุดท้าย ไม่มีใช้ทั้งคำ → เท่ากับ `CHEQUE` · `gc_method_cheque` = `'CHEQUE'` |
+| `process` (ไม่ตั้ง E ให้ใบเช็ค) · `validate` (message 104) | เรียก `is_cheque( )` แทนการเทียบตรง |
+| test include ใหม่ `ltc_submit` (4 test) | true: `CA-Cheque` `CR-Cheque` `cr-cheque` `CA - CHEQUE` `Cheque` · false: `CA-Cash` `CR-Transfer` `Transfer` ค่าว่าง |
+| `ZCL_ZARE002_UTIL` | `gc_test_payment_method` = `'CR-Transfer'` |
+
+ไม่ต้องแก้: CDS / UI ไม่มี filter หรือ value help ที่ fix คำไว้ · message 104 ข้อความกลาง · คำ `cheque` ใน test ของ `ZCL_ZARE002_SUBMIT_HTTP` เป็นข้อความตัวอย่าง ไม่ใช่ค่า payment_method
+นอก repo (แจ้งไว้): ZARI003 `ZI_ZARI003_REJECT_ITEM` ส่ง `PaymentMethod` ให้ SBPA ตรง ๆ → ถ้า SBPA/BOT มีเงื่อนไขกับคำเดิมต้องแจ้งทีม SBPA
+
+| Object | Status |
+|---|---|
+| `ZCL_ZARE002_SUBMIT` + test classes · `ZCL_ZARE002_UTIL` | ✅ `90f43a5` · unit test ผ่าน (abapGit reformat บรรทัดว่าง/ชื่อ `CLASS … IMPLEMENTATION` ของ class อื่นด้วย — format อย่างเดียว) |
+
+⚠️ **ขนพร้อม ZARI002 (payment_method char 20) รอบเดียวกัน** — ZARE002 เดี่ยว: util/test activate ไม่ผ่าน · ZARI002 เดี่ยว: ใบเช็คหลุดเข้า auto post
+
 ### ⚠️ ก่อน handover (ต้องทำ)
 
 | # | งาน | สถานะ |
