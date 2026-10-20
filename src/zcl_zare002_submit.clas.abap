@@ -25,8 +25,9 @@ CLASS zcl_zare002_submit DEFINITION
       gc_status_new       TYPE ze_request_status VALUE 'N',
       gc_status_error     TYPE ze_request_status VALUE 'E',
 
-      "! ค่าใน payment_method ที่ต้อง post มือ (ZARI002 เก็บเป็นคำ)
-      gc_method_cheque    TYPE ztar_i002_pymt-payment_method VALUE 'Cheque',
+      "! วิธีจ่ายที่ต้อง post มือ เขียนเป็นตัวพิมพ์ใหญ่
+      "! ใช้เทียบใน is_cheque หลังแปลงค่าใน payment_method เป็นตัวพิมพ์ใหญ่แล้ว
+      gc_method_cheque    TYPE ztar_i002_pymt-payment_method VALUE 'CHEQUE',
 
       "! ความยาวสูงสุดของ message จาก FI ที่เก็บได้
       "! แบ่งใส่ &2&3&4 ของ message number 108 ส่วนละ 50 ตัว
@@ -55,6 +56,17 @@ CLASS zcl_zare002_submit DEFINITION
                 iv_simulate      TYPE abap_bool DEFAULT abap_false
       EXPORTING et_entry         TYPE zcl_zare002_journal_entry=>tt_entry
       RETURNING VALUE(rs_result) TYPE ty_result.
+
+    "! ใบนี้จ่ายด้วยเช็คหรือไม่ (เช็คต้อง post มือ)
+    "! ค่ารูปแบบใหม่เป็น ประเภทการขาย-วิธีจ่าย เช่น CA-Cheque หรือ CR-Cheque
+    "! ดูเฉพาะส่วนหลังขีดตัวสุดท้าย
+    "! ค่ารูปแบบเก่าไม่มีขีด ดูทั้งคำ
+    "! ไม่สนตัวพิมพ์และช่องว่าง เพราะ ZARI002 เก็บค่าตามที่ Salesforce ส่งมาโดยไม่แปลง
+    "! @parameter iv_payment_method | ค่า payment_method ของใบ
+    "! @parameter rv_result         | abap_true = เป็นเช็ค
+    CLASS-METHODS is_cheque
+      IMPORTING iv_payment_method TYPE ztar_i002_pymt-payment_method
+      RETURNING VALUE(rv_result)  TYPE abap_bool.
 
   PRIVATE SECTION.
 
@@ -126,7 +138,9 @@ CLASS zcl_zare002_submit DEFINITION
 ENDCLASS.
 
 
-CLASS zcl_zare002_submit IMPLEMENTATION.
+
+CLASS ZCL_ZARE002_SUBMIT IMPLEMENTATION.
+
 
   METHOD process.
 
@@ -181,7 +195,7 @@ CLASS zcl_zare002_submit IMPLEMENTATION.
         " ใบ R และ C ไม่ถูกทับ เพราะ save_result เปลี่ยนได้เฉพาะใบ N และ E
         save_result( iv_payment_uuid = iv_payment_uuid
                      iv_message      = rs_result-message
-                     iv_mark_error   = xsdbool( ls_header-payment_method <> gc_method_cheque ) ).
+                     iv_mark_error   = xsdbool( is_cheque( ls_header-payment_method ) = abap_false ) ).
       ENDIF.
 
       RETURN.
@@ -397,8 +411,8 @@ CLASS zcl_zare002_submit IMPLEMENTATION.
       RETURN.
     ENDIF.
 
-    " 3. validate เคส payment_method = "Cheque" ต้อง post มือเอง โปรแกรมไม่รองรับ
-    IF is_header-payment_method = gc_method_cheque.
+    " 3. validate ใบที่จ่ายด้วยเช็ค ต้อง post มือเอง โปรแกรมไม่รองรับ
+    IF is_cheque( is_header-payment_method ) = abap_true.
       rv_message = message_text( iv_number = '104'
                                  iv_v1     = is_header-payment_document_no ).
       RETURN.
@@ -538,6 +552,27 @@ CLASS zcl_zare002_submit IMPLEMENTATION.
                                         off = 100
                                         len = nmin( val1 = strlen( lv_text ) - 100
                                                     val2 = 50 ) ) ).
+
+  ENDMETHOD.
+
+
+  METHOD is_cheque.
+
+    " ตัดช่องว่างทั้งหมดและแปลงเป็นตัวพิมพ์ใหญ่ก่อนเทียบ
+    DATA(lv_method) = replace( val  = to_upper( iv_payment_method )
+                               sub  = ` `
+                               with = ``
+                               occ  = 0 ).
+
+    " ค่ารูปแบบใหม่ ใช้เฉพาะส่วนหลังขีดตัวสุดท้าย
+    " ค่ารูปแบบเก่าไม่มีขีด ใช้ทั้งคำ
+    IF lv_method CS '-'.
+      lv_method = substring_after( val = lv_method
+                                   sub = '-'
+                                   occ = -1 ).
+    ENDIF.
+
+    rv_result = xsdbool( lv_method = gc_method_cheque ).
 
   ENDMETHOD.
 

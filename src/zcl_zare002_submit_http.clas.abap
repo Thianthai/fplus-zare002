@@ -126,7 +126,9 @@ CLASS zcl_zare002_submit_http DEFINITION
 ENDCLASS.
 
 
-CLASS zcl_zare002_submit_http IMPLEMENTATION.
+
+CLASS ZCL_ZARE002_SUBMIT_HTTP IMPLEMENTATION.
+
 
   METHOD if_http_service_extension~handle_request.
 
@@ -384,5 +386,4 @@ CLASS zcl_zare002_submit_http IMPLEMENTATION.
                 )->to_string( ).
 
   ENDMETHOD.
-
 ENDCLASS.

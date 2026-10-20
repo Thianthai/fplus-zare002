@@ -25,7 +25,7 @@ CLASS zcl_zare002_util DEFINITION
       gc_test_company_code    TYPE ztar_i002_pymt-company_code        VALUE '2000',
       gc_test_posting_date    TYPE ztar_i002_pymt-posting_date        VALUE '20260922',
       gc_test_gl_account      TYPE ztar_i002_pymt-gl_account          VALUE '0011011211',
-      gc_test_payment_method  TYPE ztar_i002_pymt-payment_method      VALUE 'Transfer',
+      gc_test_payment_method  TYPE ztar_i002_pymt-payment_method      VALUE 'CR-Transfer',
       gc_test_currency        TYPE ztar_i002_pymt-currency            VALUE 'THB',
       gc_test_payment_amount  TYPE ztar_i002_pymt-payment_amount      VALUE '10791.00',
       gc_test_fees            TYPE ztar_i002_pymt-fees                VALUE '10.00',
@@ -81,7 +81,8 @@ ENDCLASS.
 
 
 
-CLASS zcl_zare002_util IMPLEMENTATION.
+CLASS ZCL_ZARE002_UTIL IMPLEMENTATION.
+
 
   METHOD if_oo_adt_classrun~main.
 
@@ -103,6 +104,7 @@ CLASS zcl_zare002_util IMPLEMENTATION.
 
   ENDMETHOD.
 
+
   METHOD class_constructor.
     " payment document ที่ utility จะทำงานด้วย (reset_payment / submit_poc)
     " แก้ list ใน class_constructor แล้วรันใหม่ (F9)
@@ -111,6 +113,7 @@ CLASS zcl_zare002_util IMPLEMENTATION.
 *    gt_payment_document_no = VALUE #( ( '1000000002' ) ).
 *                                      ( '1000000102' ) ).
   ENDMETHOD.
+
 
   METHOD reset_payment.
 
@@ -153,6 +156,7 @@ CLASS zcl_zare002_util IMPLEMENTATION.
 
   ENDMETHOD.
 
+
   METHOD test_sfdc_bearer.
 
     " 1. ขอ token — print แค่สถานะ ห้าม print token
@@ -192,6 +196,7 @@ CLASS zcl_zare002_util IMPLEMENTATION.
 
   ENDMETHOD.
 
+
   METHOD submit_poc.
 
     out->write( |submit_poc: simulate = { gc_submit_simulate }| ).
@@ -224,6 +229,7 @@ CLASS zcl_zare002_util IMPLEMENTATION.
 
   ENDMETHOD.
 
+
   METHOD migrate_submitted_status.
 
     DATA lv_now TYPE abp_lastchange_tstmpl.
@@ -247,6 +253,7 @@ CLASS zcl_zare002_util IMPLEMENTATION.
     out->write( |{ lv_count } payment(s) changed from N to S| ).
 
   ENDMETHOD.
+
 
   METHOD set_test_data.
 
@@ -389,5 +396,4 @@ CLASS zcl_zare002_util IMPLEMENTATION.
     out->write( |  ใส่เลขนี้ใน gt_payment_document_no ของ class_constructor แล้วรัน submit_poc| ).
 
   ENDMETHOD.
-
 ENDCLASS.

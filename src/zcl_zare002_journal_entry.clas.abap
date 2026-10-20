@@ -215,7 +215,9 @@ CLASS zcl_zare002_journal_entry DEFINITION
 ENDCLASS.
 
 
-CLASS zcl_zare002_journal_entry IMPLEMENTATION.
+
+CLASS ZCL_ZARE002_JOURNAL_ENTRY IMPLEMENTATION.
+
 
   METHOD check_balance.
 
@@ -603,5 +605,4 @@ CLASS zcl_zare002_journal_entry IMPLEMENTATION.
     rv_found = abap_true.
 
   ENDMETHOD.
-
 ENDCLASS.
