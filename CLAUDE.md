@@ -187,6 +187,22 @@
   (เจอจริง 2026-09-21: prefix `/services/oauth2/token` + `set_uri_path` path เดียวกัน → 404)
   → ตั้ง Default Path / Path ของ outbound service เป็น **`/`** แล้วให้ class ใส่ path เต็มเองเสมอ
   (pattern ของ ZARI002) — โดยเฉพาะ scenario ที่ต้องยิงหลาย path
+  · **⚠️ path ใน class ห้ามขึ้นต้นด้วย `/` เมื่อ Path = `/`** — ต่อกันได้ `//public/…` (เจอจริง 2026-10-21:
+  gateway ของ SBPA ตอบ **HTTP 400 ไม่มี body** ทั้งที่ Postman ผ่าน · แก้ที่ `ZCL_ZARI003_REJECT_BATCH` `5fc2af7`)
+  · Salesforce ยอม `//` ZARI002 / ZARI003 ส่วน SFDC จึงทำงานได้ — **ไม่ต้องไล่แก้** แต่ปลายทางใหม่ให้ใช้ path ไม่มี `/` นำ
+  · Service URL ในหน้า arrangement (`https://host:443/`) = host ของ Communication System + Path แก้ตรงนั้นไม่ได้
+  · Default Path Prefix ของ scenario ใช้แค่ตอนสร้าง arrangement ใหม่ แก้ทีหลังไม่กระทบ arrangement เดิม
+- **Additional Properties ของ Communication Scenario: data element ต้องผูก domain ที่ติ๊ก Case-sensitive**
+  (เจอจริง 2026-10-21: `ZE_SBPA_API_KEY` / `ZE_SBPA_TRIGGER_ID` สร้างเป็น Predefined Type CHAR → หน้า arrangement
+  แปลงค่าเป็นตัวพิมพ์ใหญ่ตอนบันทึก → API key / trigger id ของ SBPA ผิด)
+  · scenario บังคับให้ property มี data element (error `Data element required for property …`)
+  · Predefined Type ไม่มีตัวเลือก case-sensitive — มีเฉพาะใน **Domain** (Output Characteristics → Case-sensitive)
+  → สร้าง `ZD_<DESC>` (case-sensitive) + `ZE_<DESC>` แบบ Category = Domain เสมอ แม้ค่าดูเป็นตัวใหญ่ทั้งหมดก็ตาม
+  · เปลี่ยน type ทีหลัง: activate domain → data element → **Publish Locally scenario ใหม่** (ไม่งั้นค้าง Unpublished)
+  → **กรอกค่าใหม่ใน arrangement** (ค่าเดิมถูกแปลงไปแล้ว copy จากต้นฉบับ ไม่ใช่จากหน้าจอ)
+  · ช่องที่ติ๊ก Is Secure มองค่าไม่เห็น — ตรวจตัวพิมพ์จาก property อื่นที่ไม่ secure แทน
+- **API ภายนอกตอบ 400 แต่ Postman ผ่าน → เทียบทีละส่วนกับ Postman collection** (method · auth · header · body · **URL เต็ม**
+  รวม port / `/` ซ้อน · **ตัวพิมพ์ของค่าจาก arrangement**) ก่อนสงสัยฝั่งปลายทาง (เจอจริง 2026-10-21 · OQ-48)
 - **ชื่อ field ของ Salesforce ห้ามเชื่อ spec/ตัวอย่าง — ยิง `GET /sobjects/<Object>/describe` ผ่าน
   arrangement ดูของจริง** (เจอจริง 2026-09-20: spec ให้ตารางกับ JSON example ที่ชื่อไม่ตรงกัน เลือกผิด
   → `INVALID_FIELD` ตอน Reject จริง) · describe ใช้เวลา 2 นาที ถูกกว่าถามคนหรือเดา
