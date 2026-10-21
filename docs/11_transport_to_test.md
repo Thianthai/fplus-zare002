@@ -92,6 +92,7 @@ ZBCUTILITY  →  ZARI002  →  ZARI003  →  ZARE002
 | Reject Batch ID | ZARE002 | `ZI_ZARE002_PYMT` · `ZC_ZARE002` + ddlx (`c238f5a`) |
 | 8J | ZARI003 | `ZCL_ZARI003_SFDC_RESULT` sObject Collections (`3fe7013`) — **ต้องขนพร้อม ZARE002 8J** |
 | 8J | ZARE002 | `ZBP_R_ZARE002` Reject ทีละ payment · message 004 (`b9cbfb1`) — **ต้องขนพร้อม ZARI003 8J** |
+| OQ-48 | ZARI003 | `ZD_SBPA_API_KEY` · `ZD_SBPA_TRIGGER_ID` · `ZE_SBPA_API_KEY` · `ZE_SBPA_TRIGGER_ID` · `ZCS_REJECT_BATCH` (`308d284`) · `ZCL_ZARI003_REJECT_BATCH` path (`5fc2af7`) — บน TEST กรอก `API_KEY` / `TRIGGER_ID` หลัง import (ค่าตัวพิมพ์เล็กต้องคงอยู่) |
 | 8K | ZARI002 | `ZTAR_I002_PYMT` / `ZTAR_I002_HDRLOG` `payment_method` char(20) + รับค่ารูปแบบใหม่ — **ต้องขนพร้อม ZARE002 8K** |
 | 8K | ZARE002 | `ZCL_ZARE002_SUBMIT` (`is_cheque` + test) · `ZCL_ZARE002_UTIL` (`90f43a5`) — **ต้องขนพร้อม ZARI002 8K** |
 
