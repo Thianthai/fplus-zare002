@@ -8,7 +8,9 @@
 "ZTAR_I002_PYMT"
 ],
 "ASSOCIATED":
-[],
+[
+"ZI_ZARE002_CLEARING_PARTIAL"
+],
 "BASE":
 [],
 "ANNO_REF":

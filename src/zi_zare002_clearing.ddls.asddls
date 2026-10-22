@@ -17,6 +17,11 @@ define view entity ZI_ZARE002_CLEARING
       on  Invoice.CompanyCode        = Payment.company_code
       and Invoice.AccountingDocument = Item.accounting_document
       and Invoice.PostingDate        = Item.invoice_posting_date
+      
+    // เอกสารรับชำระบางส่วนก่อนหน้าที่ BOT ต้อง clear เพิ่ม
+    // มีเฉพาะ item ของใบสุดท้าย BOT อ่านด้วย $expand=_PartialPayments
+    association [0..*] to ZI_ZARE002_CLEARING_PARTIAL as _PartialPayments
+      on $projection.ItemUuid = _PartialPayments.ItemUuid
 {
       // key ของ view เป็น item uuid เพราะ 1 row คือ 1 item
   key Item.item_uuid                       as ItemUuid,
@@ -82,7 +87,9 @@ define view entity ZI_ZARE002_CLEARING
       // เครื่องหมายติดไปกับค่าใน OData เอง ไม่ต้องแปลง
       @Semantics.amount.currencyCode: 'PaymentCurrency'
       @EndUserText.label: 'Advance Payment'
-      Payment.advance_payment              as AdvancePayment
+      Payment.advance_payment              as AdvancePayment,
+
+      _PartialPayments
 }
 where
       Payment.payment_accounting_document  <> ''
@@ -91,3 +98,6 @@ where
       // ตามปกติเกิดไม่ได้ เพราะ Reject ปฏิเสธใบที่ post แล้ว
       // กันไว้เผื่อข้อมูลถูกแก้จากภายนอก
   and Payment.status                       <> 'R'
+      // item ที่รับชำระบางส่วนไม่เข้าคิว
+      // BOT จะ clear เอกสารของใบเหล่านี้พร้อมใบสุดท้ายผ่าน _PartialPayments
+  and Item.partial_amount                  =  ''
