@@ -357,7 +357,8 @@ CLASS ZCL_ZARE002_SUBMIT IMPLEMENTATION.
              accounting_document,
              invoice_posting_date,
              billing_document,
-             amount_paid
+             amount_paid,
+             partial_amount
       WHERE payment_uuid = @iv_payment_uuid
       ORDER BY accounting_document
       INTO CORRESPONDING FIELDS OF TABLE @et_item.
@@ -419,10 +420,14 @@ CLASS ZCL_ZARE002_SUBMIT IMPLEMENTATION.
     ENDIF.
 
     " 4. validate mandatory
+    " item ที่รับชำระบางส่วนต้องมี billing document เพราะใบสุดท้ายใช้หาเอกสารนี้ตอน clearing
     DATA(lv_missing) = COND string( WHEN it_item IS INITIAL THEN `items`
                                     WHEN is_header-gl_account IS INITIAL THEN `G/L account`
                                     WHEN is_header-currency IS INITIAL THEN `currency`
-                                    WHEN line_exists( it_item[ customer_code = '' ] ) THEN `customer code` ).
+                                    WHEN line_exists( it_item[ customer_code = '' ] ) THEN `customer code`
+                                    WHEN line_exists( it_item[ partial_amount   = zcl_zare002_journal_entry=>gc_partial
+                                                               billing_document = '' ] )
+                                      THEN `billing document of partial payment` ).
 
     IF lv_missing IS NOT INITIAL.
       rv_message = message_text( iv_number = '105'

@@ -27,7 +27,7 @@ CLASS zcl_zare002_journal_entry DEFINITION
       END OF ty_payment,
 
       "! item ของ payment — 1 item = 1 บรรทัดลูกหนี้
-      "! billing_document ไม่ได้ใช้ในเอกสารบัญชี เก็บไว้ส่งให้ BOT ตอน clearing
+      "! billing_document ใส่ลง Reference1 ของบรรทัดลูกหนี้เฉพาะ item ที่รับชำระบางส่วน
       "! invoice_posting_date ใช้หาปีบัญชีของ invoice ตอนอ่านข้อมูลลูกค้า one-time
       BEGIN OF ty_item,
         customer_code        TYPE ztar_i002_item-customer_code,
@@ -35,6 +35,7 @@ CLASS zcl_zare002_journal_entry DEFINITION
         invoice_posting_date TYPE ztar_i002_item-invoice_posting_date,
         billing_document     TYPE ztar_i002_item-billing_document,
         amount_paid          TYPE ztar_i002_item-amount_paid,
+        partial_amount       TYPE ztar_i002_item-partial_amount,
       END OF ty_item,
       tt_item TYPE STANDARD TABLE OF ty_item WITH EMPTY KEY,
 
@@ -109,7 +110,10 @@ CLASS zcl_zare002_journal_entry DEFINITION
       gc_house_bank_acct_scb  TYPE c LENGTH 5  VALUE 'SA001',
 
       "! ลูกค้า one-time ดูจาก customer code ที่ขึ้นต้นด้วยค่านี้
-      gc_one_time_prefix      TYPE string      VALUE 'OT*'.
+      gc_one_time_prefix      TYPE string      VALUE 'OT*',
+
+      "! ค่าใน partial_amount ของ item ที่รับชำระบางส่วน
+      gc_partial              TYPE ztar_i002_item-partial_amount VALUE 'X'.
 
     "! payment_amount + fees - sum(amount_paid) - rounding_diff - advance_payment ต้องเป็น 0
     "! คืนผลต่าง (0 = balanced)
@@ -342,13 +346,17 @@ CLASS ZCL_ZARE002_JOURNAL_ENTRY IMPLEMENTATION.
     " business place = 0000
     " ไม่ใส่ assignment และ item text
     " BOT จะจับคู่ตอน clearing จาก customer และจำนวนเงินแทน
+    " item ที่รับชำระบางส่วนใส่ billing document ลง Reference1
+    " ใบสุดท้ายของ invoice เดียวกันใช้ค่านี้หาเอกสารรับชำระบางส่วนก่อนหน้า ให้ BOT clear พร้อมกัน
     LOOP AT it_item INTO DATA(ls_item).
       lv_line += 1.
-      APPEND VALUE #( glaccountlineitem = CONV ty_line_no( lv_line )
-                      customer          = ls_item-customer_code
-                      businessplace     = gc_business_place
-                      _currencyamount   = amount( iv_currency = is_payment-currency
-                                                  iv_amount   = - ls_item-amount_paid )
+      APPEND VALUE #( glaccountlineitem             = CONV ty_line_no( lv_line )
+                      customer                      = ls_item-customer_code
+                      businessplace                 = gc_business_place
+                      reference1idbybusinesspartner = COND #( WHEN ls_item-partial_amount = gc_partial
+                                                                THEN ls_item-billing_document )
+                      _currencyamount               = amount( iv_currency = is_payment-currency
+                                                              iv_amount   = - ls_item-amount_paid )
                     ) TO lt_ar_item.
     ENDLOOP.
 
