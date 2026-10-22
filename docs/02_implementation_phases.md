@@ -423,7 +423,7 @@ spec ฟังก์ชันนอล: customer code ขึ้นต้น **`O
 
 | เฟส | Object | Status |
 |---|---|---|
-| A | `ZCL_ZARE002_JOURNAL_ENTRY` (Reference1 · `gc_partial` + 2 test) · `ZCL_ZARE002_SUBMIT` (อ่าน `partial_amount` · validate 105 `billing document of partial payment`) | 🟨 ส่ง code แล้ว |
+| A | `ZCL_ZARE002_JOURNAL_ENTRY` (Reference1 · `gc_partial` + 2 test) · `ZCL_ZARE002_SUBMIT` (อ่าน `partial_amount` · validate 105 `billing document of partial payment`) | ✅ `311f474` (2026-10-22) |
 | B | คิว clearing + CDS เอกสาร partial ก่อนหน้า + ZARI003 ปิดใบ partial | ⬜ รอ confirm ชื่อ |
 
 ### ⚠️ ก่อน handover (ต้องทำ)
