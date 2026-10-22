@@ -424,7 +424,10 @@ spec ฟังก์ชันนอล: customer code ขึ้นต้น **`O
 | เฟส | Object | Status |
 |---|---|---|
 | A | `ZCL_ZARE002_JOURNAL_ENTRY` (Reference1 · `gc_partial` + 2 test) · `ZCL_ZARE002_SUBMIT` (อ่าน `partial_amount` · validate 105 `billing document of partial payment`) | ✅ `311f474` (2026-10-22) |
-| B | คิว clearing + CDS เอกสาร partial ก่อนหน้า + ZARI003 ปิดใบ partial | ⬜ รอ confirm ชื่อ |
+| B | `ZI_ZARE002_CLEARING_PARTIAL` (ใหม่) · `ZI_ZARE002_CLEARING` (ตัด item X + `_PartialPayments`) · `ZAPI_ZARE002` (`PartialPayments`) | ✅ `3b7ee6c` (ผู้ใช้เปลี่ยน `ClearingAccountingDocument` → `ClearingJournalEntry`) |
+| B | ZARI003 `ZCL_ZARI003_CLEARING_RESULT` (`read_partial_payments` · step 6 ปิดใบ partial + SFDC) · message 016 | ✅ zari003 `c015650` |
+
+รอ: ทดสอบ end-to-end (P1/P2/P3) · ทีม BOT อ่าน `_PartialPayments` (สัญญาใน `10_api_contract.md`) · **ขน ZARE002 + ZARI003 เฟส B พร้อมกัน**
 
 ### ⚠️ ก่อน handover (ต้องทำ)
 

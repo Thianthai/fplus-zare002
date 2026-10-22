@@ -246,6 +246,7 @@ GET https://my442178-api.s4hana.cloud.sap/sap/opu/odata4/sap/zapi_zare002_o4/srv
 - **1 แถว = 1 item** ของ payment · payment ที่มีหลาย invoice จะมีหลายแถว **กลุ่มเดียวกันคือ `PaymentAccountingDocument` เดียวกัน**
 - แสดงเฉพาะใบที่ **post JE แล้ว** และ **ยังไม่มีเลข clearing** และ **ไม่ได้ถูก reject** (status ≠ `R`)
   — ปกติใบที่ post แล้ว Reject ไม่ได้อยู่แล้ว ข้อนี้กันเผื่อข้อมูลถูกแก้จากภายนอก (เจอจริงตอนทดสอบ 2026-09-25 · แก้ใน `ed4cd9d`)
+- **item ที่ `PartialAmount = X` (รับชำระบางส่วน) ไม่อยู่ในคิว** — รอใบสุดท้ายของ invoice เดียวกัน แล้วเอกสารของใบเหล่านี้มากับใบสุดท้ายผ่าน `_PartialPayments` (เพิ่ม 2026-10-22 `3b7ee6c`)
 - ใบที่ clear เสร็จและส่งผลกลับทาง API #3 แล้ว จะหายจาก view นี้เอง ไม่ต้องมีใครมาลบคิว
 - ใบที่ BOT clear ไม่สำเร็จจะยังอยู่ในคิว คืนถัดไปจะถูกดึงไปทำใหม่โดยอัตโนมัติ
 - **เลขเอกสารบัญชีต้องใช้คู่กับปีบัญชีเสมอ** เลขเดียวกันเกิดซ้ำได้ในคนละปี
@@ -285,6 +286,56 @@ GET .../ClearingItems?$count=true&$orderby=PaymentAccountingDocument
 
 `$count=true` จะได้ `"@odata.count"` กลับมาด้วย เอาไว้เทียบว่าดึงครบหรือยัง
 แล้ววนตาม `@odata.nextLink` จนหมด
+
+### เอกสารรับชำระบางส่วนก่อนหน้า — `_PartialPayments` / `PartialPayments` (เพิ่ม 2026-10-22 `3b7ee6c` · OQ-49)
+
+invoice ที่ลูกค้าแบ่งจ่ายหลายครั้ง: ใบ partial (X) ไม่เข้าคิว · ใบสุดท้ายเข้าคิวพร้อมรายการเอกสารรับชำระบางส่วนก่อนหน้า
+**BOT ต้องเลือกเอกสารเหล่านี้ clear เพิ่มในเอกสาร clearing เดียวกับใบสุดท้าย** แล้วส่งผลกลับทาง API #3 ด้วยเลข JE ของใบสุดท้ายตามเดิม
+SAP จะปิดใบ partial ทุกใบให้เอง (status C · เลข clearing เดียวกัน · SFDC Completed) — BOT ไม่ต้องส่งผลของใบ partial
+
+```
+GET .../ClearingItems?$expand=_PartialPayments&$orderby=PaymentAccountingDocument
+GET .../PartialPayments?$filter=PaymentAccountingDocument eq '3500000120'
+```
+
+```json
+{
+  "ItemUuid": "…",
+  "PaymentAccountingDocument": "3500000120",
+  "InvoiceAccountingDocument": "6000000040",
+  "…": "…",
+  "_PartialPayments": [
+    {
+      "ItemUuid": "…",
+      "PartialAccountingDocument": "3500000097",
+      "PartialAccountingDocYear": "2026",
+      "PartialAccountingDocItem": "002",
+      "PaymentDocumentNo": "1000001300",
+      "CompanyCode": "2000",
+      "PaymentAccountingDocument": "3500000120",
+      "PaymentAccountingDocYear": "2026",
+      "BillingDocument": "O600000134",
+      "CustomerCode": "1000000003",
+      "PartialPaymentCurrency": "THB",
+      "PartialPaymentAmount": -100.00
+    }
+  ]
+}
+```
+
+| Field | BOT เอาไปใช้ |
+|---|---|
+| `PartialAccountingDocument` + `PartialAccountingDocYear` | เอกสารรับชำระบางส่วนที่ต้อง**เลือก clear เพิ่ม**ในคอลัมน์ Journal Entry · ใช้คู่กับปีเสมอ |
+| `PartialAccountingDocItem` | บรรทัดลูกหนี้ในเอกสารนั้น |
+| `PaymentAccountingDocument` / `Year` | JE ของใบสุดท้าย — กลุ่มเดียวกับ `ClearingItems` |
+| `BillingDocument` | billing document ที่ใช้จับคู่ (Reference1 ของเอกสาร partial) |
+| `CustomerCode` | ลูกค้าของเอกสาร partial (ควรเท่ากับของใบสุดท้าย) |
+| `PartialPaymentAmount` + `Currency` | ยอดลูกหนี้ของเอกสาร partial **ติดลบ** (เครดิต) ไว้เทียบยอด |
+
+กติกา:
+- มีเฉพาะ item ของใบสุดท้าย คือ partial ว่าง และ `InvoiceAmount ≠ AmountPaid` · item ปกติได้ `_PartialPayments` ว่าง
+- เฉพาะบรรทัดลูกหนี้ (D) ใน company code เดียวกัน ที่ Reference1 = billing document · **ยังไม่ถูก clear** · ไม่ใช่เอกสารกลับรายการหรือถูกกลับรายการ
+- เอกสาร partial ที่ post ก่อนวันที่ 2026-10-22 (ก่อนมี Reference1) จะไม่โผล่ — ต้อง clear เอง (ผู้ใช้ยอมรับ)
 
 ---
 
