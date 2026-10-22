@@ -14,6 +14,8 @@ define root view entity ZC_ZARE002
       _Payment.NumberOfItemsInPayment                 as NumberOfItemsInPayment,
       @Consumption.filter.defaultValue: '2000'
       _Payment.CompanyCode                            as CompanyCode,
+      // รับช่วงเดียว ให้ Fiori แสดง filter วันที่แบบมาตรฐาน (Today / From - To / Year to Date ฯลฯ)
+      @Consumption.filter: { selectionType: #INTERVAL, multipleSelections: false }
       _Payment.PostingDate                            as PostingDate,
       _Payment.GlAccount                              as GlAccount,
       _Payment.PaymentMethod                          as PaymentMethod,
