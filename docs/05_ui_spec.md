@@ -139,6 +139,14 @@ handler โดนเรียก 2 รอบแล้ว post ใบเดิม
 validation ทั้ง change set ถูก rollback ไม่มีใบไหนถูก reject FE แจ้ง "No items were processed"
 ผู้ใช้กำลัง confirm ว่า requirement ต้องการแบบนี้หรือไม่ (OQ-26)
 
+## Posting Date เป็น filter วันที่แบบมาตรฐาน (2026-10-22)
+
+`ZC_ZARE002` → `PostingDate`: `@Consumption.filter: { selectionType: #INTERVAL, multipleSelections: false }` (`d300e63`)
+→ FE V4 ใช้ Semantic Date Range (Date · Today · Yesterday · From / To · Year to Date ฯลฯ) แทน Define Conditions
+· เงื่อนไขของ FE: field `Edm.Date` + filter รับช่วงเดียว (SingleRange) · ไม่ต้องแก้ ddlx / app
+· ข้อจำกัด: เลือกได้ 1 เงื่อนไข · variant เก่าที่มีหลายเงื่อนไขของ Posting Date ต้องบันทึกใหม่
+· field วันที่อื่น (Issue Date · Invoice Posting Date · Sale Submit Date) ไม่อยู่ใน filter bar ยังเป็น Define Conditions
+
 ## Filter ที่เปลี่ยน 2026-10-01 (Phase 8G)
 
 | Filter | ก่อน | หลัง |
