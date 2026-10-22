@@ -404,6 +404,28 @@ spec ฟังก์ชันนอล: customer code ขึ้นต้น **`O
 
 ⚠️ **ขนพร้อม ZARI002 (payment_method char 20) รอบเดียวกัน** — ZARE002 เดี่ยว: util/test activate ไม่ผ่าน · ZARI002 เดี่ยว: ใบเช็คหลุดเข้า auto post
 
+## Phase 8L — Partial payment (OQ-49 · 2026-10-22)
+
+ตัวอย่าง: invoice `O600000134` ยอด 1,000 จ่าย 3 ครั้ง P1 300 (X) · P2 200 (X) · P3 500 (final, partial ว่าง)
+
+| # | เหตุการณ์ | P1 | P2 | P3 | เกิดอะไร |
+|---|---|---|---|---|---|
+| 1 | Submit P1 | S | – | – | JE-1 ลูกหนี้ −300 · Reference1 = billing document (**เฟส A**) |
+| 2 | คิว clearing | ไม่อยู่ | – | – | partial = X ถูกกรองออก (**เฟส B**) |
+| 3 | Submit P2 | S | S | – | JE-2 −200 · Reference1 = billing document · ไม่อยู่ในคิว |
+| 4 | Submit P3 | S | S | S | JE-3 −500 ไม่มี Reference1 |
+| 5 | คิว clearing | – | – | อยู่ | invoice 1,000 ≠ paid 500 → หา Reference1 = billing document เจอ JE-1 JE-2 ส่งให้ BOT (**เฟส B**) |
+| 6 | BOT clear | | | | CL-1 clear invoice + JE-1 + JE-2 + JE-3 |
+| 7 | BOT ส่งผลตาม JE-3 | **C** | **C** | **C** | ZARI003 stamp CL-1 ทุกใบ + SFDC `Completed` ทั้งชุด (**เฟส B · ZARI003**) |
+
+ผู้ใช้ยืนยัน 2026-10-22: ก่อนใบ final ทุกใบ partial เป็น S ไม่มีเลข clearing · SFDC รู้ว่า Completed ตอนใบ final เท่านั้น
+ไม่มีใบผสม (partial = X ทั้งใบ ยกเว้นใบสุดท้าย) · transaction ก่อนเฟส A ไม่ต้องจัดการ
+
+| เฟส | Object | Status |
+|---|---|---|
+| A | `ZCL_ZARE002_JOURNAL_ENTRY` (Reference1 · `gc_partial` + 2 test) · `ZCL_ZARE002_SUBMIT` (อ่าน `partial_amount` · validate 105 `billing document of partial payment`) | 🟨 ส่ง code แล้ว |
+| B | คิว clearing + CDS เอกสาร partial ก่อนหน้า + ZARI003 ปิดใบ partial | ⬜ รอ confirm ชื่อ |
+
 ### ⚠️ ก่อน handover (ต้องทำ)
 
 | # | งาน | สถานะ |
