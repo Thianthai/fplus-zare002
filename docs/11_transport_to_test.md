@@ -78,7 +78,7 @@ SBPA TEST (2026-11-09): ข้อมูลจากทีม SBPA ตรงก�
 | `ZCA_INCOMING_PYMT` · `ZCA_CLEARING_ITEM` · `ZCA_CLEARING_RESULT` | ผูก `SBPA_TEST` | ✅ มีแล้ว |
 | `ZCA_REJECT_BATCH` | ผูก `SBPA_TEST` · OAuth 2.0 (Basic) client id เดียวกับ DEV · Path `/` · Service URL `https://spa-api-gateway-bpi-ap-prod.cfapps.ap11.hana.ondemand.com:443/` | ✅ ตรง · กรอก `API_KEY` + `TRIGGER_ID` แล้ว (2026-11-09) · `TRIGGER_ID` = `0773939a-5de8-4373-973e-a76485ec8e9f` ยังเป็นตัวพิมพ์เล็กหลัง save (domain case-sensitive ขึ้น TEST แล้ว) · รอยืนยันด้วย Reject จริง (`reject_message` ว่าง = ยิงสำเร็จ) · arrangement ที่ระบบสร้างให้ตอน import ไม่พก property มา ต้องกรอกเองทุก tenant |
 | `ZCA_SFDC_TOKEN` | ผูก `SFDC_TEST` · User ID and Password (client id ของ org SIT) · Path `/` · Service URL `https://one-two-trading--sit.sandbox.my.salesforce.com:443/` | ✅ ตรง · Check Connection ผ่าน (2026-11-09) = เชื่อมต่อ host ได้ · ยังไม่พิสูจน์ client secret (ping ที่ `/` ไม่ขอ token) → ยืนยันด้วย Submit / Reject จริงที่ส่งผลถึง SFDC |
-| `ZCA_REJECT_ITEM` | ไม่มี | ⬜ **ต้องสร้าง** — scenario `ZCS_REJECT_ITEM` (8F) ต้องขนขึ้น TEST ก่อน แล้วผูก `SBPA_TEST` + inbound user `SBPA_TEST` |
+| `ZCA_REJECT_ITEM` | ผูก `SBPA_TEST` + inbound user `SBPA_TEST` · `ZAPI_ZARI003_O4` | ✅ สร้างแล้ว (2026-11-09) · `$metadata` TEST = Customizing ทุก byte |
 
 `SBPA_TEST` outbound OAuth 2.0 (Basic): ใส่ client secret ของ TEST แล้ว (2026-11-09)
 · XSUAA ของ SBPA ใช้ client id เดียวกันทุก environment แต่ **secret ต่างกันตาม service key** → ห้าม copy secret ของ DEV
@@ -88,7 +88,7 @@ SBPA TEST (2026-11-09): ข้อมูลจากทีม SBPA ตรงก�
 
 | # | งาน | ใคร |
 |---|---|---|
-| 1 | ขน 8F (`ZI_ZARI003_REJECT_ITEM` · `ZAPI_ZARI003` · `ZAPI_ZARI003_O4` · `ZCS_REJECT_ITEM`) แล้วสร้าง `ZCA_REJECT_ITEM` × `SBPA_TEST` + user `SBPA_TEST` | ผู้ใช้ |
+| 1 | ~~ขน 8F แล้วสร้าง `ZCA_REJECT_ITEM`~~ ✅ 2026-11-09 | ผู้ใช้ |
 | 2 | Business role ที่มี `ZBC_ZARE002` + `ZBC_ZARI002` · launchpad space/page · assign user ทดสอบ | ผู้ใช้ |
 | 3 | แจ้งทีม SBPA / BOT: user `SBPA_TEST` + password และ endpoint ของ TEST (ตารางล่าง) | ผู้ใช้ |
 | 4 | ฟังก์ชันนอลยืนยันค่า hardcode ใน §5 มีบน TEST | ฟังก์ชันนอล |
