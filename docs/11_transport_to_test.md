@@ -48,12 +48,15 @@ ZBCUTILITY  →  ZARI002  →  ZARI003  →  ZARE002
 
 ### 4.1 Communication System
 
-| System (DEV) | Host | Port | Inbound user | Outbound user |
-|---|---|---|---|---|
-| `SBPA_DEV` | `spa-api-gateway-bpi-ap-prod.cfapps.ap11.hana.ondemand.com` | 443 | User ID and Password · `SBPA_DEV` (SBPA / BOT ใช้เรียกทุก scenario ขาเข้า) | **OAuth 2.0 (Basic)** · client id ของ XSUAA (`sb-…\|xsuaa!…`) |
-| `SFDC_DEV` | `one-two-trading--dev.sandbox.my.salesforce.com` | 443 | `SFDC_DEV` — ของ ZSDE001 ไม่เกี่ยวกับงานนี้ | **User ID and Password** = client id / secret ของ connected app (ที่ `ZCA_SFDC_TOKEN` ใช้) · แถว OAuth 2.0 (Form Field) เป็นของ ARI001 |
+| System (DEV) | Host | Port | Outbound OAuth 2.0 → Token Endpoint | Inbound user | Outbound user |
+|---|---|---|---|---|---|
+| `SBPA_DEV` | `spa-api-gateway-bpi-ap-prod.cfapps.ap11.hana.ondemand.com` | 443 | `f-plus-sbpa.authentication.ap11.hana.ondemand.com/oauth/token` | User ID and Password · `SBPA_DEV` (SBPA / BOT ใช้เรียกทุก scenario ขาเข้า) | **OAuth 2.0 (Basic)** · client id ของ XSUAA (`sb-…\|xsuaa!…`) |
+| `SFDC_DEV` | `one-two-trading--dev.sandbox.my.salesforce.com` | 443 | `one-two-trading--dev.sandbox.my.salesforce.com/services/oauth2/token` — ใช้กับแถว Form Field ของ ARI001 เท่านั้น | `SFDC_DEV` — ของ ZSDE001 ไม่เกี่ยวกับงานนี้ | **User ID and Password** = client id / secret ของ connected app (ที่ `ZCA_SFDC_TOKEN` ใช้) · แถว OAuth 2.0 (Form Field) เป็นของ ARI001 |
 
-SBPA TEST (2026-11-09): Trigger URL ใช้ gateway host เดียวกับ DEV · token URL `https://f-plus-sbpa.authentication.ap11.hana.ondemand.com/oauth/token` · client id / secret / API key / trigger id ของ TEST ได้จากทีม SBPA
+ไม่เกี่ยวกับ 3 WRICEF นี้: `ABAP_DEV` (เรียก standard API ของตัวเอง) · `FPLUS_DEV` (inbound only ของ IT FPLUS)
+
+SBPA TEST (2026-11-09): ข้อมูลจากทีม SBPA ตรงกับ `SBPA_DEV` ทั้ง host · token endpoint · client id
+→ ต่างแค่ **`TRIGGER_ID`** (`0773939a-5de8-4373-973e-a76485ec8e9f`) · client secret / API key เทียบไม่ได้ (ช่อง secure) ให้กรอกตามที่ทีม SBPA ส่งมา
 
 ### 4.2 Communication Arrangement
 
