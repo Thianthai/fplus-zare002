@@ -80,6 +80,29 @@ SBPA TEST (2026-11-09): ข้อมูลจากทีม SBPA ตรงก�
 | `ZCA_SFDC_TOKEN` | ผูก `SFDC_TEST` · User ID and Password (client id ของ org SIT) · Path `/` · Service URL `https://one-two-trading--sit.sandbox.my.salesforce.com:443/` | ✅ ตรง · Check Connection ผ่าน (2026-11-09) = เชื่อมต่อ host ได้ · ยังไม่พิสูจน์ client secret (ping ที่ `/` ไม่ขอ token) → ยืนยันด้วย Submit / Reject จริงที่ส่งผลถึง SFDC |
 | `ZCA_REJECT_ITEM` | ไม่มี | ⬜ **ต้องสร้าง** — scenario `ZCS_REJECT_ITEM` (8F) ต้องขนขึ้น TEST ก่อน แล้วผูก `SBPA_TEST` + inbound user `SBPA_TEST` |
 
+`SBPA_TEST` outbound OAuth 2.0 (Basic): ใส่ client secret ของ TEST แล้ว (2026-11-09)
+· XSUAA ของ SBPA ใช้ client id เดียวกันทุก environment แต่ **secret ต่างกันตาม service key** → ห้าม copy secret ของ DEV
+· API key ก็ต่างกันตาม environment เช่นกัน
+
+**สิ่งที่ยังเหลือบน TEST (2026-11-09)**
+
+| # | งาน | ใคร |
+|---|---|---|
+| 1 | ขน 8F (`ZI_ZARI003_REJECT_ITEM` · `ZAPI_ZARI003` · `ZAPI_ZARI003_O4` · `ZCS_REJECT_ITEM`) แล้วสร้าง `ZCA_REJECT_ITEM` × `SBPA_TEST` + user `SBPA_TEST` | ผู้ใช้ |
+| 2 | Business role ที่มี `ZBC_ZARE002` + `ZBC_ZARI002` · launchpad space/page · assign user ทดสอบ | ผู้ใช้ |
+| 3 | แจ้งทีม SBPA / BOT: user `SBPA_TEST` + password และ endpoint ของ TEST (ตารางล่าง) | ผู้ใช้ |
+| 4 | ฟังก์ชันนอลยืนยันค่า hardcode ใน §5 มีบน TEST | ฟังก์ชันนอล |
+| 5 | Reject 1 ใบเพื่อยืนยัน `ZCA_REJECT_BATCH` + `SBPA_TEST` · Submit / Reject ที่ส่งถึง SFDC เพื่อยืนยัน `ZCA_SFDC_TOKEN` | ผู้ใช้ |
+
+Endpoint ขาเข้าบน TEST (host `https://my443707-api.s4hana.cloud.sap`)
+
+| Arrangement | ใครเรียก | Path |
+|---|---|---|
+| `ZCA_INCOMING_PYMT` | SBPA | `/sap/bc/http/sap/zari002_incoming_pymt` |
+| `ZCA_CLEARING_ITEM` | BOT | `/sap/opu/odata4/sap/zapi_zare002_o4/srvd_a2x/sap/zapi_zare002/0001/ClearingItems` |
+| `ZCA_CLEARING_RESULT` | BOT | `/sap/bc/http/sap/zari003_clearing` |
+| `ZCA_REJECT_ITEM` | SBPA | `/sap/opu/odata4/sap/zapi_zari003_o4/srvd_a2x/sap/zapi_zari003/0001/RejectedItems` (หลังข้อ 1) |
+
 ### 4.2 Communication Arrangement
 
 | Arrangement | Scenario | System | ทิศทาง | ตั้งเพิ่ม |
