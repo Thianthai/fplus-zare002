@@ -68,6 +68,16 @@ SBPA TEST (2026-11-09): ข้อมูลจากทีม SBPA ตรงก�
 - ไม่เกี่ยวกับงานนี้: `SFDC_DEV` (ใช้แค่ `ZCA_CUSTOMER_IN` ของ ZSDE001) · `ABAP_DEV` · `FPLUS_DEV`
 - บน TEST: สร้าง communication user ของ SBPA ใหม่ 1 ตัว ผูกเข้า system SBPA ของ TEST แล้วใช้ใน 4 arrangement ขาเข้า · แจ้ง user / password ให้ทีม SBPA / BOT
 
+**สถานะบน TEST (tenant `my443707` IZJ/100 · เทียบหน้าจอ 2026-11-09)**
+
+| รายการ | TEST | ผล |
+|---|---|---|
+| Communication User | `SBPA_TEST` | ✅ มีแล้ว |
+| Communication System | `SBPA_TEST` · host เดียวกับ DEV | ✅ มีแล้ว |
+| `ZCA_INCOMING_PYMT` · `ZCA_CLEARING_ITEM` · `ZCA_CLEARING_RESULT` | ผูก user `SBPA_TEST` | ✅ มีแล้ว |
+| `ZCA_REJECT_ITEM` | ไม่มี | ⬜ **ยังไม่สร้าง** — scenario `ZCS_REJECT_ITEM` (8F) ต้องขนขึ้น TEST ก่อน |
+| `ZCA_REJECT_BATCH` · `ZCA_SFDC_TOKEN` · system SFDC ของ TEST | ขาออก ไม่โผล่ในหน้า communication user | ❓ ยังไม่ได้ตรวจ |
+
 ### 4.2 Communication Arrangement
 
 | Arrangement | Scenario | System | ทิศทาง | ตั้งเพิ่ม |
