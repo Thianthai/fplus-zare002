@@ -77,7 +77,7 @@ SBPA TEST (2026-11-09): ข้อมูลจากทีม SBPA ตรงก�
 | Communication System `SFDC_TEST` | host `one-two-trading--sit.sandbox.my.salesforce.com` : 443 · Token Endpoint `…--sit…/services/oauth2/token` · outbound **User ID and Password** (client id ของ org SIT) · ไม่มี inbound user / แถว Form Field (เป็นของ ZSDE001 / ARI001 ไม่ใช่งานนี้) | ✅ ตรงตามที่งานนี้ต้องใช้ |
 | `ZCA_INCOMING_PYMT` · `ZCA_CLEARING_ITEM` · `ZCA_CLEARING_RESULT` | ผูก `SBPA_TEST` | ✅ มีแล้ว |
 | `ZCA_REJECT_BATCH` | ผูก `SBPA_TEST` · OAuth 2.0 (Basic) client id เดียวกับ DEV · Path `/` · Service URL `https://spa-api-gateway-bpi-ap-prod.cfapps.ap11.hana.ondemand.com:443/` | ✅ ตรง · ⬜ **`API_KEY` และ `TRIGGER_ID` ว่างทั้งคู่** — ต้องกรอก (`TRIGGER_ID` = `0773939a-5de8-4373-973e-a76485ec8e9f`) ไม่งั้น Reject จะได้ message 015 และไม่ยิง SBPA |
-| `ZCA_SFDC_TOKEN` | ผูก `SFDC_TEST` | ✅ มีแล้ว · ❓ ยังไม่ได้ตรวจ Path `/` |
+| `ZCA_SFDC_TOKEN` | ผูก `SFDC_TEST` · User ID and Password (client id ของ org SIT) · Path `/` · Service URL `https://one-two-trading--sit.sandbox.my.salesforce.com:443/` | ✅ ตรง · ยืนยันด้วย Check Connection |
 | `ZCA_REJECT_ITEM` | ไม่มี | ⬜ **ต้องสร้าง** — scenario `ZCS_REJECT_ITEM` (8F) ต้องขนขึ้น TEST ก่อน แล้วผูก `SBPA_TEST` + inbound user `SBPA_TEST` |
 
 ### 4.2 Communication Arrangement
