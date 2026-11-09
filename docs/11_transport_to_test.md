@@ -58,6 +58,16 @@ ZBCUTILITY  →  ZARI002  →  ZARI003  →  ZARE002
 SBPA TEST (2026-11-09): ข้อมูลจากทีม SBPA ตรงกับ `SBPA_DEV` ทั้ง host · token endpoint · client id
 → ต่างแค่ **`TRIGGER_ID`** (`0773939a-5de8-4373-973e-a76485ec8e9f`) · client secret / API key เทียบไม่ได้ (ช่อง secure) ให้กรอกตามที่ทีม SBPA ส่งมา
 
+### 4.1b Communication User (แอป Maintain Communication User)
+
+| User (DEV) | Description | ใช้ใน system | ใช้ใน arrangement ของ 3 WRICEF นี้ |
+|---|---|---|---|
+| `SBPA_DEV` | Interface User for SAP Build Process Automation | `SBPA_DEV` (inbound) | `ZCA_INCOMING_PYMT` · `ZCA_CLEARING_ITEM` · `ZCA_CLEARING_RESULT` · `ZCA_REJECT_ITEM` — ครบ 4 ตัวขาเข้า |
+
+- `ZCA_REJECT_BATCH` / `ZCA_SFDC_TOKEN` เป็นขาออก ไม่ใช้ communication user (ใช้ outbound user ใน system แทน)
+- ไม่เกี่ยวกับงานนี้: `SFDC_DEV` (ใช้แค่ `ZCA_CUSTOMER_IN` ของ ZSDE001) · `ABAP_DEV` · `FPLUS_DEV`
+- บน TEST: สร้าง communication user ของ SBPA ใหม่ 1 ตัว ผูกเข้า system SBPA ของ TEST แล้วใช้ใน 4 arrangement ขาเข้า · แจ้ง user / password ให้ทีม SBPA / BOT
+
 ### 4.2 Communication Arrangement
 
 | Arrangement | Scenario | System | ทิศทาง | ตั้งเพิ่ม |
