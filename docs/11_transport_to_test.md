@@ -89,9 +89,9 @@ SBPA TEST (2026-11-09): ข้อมูลจากทีม SBPA ตรงก�
 | # | งาน | ใคร |
 |---|---|---|
 | 1 | ~~ขน 8F แล้วสร้าง `ZCA_REJECT_ITEM`~~ ✅ 2026-11-09 | ผู้ใช้ |
-| 2 | Business role ที่มี `ZBC_ZARE002` + `ZBC_ZARI002` · launchpad space/page · assign user ทดสอบ | ผู้ใช้ |
-| 3 | แจ้งทีม SBPA / BOT: user `SBPA_TEST` + password และ endpoint ของ TEST (ตารางล่าง) | ผู้ใช้ |
-| 4 | ฟังก์ชันนอลยืนยันค่า hardcode ใน §5 มีบน TEST | ฟังก์ชันนอล |
+| 2 | Business role · launchpad · assign user — ส่งต่อฟังก์ชันนอลสร้างเอง (§4.3) | ฟังก์ชันนอล |
+| 3 | แจ้งทีม SBPA / BOT (§4.4) | ผู้ใช้ |
+| 4 | ยืนยัน master data ที่ code hardcode มีบน TEST (§4.5) | ฟังก์ชันนอล |
 | 5 | Reject 1 ใบเพื่อยืนยัน `ZCA_REJECT_BATCH` + `SBPA_TEST` · Submit / Reject ที่ส่งถึง SFDC เพื่อยืนยัน `ZCA_SFDC_TOKEN` | ผู้ใช้ |
 
 Endpoint ขาเข้าบน TEST (host `https://my443707-api.s4hana.cloud.sap`)
@@ -101,7 +101,50 @@ Endpoint ขาเข้าบน TEST (host `https://my443707-api.s4hana.cloud.
 | `ZCA_INCOMING_PYMT` | SBPA | `/sap/bc/http/sap/zari002_incoming_pymt` |
 | `ZCA_CLEARING_ITEM` | BOT | `/sap/opu/odata4/sap/zapi_zare002_o4/srvd_a2x/sap/zapi_zare002/0001/ClearingItems` |
 | `ZCA_CLEARING_RESULT` | BOT | `/sap/bc/http/sap/zari003_clearing` |
-| `ZCA_REJECT_ITEM` | SBPA | `/sap/opu/odata4/sap/zapi_zari003_o4/srvd_a2x/sap/zapi_zari003/0001/RejectedItems` (หลังข้อ 1) |
+| `ZCA_REJECT_ITEM` | SBPA | `/sap/opu/odata4/sap/zapi_zari003_o4/srvd_a2x/sap/zapi_zari003/0001/RejectedItems` |
+
+### 4.3 ส่งต่อฟังก์ชันนอล — Business Role บน TEST
+
+| Business Catalog | App ที่ได้ |
+|---|---|
+| `ZBC_ZARE002` | Automatic Incoming Payments (รวมปุ่ม Submit / Reject) |
+| `ZBC_ZARI002` | app ดู log ของ Incoming Payments |
+
+ขั้นตอน (Maintain Business Roles)
+1. สร้าง role ใหม่ หรือเพิ่มเข้า role ของทีม AR ที่มีอยู่
+2. Assigned Business Catalogs: เพิ่ม 2 catalog ข้างบน
+3. Maintain Restrictions: Read / Write / Value Help = **Unrestricted** (ยังไม่มีสิทธิ์ระดับ company code — OQ-15 hold)
+4. Launchpad Space: สร้าง space + page ใส่ tile ของ 2 app
+5. Assigned Business Users: ใส่ user ทดสอบ แล้วให้ log off / login ใหม่
+
+ปุ่ม Submit post JE ด้วยสิทธิ์ของ user ที่กด → user ต้องมีสิทธิ์ post เอกสาร FI/AR ด้วย ให้เทียบ catalog มาตรฐานกับ role ที่ใช้ทดสอบบน DEV
+
+### 4.4 แจ้งทีม SBPA / BOT
+
+| รายการ | ค่า |
+|---|---|
+| Host | `https://my443707-api.s4hana.cloud.sap` |
+| Auth | Basic · user **`SBPA_TEST`** · password ส่งแยกทางช่องทางปลอดภัย |
+| Endpoint | ตาราง endpoint ขาเข้าข้างบน — path เหมือน DEV ทุกตัว เปลี่ยนแค่ host + user |
+| Request / response body | ไม่เปลี่ยนจาก DEV — ดู `10_api_contract.md` |
+| BOT ดึงคิว | ใช้ `ClearingItems?$expand=_PartialPayments` (ตรวจแล้วว่ามีบน TEST) |
+| BOT ส่งผล clearing | ส่งเฉพาะใบ final · ห้ามส่ง JE ของใบ partial แยก |
+| SAP → SBPA | SAP เรียก trigger `0773939a-5de8-4373-973e-a76485ec8e9f` (TEST) พร้อม `RejectBatchID` ทุกครั้งที่ Reject · ทีม SBPA ต้อง deploy trigger นี้ให้พร้อมรับ |
+
+### 4.5 ส่งต่อฟังก์ชันนอล — master data ที่ code hardcode (`ZCL_ZARE002_JOURNAL_ENTRY`)
+
+| กลุ่ม | ค่า | ใช้ทำอะไร |
+|---|---|---|
+| Document | doc type `DS` · business transaction `RFPI` | header ของ JE |
+| Bank | G/L `0011011211` · house bank `SCB01` · account ID `SA001` | บรรทัดเงินเข้าธนาคาร |
+| Bank charge | G/L `0054030012` · cost center `2002010000` | บรรทัดค่าธรรมเนียม |
+| Tax ของ bank charge | tax code `WP` · business place `0000` · account key `VST` · condition `MWVS` | tax item |
+| Rounding | G/L `0059090001` | เศษสตางค์ |
+| Advance payment | special G/L indicator `Z` | ยอดรับล่วงหน้า |
+| One-time customer | รหัสลูกค้าขึ้นต้น `OT` | แยกการ post ลูกค้าจร |
+
+ข้อมูลทดสอบที่ต้องมีบน TEST ด้วย: customer / invoice / billing document ที่ SBPA จะส่งมา · company code ทดสอบ (DEV ใช้ `2000`)
+· Salesforce org SIT ต้องมี custom object / field ชุดเดียวกับ dev org (`BST_SAP_Status__c` · `Integration_Log__c`) — ให้ทีม Salesforce ยืนยัน
 
 ### 4.2 Communication Arrangement
 
