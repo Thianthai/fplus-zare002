@@ -50,7 +50,7 @@ ZBCUTILITY  →  ZARI002  →  ZARI003  →  ZARE002
 
 | System (DEV) | Host | Port | Outbound OAuth 2.0 → Token Endpoint | Inbound user | Outbound user |
 |---|---|---|---|---|---|
-| `SBPA_DEV` | `spa-api-gateway-bpi-ap-prod.cfapps.ap11.hana.ondemand.com` | 443 | `f-plus-sbpa.authentication.ap11.hana.ondemand.com/oauth/token` | User ID and Password · `SBPA_DEV` (SBPA / BOT ใช้เรียกทุก scenario ขาเข้า) | **OAuth 2.0 (Basic)** · client id ของ XSUAA (`sb-…\|xsuaa!…`) |
+| `SBPA_DEV` | `spa-api-gateway-bpi-ap-prod.cfapps.ap11.hana.ondemand.com` | 443 | `f-plus-sbpa.authentication.ap11.hana.ondemand.com/oauth/token` | User ID and Password · `SBPA_DEV` (ทีม SBPA ใช้เรียกทุก scenario ขาเข้า) | **OAuth 2.0 (Basic)** · client id ของ XSUAA (`sb-…\|xsuaa!…`) |
 | `SFDC_DEV` | `one-two-trading--dev.sandbox.my.salesforce.com` | 443 | `one-two-trading--dev.sandbox.my.salesforce.com/services/oauth2/token` — ใช้กับแถว Form Field ของ ARI001 เท่านั้น | `SFDC_DEV` — ของ ZSDE001 ไม่เกี่ยวกับงานนี้ | **User ID and Password** = client id / secret ของ connected app (ที่ `ZCA_SFDC_TOKEN` ใช้) · แถว OAuth 2.0 (Form Field) เป็นของ ARI001 |
 
 ไม่เกี่ยวกับ 3 WRICEF นี้: `ABAP_DEV` (เรียก standard API ของตัวเอง) · `FPLUS_DEV` (inbound only ของ IT FPLUS)
@@ -66,7 +66,7 @@ SBPA TEST (2026-11-09): ข้อมูลจากทีม SBPA ตรงก�
 
 - `ZCA_REJECT_BATCH` / `ZCA_SFDC_TOKEN` เป็นขาออก ไม่ใช้ communication user (ใช้ outbound user ใน system แทน)
 - ไม่เกี่ยวกับงานนี้: `SFDC_DEV` (ใช้แค่ `ZCA_CUSTOMER_IN` ของ ZSDE001) · `ABAP_DEV` · `FPLUS_DEV`
-- บน TEST: สร้าง communication user ของ SBPA ใหม่ 1 ตัว ผูกเข้า system SBPA ของ TEST แล้วใช้ใน 4 arrangement ขาเข้า · แจ้ง user / password ให้ทีม SBPA / BOT
+- บน TEST: สร้าง communication user ของ SBPA ใหม่ 1 ตัว ผูกเข้า system SBPA ของ TEST แล้วใช้ใน 4 arrangement ขาเข้า · แจ้ง user / password ให้ทีม SBPA
 
 **สถานะบน TEST (tenant `my443707` IZJ/100 · เทียบหน้าจอ 2026-11-09)**
 
@@ -90,7 +90,7 @@ SBPA TEST (2026-11-09): ข้อมูลจากทีม SBPA ตรงก�
 |---|---|---|
 | 1 | ~~ขน 8F แล้วสร้าง `ZCA_REJECT_ITEM`~~ ✅ 2026-11-09 | ผู้ใช้ |
 | 2 | Business role · launchpad · assign user — ส่งต่อฟังก์ชันนอลสร้างเอง (§4.3) | ฟังก์ชันนอล |
-| 3 | แจ้งทีม SBPA / BOT (§4.4) | ผู้ใช้ |
+| 3 | แจ้งทีม SBPA (§4.4) | ผู้ใช้ |
 | 4 | ยืนยัน master data ที่ code hardcode มีบน TEST (§4.5) | ฟังก์ชันนอล |
 | 5 | Reject 1 ใบเพื่อยืนยัน `ZCA_REJECT_BATCH` + `SBPA_TEST` · Submit / Reject ที่ส่งถึง SFDC เพื่อยืนยัน `ZCA_SFDC_TOKEN` | ผู้ใช้ |
 
@@ -99,8 +99,8 @@ Endpoint ขาเข้าบน TEST (host `https://my443707-api.s4hana.cloud.
 | Arrangement | ใครเรียก | Path |
 |---|---|---|
 | `ZCA_INCOMING_PYMT` | SBPA | `/sap/bc/http/sap/zari002_incoming_pymt` |
-| `ZCA_CLEARING_ITEM` | BOT | `/sap/opu/odata4/sap/zapi_zare002_o4/srvd_a2x/sap/zapi_zare002/0001/ClearingItems` |
-| `ZCA_CLEARING_RESULT` | BOT | `/sap/bc/http/sap/zari003_clearing` |
+| `ZCA_CLEARING_ITEM` | SBPA (bot clearing) | `/sap/opu/odata4/sap/zapi_zare002_o4/srvd_a2x/sap/zapi_zare002/0001/ClearingItems` |
+| `ZCA_CLEARING_RESULT` | SBPA (bot clearing) | `/sap/bc/http/sap/zari003_clearing` |
 | `ZCA_REJECT_ITEM` | SBPA | `/sap/opu/odata4/sap/zapi_zari003_o4/srvd_a2x/sap/zapi_zari003/0001/RejectedItems` |
 
 ### 4.3 ส่งต่อฟังก์ชันนอล — Business Role บน TEST
@@ -119,7 +119,9 @@ Endpoint ขาเข้าบน TEST (host `https://my443707-api.s4hana.cloud.
 
 ปุ่ม Submit post JE ด้วยสิทธิ์ของ user ที่กด → user ต้องมีสิทธิ์ post เอกสาร FI/AR ด้วย ให้เทียบ catalog มาตรฐานกับ role ที่ใช้ทดสอบบน DEV
 
-### 4.4 แจ้งทีม SBPA / BOT
+### 4.4 แจ้งทีม SBPA
+
+SBPA กับ BOT คือทีมเดียวกัน — ทีม SBPA ใช้ bot ของ SAP Build Process Automation ทำ automation ทุกขา
 
 | รายการ | ค่า |
 |---|---|
@@ -157,7 +159,7 @@ Endpoint ขาเข้าบน TEST (host `https://my443707-api.s4hana.cloud.
 | `ZCA_REJECT_BATCH` | `ZCS_REJECT_BATCH` | `SBPA_*` | ขาออก → SBPA trigger | outbound user OAuth 2.0 (Basic) · Path `/` · `API_KEY` · `TRIGGER_ID` (ตัวพิมพ์เล็กต้องคงอยู่) |
 | `ZCA_SFDC_TOKEN` | `ZCS_SFDC_TOKEN` | `SFDC_*` | ขาออก → Salesforce | outbound user User ID and Password · **Path `/`** (scenario มี default `/services/oauth2/token` ต้องแก้ตอนสร้าง ไม่งั้น 404) · Check Connection |
 
-อื่น ๆ: business role ที่รวม `ZBC_ZARE002` และ `ZBC_ZARI002` + launchpad space · URL ของ inbound ทั้ง 4 ตัวบน TEST และ inbound user ต้องแจ้ง SBPA / ทีม BOT ใหม่ (host เปลี่ยน)
+อื่น ๆ: business role ที่รวม `ZBC_ZARE002` และ `ZBC_ZARI002` + launchpad space · URL ของ inbound ทั้ง 4 ตัวบน TEST และ inbound user ต้องแจ้งทีม SBPA ใหม่ (host เปลี่ยน)
 
 ## 5. ค่าที่ hardcode ใน `ZCL_ZARE002_JOURNAL_ENTRY` — ฟังก์ชันนอลต้องยืนยันว่ามีบน TEST
 
