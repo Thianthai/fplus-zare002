@@ -73,10 +73,12 @@ SBPA TEST (2026-11-09): ข้อมูลจากทีม SBPA ตรงก�
 | รายการ | TEST | ผล |
 |---|---|---|
 | Communication User | `SBPA_TEST` | ✅ มีแล้ว |
-| Communication System | `SBPA_TEST` · host เดียวกับ DEV | ✅ มีแล้ว |
-| `ZCA_INCOMING_PYMT` · `ZCA_CLEARING_ITEM` · `ZCA_CLEARING_RESULT` | ผูก user `SBPA_TEST` | ✅ มีแล้ว |
-| `ZCA_REJECT_ITEM` | ไม่มี | ⬜ **ยังไม่สร้าง** — scenario `ZCS_REJECT_ITEM` (8F) ต้องขนขึ้น TEST ก่อน |
-| `ZCA_REJECT_BATCH` · `ZCA_SFDC_TOKEN` · system SFDC ของ TEST | ขาออก ไม่โผล่ในหน้า communication user | ❓ ยังไม่ได้ตรวจ |
+| Communication System `SBPA_TEST` | host · port 443 · Token Endpoint · outbound OAuth 2.0 (Basic) client id เหมือน `SBPA_DEV` ทุกตัว · inbound `SBPA_TEST` | ✅ ตรง |
+| Communication System `SFDC_TEST` | host `one-two-trading--sit.sandbox.my.salesforce.com` : 443 · Token Endpoint `…--sit…/services/oauth2/token` · outbound **User ID and Password** (client id ของ org SIT) · ไม่มี inbound user / แถว Form Field (เป็นของ ZSDE001 / ARI001 ไม่ใช่งานนี้) | ✅ ตรงตามที่งานนี้ต้องใช้ |
+| `ZCA_INCOMING_PYMT` · `ZCA_CLEARING_ITEM` · `ZCA_CLEARING_RESULT` | ผูก `SBPA_TEST` | ✅ มีแล้ว |
+| `ZCA_REJECT_BATCH` | ผูก `SBPA_TEST` | ✅ มีแล้ว · ❓ ยังไม่ได้ตรวจข้างใน (Path `/` · `API_KEY` · `TRIGGER_ID` ตัวพิมพ์เล็ก) |
+| `ZCA_SFDC_TOKEN` | ผูก `SFDC_TEST` | ✅ มีแล้ว · ❓ ยังไม่ได้ตรวจ Path `/` |
+| `ZCA_REJECT_ITEM` | ไม่มี | ⬜ **ต้องสร้าง** — scenario `ZCS_REJECT_ITEM` (8F) ต้องขนขึ้น TEST ก่อน แล้วผูก `SBPA_TEST` + inbound user `SBPA_TEST` |
 
 ### 4.2 Communication Arrangement
 
