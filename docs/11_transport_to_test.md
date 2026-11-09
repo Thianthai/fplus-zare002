@@ -43,16 +43,30 @@ ZBCUTILITY  →  ZARI002  →  ZARI003  →  ZARE002
 
 ## 4. Config ที่ไม่ติดไปกับ transport — ต้องสร้างบน TEST
 
-| Scenario | ทิศทาง | Arrangement ใน DEV | Communication System | Auth |
-|---|---|---|---|---|
-| `ZCS_SFDC_TOKEN` | ขาออก → Salesforce | `ZCA_SFDC_TOKEN` | SFDC ของ TEST | Basic (client id / secret) |
-| `ZCS_INCOMING_PYMT` | ขาเข้า SBPA → ZARI002 | ของ ZARI002 | SBPA ของ TEST | Basic |
-| `ZCS_CLEARING_ITEM` | ขาเข้า BOT → `ZAPI_ZARE002_O4` | `ZCA_CLEARING_ITEM` | SBPA ของ TEST | Basic |
-| `ZCS_CLEARING_RESULT` | ขาเข้า BOT → `ZARI003_CLEARING` | `ZCA_CLEARING_RESULT` | SBPA ของ TEST | Basic |
-| `ZCS_REJECT_BATCH` | ขาออก → SBPA | `ZCA_REJECT_BATCH` | SBPA ของ TEST | OAuth 2.0 client credentials (token endpoint XSUAA + client id / secret) · **+ Additional Properties `API_KEY` / `TRIGGER_ID` ของ SBPA TEST** (2026-10-07) |
-| `ZCS_REJECT_ITEM` | ขาเข้า SBPA → `ZAPI_ZARI003_O4` (Phase 8F · ยังไม่ได้ขึ้น TEST รอบแรก) | `ZCA_REJECT_ITEM` | SBPA ของ TEST | Basic |
+ค่าอ้างอิงจากหน้าจอจริงของ Customizing tenant IA5/100 (ผู้ใช้ส่งมา 2026-11-09) · TEST ตั้งรูปแบบเดียวกัน เปลี่ยนแค่ค่าของ TEST
+· secret / client id / API key ไม่บันทึกในเอกสาร
 
-อื่น ๆ: business role ที่รวม `ZBC_ZARE002` และ `ZBC_ZARI002` · URL ของ inbound ทั้ง 3 ตัวบน TEST ต้องแจ้ง SBPA / ทีม BOT ใหม่ (host เปลี่ยน)
+### 4.1 Communication System
+
+| System (DEV) | Host | Port | Inbound user | Outbound user |
+|---|---|---|---|---|
+| `SBPA_DEV` | `spa-api-gateway-bpi-ap-prod.cfapps.ap11.hana.ondemand.com` | 443 | User ID and Password · `SBPA_DEV` (SBPA / BOT ใช้เรียกทุก scenario ขาเข้า) | **OAuth 2.0 (Basic)** · client id ของ XSUAA (`sb-…\|xsuaa!…`) |
+| `SFDC_DEV` | `one-two-trading--dev.sandbox.my.salesforce.com` | 443 | `SFDC_DEV` — ของ ZSDE001 ไม่เกี่ยวกับงานนี้ | **User ID and Password** = client id / secret ของ connected app (ที่ `ZCA_SFDC_TOKEN` ใช้) · แถว OAuth 2.0 (Form Field) เป็นของ ARI001 |
+
+SBPA TEST (2026-11-09): Trigger URL ใช้ gateway host เดียวกับ DEV · token URL `https://f-plus-sbpa.authentication.ap11.hana.ondemand.com/oauth/token` · client id / secret / API key / trigger id ของ TEST ได้จากทีม SBPA
+
+### 4.2 Communication Arrangement
+
+| Arrangement | Scenario | System | ทิศทาง | ตั้งเพิ่ม |
+|---|---|---|---|---|
+| `ZCA_INCOMING_PYMT` | `ZCS_INCOMING_PYMT` | `SBPA_*` | ขาเข้า SBPA → ZARI002 | inbound user |
+| `ZCA_CLEARING_ITEM` | `ZCS_CLEARING_ITEM` | `SBPA_*` | ขาเข้า BOT → `ZAPI_ZARE002_O4` | inbound user |
+| `ZCA_CLEARING_RESULT` | `ZCS_CLEARING_RESULT` | `SBPA_*` | ขาเข้า BOT → `ZARI003_CLEARING` | inbound user |
+| `ZCA_REJECT_ITEM` | `ZCS_REJECT_ITEM` | `SBPA_*` | ขาเข้า SBPA → `ZAPI_ZARI003_O4` | inbound user |
+| `ZCA_REJECT_BATCH` | `ZCS_REJECT_BATCH` | `SBPA_*` | ขาออก → SBPA trigger | outbound user OAuth 2.0 (Basic) · Path `/` · `API_KEY` · `TRIGGER_ID` (ตัวพิมพ์เล็กต้องคงอยู่) |
+| `ZCA_SFDC_TOKEN` | `ZCS_SFDC_TOKEN` | `SFDC_*` | ขาออก → Salesforce | outbound user User ID and Password · **Path `/`** (scenario มี default `/services/oauth2/token` ต้องแก้ตอนสร้าง ไม่งั้น 404) · Check Connection |
+
+อื่น ๆ: business role ที่รวม `ZBC_ZARE002` และ `ZBC_ZARI002` + launchpad space · URL ของ inbound ทั้ง 4 ตัวบน TEST และ inbound user ต้องแจ้ง SBPA / ทีม BOT ใหม่ (host เปลี่ยน)
 
 ## 5. ค่าที่ hardcode ใน `ZCL_ZARE002_JOURNAL_ENTRY` — ฟังก์ชันนอลต้องยืนยันว่ามีบน TEST
 
