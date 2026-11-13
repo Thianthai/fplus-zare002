@@ -74,15 +74,22 @@ SBPA TEST (2026-11-09): ข้อมูลจากทีม SBPA ตรงก�
 |---|---|---|
 | Communication User | `SBPA_TEST` | ✅ มีแล้ว |
 | Communication System `SBPA_TEST` | host · port 443 · Token Endpoint · outbound OAuth 2.0 (Basic) client id เหมือน `SBPA_DEV` ทุกตัว · inbound `SBPA_TEST` | ✅ ตรง |
-| Communication System `SFDC_TEST` | host `one-two-trading--sit.sandbox.my.salesforce.com` : 443 · Token Endpoint `…--sit…/services/oauth2/token` · outbound **User ID and Password** (client id ของ org SIT) · ไม่มี inbound user / แถว Form Field (เป็นของ ZSDE001 / ARI001 ไม่ใช่งานนี้) | ✅ ตรงตามที่งานนี้ต้องใช้ |
+| Communication System `SFDC_SIT` (rename จาก `SFDC_TEST` 2026-11-13 · System ID / Logical / Business System แก้ได้ใน Edit) | host `one-two-trading--sit.sandbox.my.salesforce.com` : 443 · Token Endpoint `…--sit…/services/oauth2/token` · outbound **User ID and Password** (client id ของ org SIT) · ไม่มี inbound user / แถว Form Field (เป็นของ ZSDE001 / ARI001 ไม่ใช่งานนี้) | ✅ ตรงตามที่งานนี้ต้องใช้ |
 | `ZCA_INCOMING_PYMT` · `ZCA_CLEARING_ITEM` · `ZCA_CLEARING_RESULT` | ผูก `SBPA_TEST` | ✅ มีแล้ว · `$metadata` ของ `ZAPI_ZARE002` บน TEST (login `SBPA_TEST`) มี `PartialPayments` + `_PartialPayments` แล้ว = 8L ขึ้นครบ ไม่ต้อง publish ใหม่ (2026-11-09) · GET `zari003_clearing` บน TEST ตอบ JSON ตัวอย่างได้ (2026-11-09) |
 | `ZCA_REJECT_BATCH` | ผูก `SBPA_TEST` · OAuth 2.0 (Basic) client id เดียวกับ DEV · Path `/` · Service URL `https://spa-api-gateway-bpi-ap-prod.cfapps.ap11.hana.ondemand.com:443/` | ✅ ตรง · กรอก `API_KEY` + `TRIGGER_ID` แล้ว (2026-11-09) · `TRIGGER_ID` = `0773939a-5de8-4373-973e-a76485ec8e9f` ยังเป็นตัวพิมพ์เล็กหลัง save (domain case-sensitive ขึ้น TEST แล้ว) · รอยืนยันด้วย Reject จริง (`reject_message` ว่าง = ยิงสำเร็จ) · arrangement ที่ระบบสร้างให้ตอน import ไม่พก property มา ต้องกรอกเองทุก tenant |
-| `ZCA_SFDC_TOKEN` | ผูก `SFDC_TEST` · User ID and Password (client id ของ org SIT) · Path `/` · Service URL `https://one-two-trading--sit.sandbox.my.salesforce.com:443/` | ✅ ตรง · Check Connection ผ่าน (2026-11-09) = เชื่อมต่อ host ได้ · Consumer Key ใน `SFDC_TEST` ตรงกับ org **SIT** ในเอกสาร Salesforce credentials และ host ตรงกับ Login URL ของ SIT · ผู้ใช้ยืนยัน secret ตรงกับ key (2026-11-10) · Run As = integration user ของ org SIT · ยังต้องพิสูจน์ token ด้วย flow จริง (SBPA ส่ง payment / Reject / clearing result) — Submit ไม่เรียก SFDC |
+| `ZCA_SFDC_TOKEN` | ผูก `SFDC_SIT` (ตามการ rename อัตโนมัติ · Check Connection ผ่าน 2026-11-13) · User ID and Password (client id ของ org SIT) · Path `/` · Service URL `https://one-two-trading--sit.sandbox.my.salesforce.com:443/` | ✅ ตรง · Check Connection ผ่าน (2026-11-09) = เชื่อมต่อ host ได้ · Consumer Key ใน `SFDC_SIT` ตรงกับ org **SIT** ในเอกสาร Salesforce credentials และ host ตรงกับ Login URL ของ SIT · ผู้ใช้ยืนยัน secret ตรงกับ key (2026-11-10) · Run As = integration user ของ org SIT · ยังต้องพิสูจน์ token ด้วย flow จริง (SBPA ส่ง payment / Reject / clearing result) — Submit ไม่เรียก SFDC |
 | `ZCA_REJECT_ITEM` | ผูก `SBPA_TEST` + inbound user `SBPA_TEST` · `ZAPI_ZARI003_O4` | ✅ สร้างแล้ว (2026-11-09) · `$metadata` TEST = Customizing ทุก byte |
 
 `SBPA_TEST` outbound OAuth 2.0 (Basic): ใส่ client secret ของ TEST แล้ว (2026-11-09)
 · XSUAA ของ SBPA ใช้ client id เดียวกันทุก environment แต่ **secret ต่างกันตาม service key** → ห้าม copy secret ของ DEV
 · API key ก็ต่างกันตาม environment เช่นกัน
+
+**สลับ Salesforce org บน TEST (SIT ↔ UAT)** — ไม่ต้องแก้โปรแกรม (code อ้างแค่ scenario `ZCS_SFDC_TOKEN` + service ไม่อ้างชื่อ system)
+- `SFDC_SIT` = org SIT · `SFDC_UAT` = org UAT (host `one-two-trading--uat.sandbox.my.salesforce.com` · Consumer Key/Secret ของ UAT)
+- **มี arrangement `ZCA_SFDC_TOKEN` ได้ตัวเดียว** — สลับโดยเปลี่ยน Communication System ใน arrangement · ห้ามสร้าง arrangement ตัวที่ 2 (โปรแกรมไม่ส่ง `comm_system_id` จะเลือกไม่ได้)
+- สลับแล้วทุก flow ที่เรียก SFDC บน TEST (รวม WRICEF อื่นที่ใช้ `ZCL_UTILITY`) เปลี่ยน org พร้อมกัน · แจ้งทีมก่อนสลับ
+- payment ที่มาจาก org หนึ่ง ถ้า Reject / clear ตอนชี้อีก org จะได้ `NOT_FOUND` · ปิดงานของ org เดิมให้จบก่อน
+- ถ้าต้องสร้าง arrangement ใหม่ ต้องแก้ Path เป็น `/` ทุกครั้ง
 
 **สิ่งที่ยังเหลือบน TEST (2026-11-09)**
 
