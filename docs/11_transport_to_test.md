@@ -84,6 +84,9 @@ SBPA TEST (2026-11-09): ข้อมูลจากทีม SBPA ตรงก�
 · XSUAA ของ SBPA ใช้ client id เดียวกันทุก environment แต่ **secret ต่างกันตาม service key** → ห้าม copy secret ของ DEV
 · API key ก็ต่างกันตาม environment เช่นกัน
 
+**สถานะปัจจุบัน (2026-11-13): `ZCA_SFDC_TOKEN` ชี้ `SFDC_UAT`** · Check Connection ผ่าน · `SFDC_SIT` ยังอยู่ (ไม่มี arrangement ผูก) ไว้สลับกลับ
+`SFDC_UAT`: host `one-two-trading--uat.sandbox.my.salesforce.com` : 443 · Token Endpoint `…--uat…/services/oauth2/token` · outbound User ID and Password = Consumer Key ของ org UAT (ตรงกับเอกสาร Salesforce credentials)
+
 **สลับ Salesforce org บน TEST (SIT ↔ UAT)** — ไม่ต้องแก้โปรแกรม (code อ้างแค่ scenario `ZCS_SFDC_TOKEN` + service ไม่อ้างชื่อ system)
 - `SFDC_SIT` = org SIT · `SFDC_UAT` = org UAT (host `one-two-trading--uat.sandbox.my.salesforce.com` · Consumer Key/Secret ของ UAT)
 - **มี arrangement `ZCA_SFDC_TOKEN` ได้ตัวเดียว** — สลับโดยเปลี่ยน Communication System ใน arrangement · ห้ามสร้าง arrangement ตัวที่ 2 (โปรแกรมไม่ส่ง `comm_system_id` จะเลือกไม่ได้)
