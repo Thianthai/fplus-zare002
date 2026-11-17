@@ -67,7 +67,23 @@ CLASS zcl_zare002_journal_entry DEFINITION
         taxnumber3                TYPE i_onetimeaccountcustomer-taxid3,
         postalcode                TYPE i_onetimeaccountcustomer-postalcode,
         businesspartnerstreetname TYPE i_onetimeaccountcustomer-streetaddressname,
-      END OF ty_one_time_customer.
+      END OF ty_one_time_customer,
+
+      "! เลขบรรทัดของเอกสาร (docln6)
+      "! ต้องเป็นตัวเลขเติมศูนย์ 000001 ไม่ใช่ char ชิดขวาที่มีช่องว่างนำหน้า
+      "! ย้ายมาจาก private เพราะ ty_ref3_line ใช้ด้วย
+      ty_line_no            TYPE n LENGTH 6,
+
+      "! บรรทัดลูกค้า 1 บรรทัดที่ต้องเขียน Reference Key 3
+      "! customer ใช้ตรวจกับเอกสารจริงก่อนแก้ กันเขียนผิดบรรทัด
+      BEGIN OF ty_ref3_line,
+        line_item  TYPE ty_line_no,
+        customer   TYPE ztar_i002_item-customer_code,
+        reference3 TYPE i_operationalacctgdocitem-reference3idbybusinesspartner,
+      END OF ty_ref3_line,
+
+      "! บรรทัดที่ต้องเขียน Reference Key 3 ของเอกสาร 1 ใบ
+      tt_ref3_line          TYPE STANDARD TABLE OF ty_ref3_line WITH EMPTY KEY.
 
     TYPES:
       "! house bank id / account id (hbkid / hktid ไม่ released)
@@ -179,6 +195,56 @@ CLASS zcl_zare002_journal_entry DEFINITION
                 iv_customer      TYPE ztar_i002_item-customer_code
       RETURNING VALUE(rv_amount) TYPE ztar_i002_pymt-advance_payment.
 
+    "! บรรทัดลูกหนี้ของ payment JE ที่ต้องเขียน Reference Key 3
+    "! จับคู่ item กับบรรทัดลูกหนี้ที่ไม่ใช่ Special G/L ตามลำดับที่ build สร้าง
+    "! เลขบรรทัดในเอกสารจริงตรงกับเลขที่ส่งไปตอน post
+    "! ค่า = เลขเอกสาร JE ต่อด้วย billing document
+    "! item ที่ไม่มี billing document ไม่ต้องเขียน
+    "! @parameter it_entry               | payload ที่ใช้ post
+    "! @parameter it_item                | item ของ payment ลำดับเดียวกับตอน build
+    "! @parameter iv_accounting_document | เลขเอกสาร JE ที่ post ได้
+    "! @parameter et_line                | บรรทัดที่ต้องเขียน
+    "! @parameter rv_ok                  | abap_false = จำนวนบรรทัดลูกหนี้ไม่เท่าจำนวน item จับคู่ไม่ได้
+    CLASS-METHODS build_payment_ref3
+      IMPORTING it_entry               TYPE tt_entry
+                it_item                TYPE tt_item
+                iv_accounting_document TYPE ztar_i002_pymt-payment_accounting_document
+      EXPORTING et_line                TYPE tt_ref3_line
+      RETURNING VALUE(rv_ok)           TYPE abap_bool.
+
+    "! บรรทัดลูกค้าของ invoice ที่ต้องเขียน Reference Key 3
+    "! invoice มีบรรทัดลูกค้าที่ไม่ใช่ Special G/L บรรทัดเดียว
+    "! หาปีบัญชีจาก posting date เพราะ table เก็บแค่เลขเอกสารกับวันที่
+    "! ค่า = เลขเอกสาร invoice ต่อด้วย billing document
+    "! @parameter iv_company_code | company code ของ payment
+    "! @parameter is_item         | item ที่มี billing document
+    "! @parameter ev_fiscal_year  | ปีบัญชีของ invoice
+    "! @parameter es_line         | บรรทัดที่ต้องเขียน
+    "! @parameter rv_found        | abap_false = ไม่เจอ เจอมากกว่า 1 บรรทัด หรือ customer ไม่ตรง
+    CLASS-METHODS read_invoice_ref3
+      IMPORTING iv_company_code TYPE ztar_i002_pymt-company_code
+                is_item         TYPE ty_item
+      EXPORTING ev_fiscal_year  TYPE ztar_i002_pymt-payment_fiscal_year
+                es_line         TYPE ty_ref3_line
+      RETURNING VALUE(rv_found) TYPE abap_bool.
+
+    "! เขียน Reference Key 3 ลงบรรทัดลูกค้าของเอกสาร 1 ใบ ผ่าน action Change ของ I_JournalEntryTP
+    "! ตรวจกับเอกสารจริงก่อนว่าทุกบรรทัดเป็นบรรทัดลูกค้าที่ไม่ใช่ Special G/L และ customer ตรง
+    "! บรรทัดไหนไม่ตรง ไม่แก้ทั้งเอกสาร
+    "! บรรทัดที่มีค่าถูกอยู่แล้วข้ามไป
+    "! มี COMMIT ENTITIES ห้ามเรียกจากใน RAP handler หรือ saver
+    "! @parameter iv_company_code        | company code ของเอกสาร
+    "! @parameter iv_accounting_document | เลขเอกสาร
+    "! @parameter iv_fiscal_year         | ปีบัญชีของเอกสาร
+    "! @parameter it_line                | บรรทัดที่ต้องเขียน
+    "! @parameter rv_ok                  | abap_true = เขียนสำเร็จ หรือทุกบรรทัดมีค่าถูกอยู่แล้ว
+    CLASS-METHODS change_reference3
+      IMPORTING iv_company_code        TYPE ztar_i002_pymt-company_code
+                iv_accounting_document TYPE ztar_i002_pymt-payment_accounting_document
+                iv_fiscal_year         TYPE ztar_i002_pymt-payment_fiscal_year
+                it_line                TYPE tt_ref3_line
+      RETURNING VALUE(rv_ok)           TYPE abap_bool.
+
     "! house bank / account ของบัญชี bank incoming — มีเฉพาะ G/L ที่บังคับ (mapping คงที่) นอกนั้นว่าง
     CLASS-METHODS derive_house_bank
       IMPORTING iv_gl_account         TYPE ztar_i002_pymt-gl_account
@@ -204,9 +270,12 @@ CLASS zcl_zare002_journal_entry DEFINITION
       "! ยอด 1 บรรทัดใน _CurrencyAmount (โครงเดียวกันทุก node)
       tt_currency_amount TYPE ty_gl_item-_currencyamount,
 
-      "! เลขบรรทัด (docln6)
-      "! ต้องเป็นตัวเลขเติมศูนย์ 000001 ไม่ใช่ char ชิดขวาที่มีช่องว่างนำหน้า
-      ty_line_no         TYPE n LENGTH 6.
+      "! payload ของ action Change — 1 แถวต่อ 1 เอกสาร
+      tt_change          TYPE TABLE FOR ACTION IMPORT i_journalentrytp~change,
+      ty_change          TYPE LINE OF tt_change,
+
+      "! _APARItems ของ action Change
+      tt_change_apar     TYPE ty_change-%param-_aparitems.
 
     "! รวบยอด 1 ตัวเป็น _CurrencyAmount
     "! iv_tax_base ใส่เฉพาะบรรทัด tax statement
@@ -552,6 +621,160 @@ CLASS ZCL_ZARE002_JOURNAL_ENTRY IMPLEMENTATION.
         AND SpecialGLCode              = @gc_special_gl_code
         AND ClearingJournalEntry       = ''
       INTO @rv_amount.
+
+  ENDMETHOD.
+
+
+  METHOD build_payment_ref3.
+
+    DATA lt_ar_line TYPE tt_ar_item.
+
+    CLEAR et_line.
+    rv_ok = abap_false.
+
+    DATA(ls_entry) = VALUE #( it_entry[ 1 ] OPTIONAL ).
+
+    " เอาเฉพาะบรรทัดลูกหนี้ของ item
+    " บรรทัด Special G/L Z เป็นเงินรับล่วงหน้าของทั้งใบ ไม่ใช่ของ item ใด
+    LOOP AT ls_entry-%param-_aritems INTO DATA(ls_ar) WHERE specialglcode IS INITIAL.
+      APPEND ls_ar TO lt_ar_line.
+    ENDLOOP.
+
+    " build สร้างบรรทัดลูกหนี้ 1 บรรทัดต่อ 1 item ตามลำดับ item
+    " จำนวนไม่เท่ากันแปลว่าจับคู่ไม่ได้ ไม่เขียนเลยดีกว่าเขียนผิดบรรทัด
+    IF lines( lt_ar_line ) <> lines( it_item ).
+      RETURN.
+    ENDIF.
+
+    LOOP AT it_item INTO DATA(ls_item).
+      DATA(lv_index) = sy-tabix.
+
+      IF ls_item-billing_document IS INITIAL.
+        CONTINUE.
+      ENDIF.
+
+      APPEND VALUE #( line_item  = lt_ar_line[ lv_index ]-glaccountlineitem
+                      customer   = ls_item-customer_code
+                      reference3 = |{ iv_accounting_document }{ ls_item-billing_document }| ) TO et_line.
+    ENDLOOP.
+
+    rv_ok = abap_true.
+
+  ENDMETHOD.
+
+
+  METHOD read_invoice_ref3.
+
+    CLEAR: ev_fiscal_year, es_line.
+    rv_found = abap_false.
+
+    SELECT FiscalYear,
+           AccountingDocumentItem,
+           Customer
+      FROM i_operationalacctgdocitem
+      WHERE CompanyCode          = @iv_company_code
+        AND AccountingDocument   = @is_item-accounting_document
+        AND PostingDate          = @is_item-invoice_posting_date
+        AND FinancialAccountType = 'D'
+        AND SpecialGLCode        = ''
+      INTO TABLE @DATA(lt_line)
+      UP TO 2 ROWS.
+
+    " invoice ปกติมีบรรทัดลูกค้าบรรทัดเดียว
+    " เจอมากกว่า 1 บรรทัดแปลว่าไม่รู้ว่าบรรทัดไหนของ item นี้ ไม่เขียนเลยดีกว่าเขียนผิดบรรทัด
+    IF lines( lt_line ) <> 1.
+      RETURN.
+    ENDIF.
+
+    DATA(ls_line) = lt_line[ 1 ].
+
+    IF ls_line-customer <> is_item-customer_code.
+      RETURN.
+    ENDIF.
+
+    ev_fiscal_year = ls_line-fiscalyear.
+
+    " เลขบรรทัดในเอกสารมี 3 หลัก แต่ action Change รับ 6 หลักเติมศูนย์
+    " ย้ายค่าเข้า type n จึงเติมศูนย์ด้านหน้าให้เอง
+    es_line = VALUE #( line_item  = ls_line-accountingdocumentitem
+                       customer   = ls_line-customer
+                       reference3 = |{ is_item-accounting_document }{ is_item-billing_document }| ).
+
+    rv_found = abap_true.
+
+  ENDMETHOD.
+
+
+  METHOD change_reference3.
+
+    DATA lt_apar TYPE tt_change_apar.
+    DATA lv_item TYPE i_operationalacctgdocitem-accountingdocumentitem.
+
+    rv_ok = abap_false.
+
+    LOOP AT it_line INTO DATA(ls_line).
+
+      " เลขบรรทัด 6 หลักย้ายเข้าเลขบรรทัดในเอกสาร 3 หลัก ตัดศูนย์ด้านหน้าออกให้เอง
+      lv_item = ls_line-line_item.
+
+      " ตรวจกับเอกสารจริงก่อน กันเขียนผิดบรรทัด
+      SELECT SINGLE Reference3IDByBusinessPartner
+        FROM i_operationalacctgdocitem
+        WHERE CompanyCode            = @iv_company_code
+          AND AccountingDocument     = @iv_accounting_document
+          AND FiscalYear             = @iv_fiscal_year
+          AND AccountingDocumentItem = @lv_item
+          AND FinancialAccountType   = 'D'
+          AND SpecialGLCode          = ''
+          AND Customer               = @ls_line-customer
+        INTO @DATA(lv_current).
+
+      IF sy-subrc <> 0.
+        RETURN.
+      ENDIF.
+
+      " ค่าถูกอยู่แล้วไม่ต้องแก้ซ้ำ
+      " เช่น invoice เดียวกันที่เคยรับชำระบางส่วนมาก่อน
+      IF lv_current = ls_line-reference3.
+        CONTINUE.
+      ENDIF.
+
+      " เปิด control เฉพาะ field ที่แก้ field อื่นของบรรทัดจะไม่ถูกเขียนทับ
+      APPEND VALUE #( glaccountlineitem                      = ls_line-line_item
+                      reference3idbybusinesspartner          = ls_line-reference3
+                      %control-glaccountlineitem             = if_abap_behv=>mk-on
+                      %control-reference3idbybusinesspartner = if_abap_behv=>mk-on ) TO lt_apar.
+    ENDLOOP.
+
+    IF lt_apar IS INITIAL.
+      rv_ok = abap_true.
+      RETURN.
+    ENDIF.
+
+    MODIFY ENTITIES OF i_journalentrytp
+      ENTITY journalentry
+      EXECUTE change FROM VALUE tt_change(
+        ( companycode        = iv_company_code
+          fiscalyear         = iv_fiscal_year
+          accountingdocument = iv_accounting_document
+          %param             = VALUE #( _aparitems          = lt_apar
+                                        %control-_aparitems = if_abap_behv=>mk-on ) ) )
+      FAILED DATA(ls_failed).
+
+    IF ls_failed-journalentry IS NOT INITIAL.
+      ROLLBACK ENTITIES.
+      RETURN.
+    ENDIF.
+
+    COMMIT ENTITIES
+      RESPONSE OF i_journalentrytp
+      FAILED DATA(ls_commit_failed).
+
+    IF sy-subrc <> 0 OR ls_commit_failed-journalentry IS NOT INITIAL.
+      RETURN.
+    ENDIF.
+
+    rv_ok = abap_true.
 
   ENDMETHOD.
 

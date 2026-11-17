@@ -34,6 +34,11 @@ CLASS ltc_journal_entry DEFINITION FINAL FOR TESTING
     METHODS partial_item_has_reference1  FOR TESTING.
     "! item ที่รับชำระเต็มไม่มี Reference1
     METHODS full_item_no_reference1      FOR TESTING.
+    "! Reference Key 3 ลงเฉพาะบรรทัดลูกหนี้ของ item ที่มี billing document
+    "! ข้ามบรรทัด Special G/L Z และเลขบรรทัดตรงกับที่ build สร้าง
+    METHODS payment_ref3_skips_advance   FOR TESTING.
+    "! จำนวนบรรทัดลูกหนี้ไม่เท่าจำนวน item -> ไม่คืนบรรทัดใดเลย
+    METHODS payment_ref3_mismatch        FOR TESTING.
 
 ENDCLASS.
 
@@ -297,6 +302,71 @@ CLASS ltc_journal_entry IMPLEMENTATION.
                                                amount_paid         = '10700.00' ) ) ).
 
     cl_abap_unit_assert=>assert_initial( lt_entry[ 1 ]-%param-_aritems[ 1 ]-reference1idbybusinesspartner ).
+
+  ENDMETHOD.
+
+  METHOD payment_ref3_skips_advance.
+
+    DATA lt_line TYPE zcl_zare002_journal_entry=>tt_ref3_line.
+
+    " sample มี fees rounding advance ครบ
+    " บรรทัดจึงเป็น bank 001 / fees 002 / rounding 003 / Z 004 / ลูกหนี้ 005 และ 006
+    " item แรกไม่มี billing document จึงไม่ต้องเขียน
+    DATA(lt_item) = VALUE zcl_zare002_journal_entry=>tt_item(
+                      ( customer_code       = '1000000014'
+                        accounting_document = '6000000023'
+                        amount_paid         = '5000.00' )
+                      ( customer_code       = '1000000014'
+                        accounting_document = '6000000024'
+                        billing_document    = 'O600000028'
+                        amount_paid         = '5700.00' ) ).
+
+    DATA(lt_entry) = zcl_zare002_journal_entry=>build( is_payment = sample_payment( )
+                                                       it_item    = lt_item ).
+
+    DATA(lv_ok) = zcl_zare002_journal_entry=>build_payment_ref3(
+                    EXPORTING it_entry               = lt_entry
+                              it_item                = lt_item
+                              iv_accounting_document = '3500000006'
+                    IMPORTING et_line                = lt_line ).
+
+    cl_abap_unit_assert=>assert_true( lv_ok ).
+    cl_abap_unit_assert=>assert_equals( act = lines( lt_line ) exp = 1 ).
+    cl_abap_unit_assert=>assert_equals( act = lt_line[ 1 ]-line_item  exp = '000006' ).
+    cl_abap_unit_assert=>assert_equals( act = lt_line[ 1 ]-customer   exp = '1000000014' ).
+    cl_abap_unit_assert=>assert_equals( act = lt_line[ 1 ]-reference3 exp = '3500000006O600000028' ).
+
+  ENDMETHOD.
+
+  METHOD payment_ref3_mismatch.
+
+    DATA lt_line TYPE zcl_zare002_journal_entry=>tt_ref3_line.
+
+    DATA(lt_item) = VALUE zcl_zare002_journal_entry=>tt_item(
+                      ( customer_code       = '1000000014'
+                        accounting_document = '6000000023'
+                        billing_document    = 'O600000027'
+                        amount_paid         = '5000.00' )
+                      ( customer_code       = '1000000014'
+                        accounting_document = '6000000024'
+                        billing_document    = 'O600000028'
+                        amount_paid         = '5700.00' ) ).
+
+    DATA(lt_entry) = zcl_zare002_journal_entry=>build( is_payment = sample_payment( )
+                                                       it_item    = lt_item ).
+
+    " ตัดบรรทัดลูกหนี้บรรทัดสุดท้ายทิ้ง ให้จำนวนบรรทัดไม่เท่าจำนวน item
+    ASSIGN lt_entry[ 1 ] TO FIELD-SYMBOL(<lfs_entry>).
+    DELETE <lfs_entry>-%param-_aritems INDEX lines( <lfs_entry>-%param-_aritems ).
+
+    DATA(lv_ok) = zcl_zare002_journal_entry=>build_payment_ref3(
+                    EXPORTING it_entry               = lt_entry
+                              it_item                = lt_item
+                              iv_accounting_document = '3500000006'
+                    IMPORTING et_line                = lt_line ).
+
+    cl_abap_unit_assert=>assert_false( lv_ok ).
+    cl_abap_unit_assert=>assert_initial( lt_line ).
 
   ENDMETHOD.
 

@@ -47,6 +47,9 @@ annotate entity ZC_ZARE002 with
   @UI.lineItem: [ { position: 90, importance: #MEDIUM } ]
   BillingDocument;
 
+  @UI.lineItem: [ { position: 95, importance: #MEDIUM } ]
+  AccRefKey3;
+  
   @UI.lineItem: [ { position: 100, importance: #HIGH } ]
   InvoiceAmount;
 
@@ -62,6 +65,9 @@ annotate entity ZC_ZARE002 with
   @UI.selectionField: [ { position: 70 } ]
   PaymentAccountingDocument;
 
+  @UI.lineItem: [ { position: 125, importance: #MEDIUM } ]
+  SubmitRefKey3;
+  
   @UI.lineItem: [ { position: 130, importance: #LOW } ]
   SubmitMessage;
 

@@ -135,6 +135,23 @@ CLASS zcl_zare002_submit DEFINITION
                 ev_chunk2  TYPE string
                 ev_chunk3  TYPE string.
 
+    "! เขียน Reference Key 3 ลงบรรทัดลูกค้าของ payment JE และของ invoice ทุกใบที่มี billing document
+    "! แก้ทีละเอกสาร ใบที่ไม่ผ่านไม่ดึงใบอื่นล้มตาม
+    "! ไม่ผ่านไม่ทำให้ Submit ล้ม เพราะ JE post ไปแล้ว user แก้เองในระบบได้
+    "! @parameter is_header              | header ของ payment
+    "! @parameter it_item                | item ลำดับเดียวกับตอน build
+    "! @parameter it_entry               | payload ที่ใช้ post
+    "! @parameter iv_accounting_document | เลขเอกสาร JE ที่ post ได้
+    "! @parameter iv_fiscal_year         | ปีบัญชีของเอกสาร JE
+    "! @parameter rv_message             | ข้อความเตือนพร้อมรายชื่อเอกสารที่เขียนไม่ผ่าน ว่าง = ผ่านทุกใบ
+    METHODS update_reference3
+      IMPORTING is_header              TYPE ty_header
+                it_item                TYPE zcl_zare002_journal_entry=>tt_item
+                it_entry               TYPE zcl_zare002_journal_entry=>tt_entry
+                iv_accounting_document TYPE ztar_i002_pymt-payment_accounting_document
+                iv_fiscal_year         TYPE ztar_i002_pymt-payment_fiscal_year
+      RETURNING VALUE(rv_message)      TYPE string.
+
 ENDCLASS.
 
 
@@ -311,6 +328,20 @@ CLASS ZCL_ZARE002_SUBMIT IMPLEMENTATION.
                                             ELSE message_text( iv_number = '108'
                                                                iv_v1     = ls_header-payment_document_no
                                                                iv_v2     = `posted, document number not found yet` ) ).
+
+    " 7. เขียน Reference Key 3 ลงเอกสาร
+    " ไม่ผ่านไม่ทำให้ Submit ล้ม ต่อข้อความเตือนท้าย message ให้ user ไปแก้เองในระบบ
+    IF ls_post-accounting_document IS NOT INITIAL.
+      DATA(lv_ref3_message) = update_reference3( is_header              = ls_header
+                                                 it_item                = lt_item
+                                                 it_entry               = et_entry
+                                                 iv_accounting_document = ls_post-accounting_document
+                                                 iv_fiscal_year         = ls_post-fiscal_year ).
+
+      IF lv_ref3_message IS NOT INITIAL.
+        rs_result-message = |{ rs_result-message } \| { lv_ref3_message }|.
+      ENDIF.
+    ENDIF.
 
     save_result( iv_payment_uuid        = iv_payment_uuid
                  iv_accounting_document = ls_post-accounting_document
@@ -580,4 +611,74 @@ CLASS ZCL_ZARE002_SUBMIT IMPLEMENTATION.
     rv_result = xsdbool( lv_method = gc_method_cheque ).
 
   ENDMETHOD.
+
+
+  METHOD update_reference3.
+
+    DATA lt_failed      TYPE STANDARD TABLE OF string WITH EMPTY KEY.
+    DATA lt_line        TYPE zcl_zare002_journal_entry=>tt_ref3_line.
+    DATA ls_line        TYPE zcl_zare002_journal_entry=>ty_ref3_line.
+    DATA lv_fiscal_year TYPE ztar_i002_pymt-payment_fiscal_year.
+
+    " payment JE แก้ครั้งเดียวครบทุก item
+    IF zcl_zare002_journal_entry=>build_payment_ref3(
+         EXPORTING it_entry               = it_entry
+                   it_item                = it_item
+                   iv_accounting_document = iv_accounting_document
+         IMPORTING et_line                = lt_line ) = abap_false.
+
+      APPEND |{ iv_accounting_document }| TO lt_failed.
+
+    ELSEIF zcl_zare002_journal_entry=>change_reference3(
+             iv_company_code        = is_header-company_code
+             iv_accounting_document = iv_accounting_document
+             iv_fiscal_year         = iv_fiscal_year
+             it_line                = lt_line ) = abap_false.
+
+      APPEND |{ iv_accounting_document }| TO lt_failed.
+
+    ENDIF.
+
+    " invoice แก้ทีละใบ
+    " item ที่ไม่มี billing document ไม่ต้องเขียน
+    LOOP AT it_item INTO DATA(ls_item) WHERE billing_document IS NOT INITIAL.
+
+      IF zcl_zare002_journal_entry=>read_invoice_ref3(
+           EXPORTING iv_company_code = is_header-company_code
+                     is_item         = ls_item
+           IMPORTING ev_fiscal_year  = lv_fiscal_year
+                     es_line         = ls_line ) = abap_false.
+
+        APPEND |{ ls_item-accounting_document }| TO lt_failed.
+
+      ELSEIF zcl_zare002_journal_entry=>change_reference3(
+               iv_company_code        = is_header-company_code
+               iv_accounting_document = ls_item-accounting_document
+               iv_fiscal_year         = lv_fiscal_year
+               it_line                = VALUE #( ( ls_line ) ) ) = abap_false.
+
+        APPEND |{ ls_item-accounting_document }| TO lt_failed.
+
+      ENDIF.
+
+    ENDLOOP.
+
+    IF lt_failed IS INITIAL.
+      RETURN.
+    ENDIF.
+
+    " รายชื่อเอกสารแบ่งใส่ &1&2&3 ส่วนละ 50 ตัว
+    fi_message_chunks( EXPORTING iv_message = concat_lines_of( table = lt_failed
+                                                               sep   = ` ` )
+                       IMPORTING ev_chunk1  = DATA(lv_chunk1)
+                                 ev_chunk2  = DATA(lv_chunk2)
+                                 ev_chunk3  = DATA(lv_chunk3) ).
+
+    rv_message = message_text( iv_number = '116'
+                               iv_v1     = lv_chunk1
+                               iv_v2     = lv_chunk2
+                               iv_v3     = lv_chunk3 ).
+
+  ENDMETHOD.
+
 ENDCLASS.

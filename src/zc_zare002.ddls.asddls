@@ -73,6 +73,12 @@ define root view entity ZC_ZARE002
       PartialAmount,
       SaleSubmitDate,
 
+      /* ---------- Reference Key 3 ที่อยู่ในเอกสารจริง ---------- */
+      @EndUserText.label: 'Acc. Ref. Key 3'
+      _RefKey3.AccRefKey3                             as AccRefKey3,
+      @EndUserText.label: 'Submit Ref. Key 3'
+      _RefKey3.SubmitRefKey3                          as SubmitRefKey3,
+      
       /* ---------- field เดียวที่แก้ได้ ---------- */
       RejectReason,
 
