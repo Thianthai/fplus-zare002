@@ -580,5 +580,4 @@ CLASS ZCL_ZARE002_SUBMIT IMPLEMENTATION.
     rv_result = xsdbool( lv_method = gc_method_cheque ).
 
   ENDMETHOD.
-
 ENDCLASS.

@@ -17,7 +17,19 @@ define view entity ZI_ZARE002_CLEARING
       on  Invoice.CompanyCode        = Payment.company_code
       and Invoice.AccountingDocument = Item.accounting_document
       and Invoice.PostingDate        = Item.invoice_posting_date
-      
+
+    // ลูกค้าที่เคยใช้เงินล่วงหน้าหักกับการรับชำระบางส่วน
+    // view ให้ 1 row ต่อ company code และลูกค้า จึงไม่ทำให้แถวซ้ำ
+    left outer join ZI_ZARE002_ADVANCE_USED as AdvanceUsed
+      on  AdvanceUsed.CompanyCode  = Payment.company_code
+      and AdvanceUsed.CustomerCode = Item.customer_code
+
+    // ลูกค้าที่ยังมีบรรทัด Special G/L Z ค้างไม่ถูก clear
+    // view ให้ 1 row ต่อ company code และลูกค้า จึงไม่ทำให้แถวซ้ำ
+    left outer join ZI_ZARE002_SPECIAL_GL_OPEN as SpecialGlOpen
+      on  SpecialGlOpen.CompanyCode  = Payment.company_code
+      and SpecialGlOpen.CustomerCode = Item.customer_code
+
     // เอกสารรับชำระบางส่วนก่อนหน้าที่ BOT ต้อง clear เพิ่ม
     // มีเฉพาะ item ของใบสุดท้าย BOT อ่านด้วย $expand=_PartialPayments
     association [0..*] to ZI_ZARE002_CLEARING_PARTIAL as _PartialPayments
@@ -65,6 +77,16 @@ define view entity ZI_ZARE002_CLEARING
       @EndUserText.label: 'Invoice Doc Year'
       Invoice.FiscalYear                   as InvoiceAccountingDocYear,
 
+      // Reference Key 3 ของ invoice
+      // เลขเอกสาร invoice ต่อด้วย billing document
+      // item ที่ไม่มี billing document ได้ค่าว่าง
+      @EndUserText.label: 'Invoice Ref. Key 3'
+      case
+        when Item.billing_document <> ''
+          then cast( concat( Item.accounting_document, Item.billing_document ) as abap.char( 20 ) )
+        else cast( '' as abap.char( 20 ) )
+      end                                  as InvoiceRefKey3,
+
       // เลขเอกสาร JE ที่ ZARE002 post ไว้
       // BOT ส่งค่านี้กลับมาคู่กับเลข clearing เพื่อบอกว่าทำใบไหนเสร็จ
       @EndUserText.label: 'Payment Doc'
@@ -75,19 +97,36 @@ define view entity ZI_ZARE002_CLEARING
       @EndUserText.label: 'Payment Doc Year'
       Payment.payment_fiscal_year          as PaymentAccountingDocYear,
 
+      // Reference Key 3 ของบรรทัดลูกหนี้ของ item นี้ในเอกสาร JE
+      // เลขเอกสาร JE ต่อด้วย billing document
+      // item ที่ไม่มี billing document ได้ค่าว่าง
+      @EndUserText.label: 'Payment Ref. Key 3'
+      case
+        when Item.billing_document <> ''
+          then cast( concat( Payment.payment_accounting_document, Item.billing_document ) as abap.char( 20 ) )
+        else cast( '' as abap.char( 20 ) )
+      end                                  as PaymentRefKey3,
+
       // สกุลเงินของยอดระดับ header
-      // ต้องมีเพราะ field จำนวนเงินต้องอ้างสกุลเงินเสมอ
       @EndUserText.label: 'Payment Currency'
       Payment.currency                     as PaymentCurrency,
 
-      // เงินรับล่วงหน้าของใบ ค่าเดียวกันทุกแถวของใบเดียวกัน
-      // บวก คือรับเงินล่วงหน้าเพิ่ม
-      // ลบ คือดึงเงินล่วงหน้าที่เคยรับไว้มาหักกับ invoice
-      // ศูนย์ คือใบนี้ไม่มีเงินล่วงหน้า
-      // เครื่องหมายติดไปกับค่าใน OData เอง ไม่ต้องแปลง
-      @Semantics.amount.currencyCode: 'PaymentCurrency'
+      // บอก BOT ว่าต้องจัดการเงินรับล่วงหน้าด้วยหรือไม่ ค่าเดียวกันทุกแถวของใบเดียวกัน
+      // X เมื่อใบนี้ดึงเงินล่วงหน้ามาหัก คือ advance ติดลบ
+      // X เมื่อ item ไม่ใช่การรับชำระบางส่วน
+      //   และลูกค้าเคยมีใบรับชำระบางส่วนที่ advance ติดลบ
+      //   และลูกค้ายังมีบรรทัด Special G/L Z ที่ยังไม่ clear
+      // กรณีอื่นได้ค่าว่าง
       @EndUserText.label: 'Advance Payment'
-      Payment.advance_payment              as AdvancePayment,
+      case
+        when Payment.advance_payment < 0
+          then cast( 'X' as abap.char( 1 ) )
+        when Item.partial_amount             =  ''
+         and AdvanceUsed.CustomerCode        is not null
+         and SpecialGlOpen.CustomerCode      is not null
+          then cast( 'X' as abap.char( 1 ) )
+        else cast( '' as abap.char( 1 ) )
+      end                                  as AdvancePayment,
 
       _PartialPayments
 }

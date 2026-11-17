@@ -39,6 +39,13 @@ define view entity ZI_ZARE002_CLEARING_PARTIAL
       @EndUserText.label: 'Payment Document No.'
       Payment.payment_document_no          as PaymentDocumentNo,
 
+      // Reference Key 3 ของบรรทัดลูกหนี้ในเอกสารรับชำระบางส่วน
+      // เลขเอกสารของตัวเองต่อด้วย billing document
+      // billing document ไม่ว่างเสมอ เพราะใช้หาเอกสารรับชำระบางส่วน
+      @EndUserText.label: 'Partial Ref. Key 3'
+      cast( concat( Partial.AccountingDocument, Item.billing_document ) as abap.char( 20 ) )
+                                           as PartialRefKey3,
+                                           
       @EndUserText.label: 'Company Code'
       Payment.company_code                 as CompanyCode,
 
