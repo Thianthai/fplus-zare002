@@ -216,10 +216,12 @@ GET https://my442178-api.s4hana.cloud.sap/sap/opu/odata4/sap/zapi_zare002_o4/srv
       "JournalEntryType": "DS",
       "InvoiceAccountingDocument": "6000000021",
       "InvoiceAccountingDocYear": "2026",
+      "InvoiceRefKey3": "60000000210090000021",
       "PaymentAccountingDocument": "3500000006",
       "PaymentAccountingDocYear": "2026",
+      "PaymentRefKey3": "35000000060090000021",
       "PaymentCurrency": "THB",
-      "AdvancePayment": -100.00
+      "AdvancePayment": "X"
     }
   ]
 }
@@ -236,10 +238,12 @@ GET https://my442178-api.s4hana.cloud.sap/sap/opu/odata4/sap/zapi_zare002_o4/srv
 | `JournalEntryType` | string(2) | ช่อง **Journal Entry Type** (คงที่ `DS`) |
 | `InvoiceAccountingDocument` | string(10) | เลขเอกสาร invoice ที่ต้องเลือก clear ในคอลัมน์ **Journal Entry** |
 | `InvoiceAccountingDocYear` | string(4) | ปีบัญชีของ invoice · ใช้คู่กับเลขเอกสารตอนเลือกในจอ · อ่านจากเอกสาร FI จริง ไม่ได้คำนวณจากวันที่ |
+| `InvoiceRefKey3` | string(20) | Reference Key 3 ของ invoice = `InvoiceAccountingDocument` + billing document · ว่างถ้า item ไม่มี billing document (เพิ่ม 2026-11-17 `5f41076`) |
 | `PaymentAccountingDocument` | string(10) | เลขเอกสาร JE ที่ SAP post ไว้ · เลือกบรรทัดนี้ในจอ และ **ส่งกลับมาใน API #3** |
 | `PaymentAccountingDocYear` | string(4) | ปีบัญชีของเอกสาร JE · ใช้คู่กับเลขเอกสารเสมอ และ **ส่งกลับมาใน API #3** |
-| `PaymentCurrency` | string(5) | สกุลเงินของ `AdvancePayment` (เพิ่ม 2026-10-12 `99272be`) |
-| `AdvancePayment` | Edm.Decimal | เงินรับล่วงหน้าของใบ **มีเครื่องหมาย** · บวก = รับล่วงหน้าเพิ่ม · ลบ = ดึงเงินล่วงหน้าเก่ามาหัก invoice · 0 = ไม่มี · ค่าเดียวกันทุกแถวของใบ (เพิ่ม 2026-10-12 `99272be`) |
+| `PaymentRefKey3` | string(20) | Reference Key 3 ของบรรทัดลูกหนี้ของ item นี้ในเอกสาร JE = `PaymentAccountingDocument` + billing document · ว่างถ้า item ไม่มี billing document (เพิ่ม 2026-11-17 `5f41076`) |
+| `PaymentCurrency` | string(5) | สกุลเงินของใบ (เพิ่ม 2026-10-12 `99272be`) · คงไว้แม้ `AdvancePayment` ไม่ใช่จำนวนเงินแล้ว |
+| `AdvancePayment` | string(1) | **flag `X` / ว่าง** ว่า BOT ต้องจัดการเงินรับล่วงหน้าด้วยหรือไม่ · ดูกติกาด้านล่าง · **⚠️ เปลี่ยนจาก Edm.Decimal (จำนวนเงิน) 2026-11-17 `5f41076` — breaking change ทีม BOT ยืนยันว่าไม่ใช้ยอดเงินแล้ว** |
 
 ### กติกาของ view
 
@@ -247,6 +251,11 @@ GET https://my442178-api.s4hana.cloud.sap/sap/opu/odata4/sap/zapi_zare002_o4/srv
 - แสดงเฉพาะใบที่ **post JE แล้ว** และ **ยังไม่มีเลข clearing** และ **ไม่ได้ถูก reject** (status ≠ `R`)
   — ปกติใบที่ post แล้ว Reject ไม่ได้อยู่แล้ว ข้อนี้กันเผื่อข้อมูลถูกแก้จากภายนอก (เจอจริงตอนทดสอบ 2026-09-25 · แก้ใน `ed4cd9d`)
 - **item ที่ `PartialAmount = X` (รับชำระบางส่วน) ไม่อยู่ในคิว** — รอใบสุดท้ายของ invoice เดียวกัน แล้วเอกสารของใบเหล่านี้มากับใบสุดท้ายผ่าน `_PartialPayments` (เพิ่ม 2026-10-22 `3b7ee6c`)
+- **`AdvancePayment = X`** (2026-11-17 `5f41076`) เมื่อเข้าข้อใดข้อหนึ่ง:
+  1. ใบนี้มี advance payment **ติดลบ** (ดึงเงินล่วงหน้าเก่ามาหัก) — บวกหรือศูนย์ไม่นับ
+  2. ครบทั้ง 3 ขั้น: item นี้ partial ว่าง **และ** ลูกค้าเดียวกัน (company code เดียวกัน) มี payment อื่นอย่างน้อย 1 ใบที่ post JE แล้ว ไม่ใช่ Reject มี advance ติดลบ และมี item partial = X (`ZI_ZARE002_ADVANCE_USED`) **และ** ลูกค้ายังมีบรรทัด Special G/L Z ที่ `ClearingJournalEntry` ว่าง (`ZI_ZARE002_SPECIAL_GL_OPEN`)
+  - ค่าเดียวกันทุกแถวของใบเมื่อเข้าข้อ 1 · ข้อ 2 ขึ้นกับลูกค้าของ item
+- **Ref Key 3** ทั้ง 3 field (`InvoiceRefKey3` `PaymentRefKey3` `PartialRefKey3`) CDS ต่อค่าเอง ไม่ได้อ่านจากเอกสาร — ได้ค่าแม้การเขียน Ref3 ลงเอกสารตอน Submit จะไม่ผ่าน
 - ใบที่ clear เสร็จและส่งผลกลับทาง API #3 แล้ว จะหายจาก view นี้เอง ไม่ต้องมีใครมาลบคิว
 - ใบที่ BOT clear ไม่สำเร็จจะยังอยู่ในคิว คืนถัดไปจะถูกดึงไปทำใหม่โดยอัตโนมัติ
 - **เลขเอกสารบัญชีต้องใช้คู่กับปีบัญชีเสมอ** เลขเดียวกันเกิดซ้ำได้ในคนละปี
@@ -311,6 +320,7 @@ GET .../PartialPayments?$filter=PaymentAccountingDocument eq '3500000120'
       "PartialAccountingDocYear": "2026",
       "PartialAccountingDocItem": "002",
       "PaymentDocumentNo": "1000001300",
+      "PartialRefKey3": "3500000097O600000134",
       "CompanyCode": "2000",
       "PaymentAccountingDocument": "3500000120",
       "PaymentAccountingDocYear": "2026",
@@ -327,6 +337,7 @@ GET .../PartialPayments?$filter=PaymentAccountingDocument eq '3500000120'
 |---|---|
 | `PartialAccountingDocument` + `PartialAccountingDocYear` | เอกสารรับชำระบางส่วนที่ต้อง**เลือก clear เพิ่ม**ในคอลัมน์ Journal Entry · ใช้คู่กับปีเสมอ |
 | `PartialAccountingDocItem` | บรรทัดลูกหนี้ในเอกสารนั้น |
+| `PartialRefKey3` | Reference Key 3 = `PartialAccountingDocument` + billing document (เพิ่ม 2026-11-17 `5f41076`) |
 | `PaymentAccountingDocument` / `Year` | JE ของใบสุดท้าย — กลุ่มเดียวกับ `ClearingItems` |
 | `BillingDocument` | billing document ที่ใช้จับคู่ (Reference1 ของเอกสาร partial) |
 | `CustomerCode` | ลูกค้าของเอกสาร partial (ควรเท่ากับของใบสุดท้าย) |
