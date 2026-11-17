@@ -429,6 +429,33 @@ spec ฟังก์ชันนอล: customer code ขึ้นต้น **`O
 
 รอ: ทดสอบ end-to-end (P1/P2/P3) · ทีม BOT อ่าน `_PartialPayments` (สัญญาใน `10_api_contract.md`) · **ขน ZARE002 + ZARI003 เฟส B พร้อมกัน**
 
+## Phase 8M — Reference Key 3 + AdvancePayment เป็น flag (2026-11-17)
+
+ที่มา: ทีมฟังก์ชันนอลขอให้ (1) เขียน Reference Key 3 (`Reference3IDByBusinessPartner` / BSEG-XREF3) ลงบรรทัดลูกค้าของเอกสารตอน Submit (2) BOT ได้ค่า Ref3 จาก API (3) `AdvancePayment` ใน API เป็น flag
+
+| เอกสาร | บรรทัด | ค่า |
+|---|---|---|
+| invoice (`ztar_i002_item-accounting_document`) | บรรทัด D ที่ไม่ใช่ Special G/L บรรทัดเดียว · หาปีบัญชีจาก `invoice_posting_date` | เลข invoice + `billing_document` |
+| payment JE ที่ Submit post | บรรทัดลูกหนี้ของแต่ละ item (ไม่นับบรรทัด Z) · จับคู่ด้วยเลขบรรทัดที่ `build` ส่งไป (พิสูจน์จากข้อมูล tenant: เลขบรรทัดจริง = `glaccountlineitem`) | เลข JE + `billing_document` |
+
+กติกา (ผู้ใช้ยืนยัน): item ไม่มี billing document ไม่เขียน · เอกสารต้องมีแต่ค่าเต็ม ห้ามค่าชั่วคราว · เขียนพร้อม Submit (หลัง `COMMIT ENTITIES` ของ Post เพราะ late numbering) · ไม่ผ่าน = Submit ยังสำเร็จ ต่อข้อความ 116 ท้าย `submit_message` แล้ว user แก้มือในระบบ
+
+`AdvancePayment` = X เมื่อ advance ของใบนี้ < 0 **หรือ** (partial ว่าง **และ** มีใบก่อนหน้าของลูกค้า + company code เดียวกันที่ post JE แล้ว ไม่ใช่ Reject advance < 0 มี item partial X อย่างน้อย 1 ใบ **และ** ลูกค้ายังมีบรรทัด Special G/L Z ไม่ clear)
+
+| เฟส | Object | Status |
+|---|---|---|
+| A | `ZI_ZARE002_ADVANCE_USED` · `ZI_ZARE002_SPECIAL_GL_OPEN` (ใหม่) · `ZI_ZARE002_CLEARING` (`InvoiceRefKey3` `PaymentRefKey3` · `AdvancePayment` flag) · `ZI_ZARE002_CLEARING_PARTIAL` (`PartialRefKey3`) | ✅ `5f41076` · สัญญา `10_api_contract.md` `1fb7cd2` |
+| B | `ZCL_ZARE002_JOURNAL_ENTRY` (`build_payment_ref3` · `read_invoice_ref3` · `change_reference3` + 2 test) · `ZCL_ZARE002_SUBMIT` (`update_reference3`) · message 116 · `ZI_ZARE002_REF_KEY3` (ใหม่) · `ZR_ZARE002` (`_RefKey3`) · `ZC_ZARE002` + ddlx (คอลัมน์ Acc. Ref. Key 3 / Submit Ref. Key 3) | ✅ `d1ce8a9` · ATC + unit test ผ่าน |
+
+ยังต้องพิสูจน์ด้วย Submit จริง:
+- เลขบรรทัด invoice 3 หลัก → 6 หลัก (`001` → `000001`) ที่ action `Change` รับ
+- `Change` แก้ XREF3 ของ invoice SD ได้ (ฟังก์ชันนอลเคยแก้มือได้ → น่าจะได้)
+- `%control-_aparitems` ทำงานตามคาด (แก้แค่ Ref3 field อื่นไม่ถูกเขียนทับ)
+- คอลัมน์ใน report ขึ้นค่าหลัง Submit · ใบที่ไม่ผ่านได้ข้อความ 116
+
+ข้อจำกัด: ใบที่ Submit ครั้งก่อน post ได้แต่บันทึกเลขไม่ทัน (ขั้น 4 ของ `process` คืน 109 ทันที) ไม่ถูกเขียน Ref3 อัตโนมัติ → report ขึ้นว่าง ให้ user แก้มือ
+ค้างตรวจบน tenant: `$metadata` ของ `ZAPI_ZARE002_O4` ต้องเห็น `AdvancePayment` เป็น `Edm.String` (ไม่เห็น → publish ใหม่) · ทีม BOT ต้องรู้ว่า `AdvancePayment` เปลี่ยนจากยอดเป็น flag (breaking)
+
 ### ⚠️ ก่อน handover (ต้องทำ)
 
 | # | งาน | สถานะ |

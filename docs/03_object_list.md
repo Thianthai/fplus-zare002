@@ -24,7 +24,7 @@ baseline ที่ tenant serialize มาแล้ว (commit `7936197`) — ob
 | Object | Type | ไฟล์ | Phase | Status |
 |--------|------|------|-------|--------|
 | `ZTAR_E002_ITEM_D` | Draft table ของ `ZR_ZARE002` — สร้างด้วย quick-fix จาก BDEF · include `SYCH_BDL_DRAFT_ADMIN_INC` เป็น `%ADMIN` ครบ | `src/ztar_e002_item_d.tabl.xml` | 4 | ✅ |
-| `ZARE002` | Message class — `001` reject reason missing (per item) · `002` already rejected · `003` rejected OK · `004` payment > 200 items (8J) · `005` SFDC success=false · `006` SFDC unreachable · `001–099` Reject · `100+` Submit | `src/zare002.msag.xml` | 7 / 8A | ✅ 001–006 |
+| `ZARE002` | Message class — `001` reject reason missing (per item) · `002` already rejected · `003` rejected OK · `004` payment > 200 items (8J) · `005` SFDC success=false · `006` SFDC unreachable · `001–099` Reject · `100+` Submit · 8M `116` Ref. Key 3 not updated (เตือน ต่อท้าย `submit_message`) | `src/zare002.msag.xml` | 7 / 8A / 8M | ✅ 001–006 · 101–116 (116 `d1ce8a9`) |
 
 **ไม่สร้าง data element / domain ใหม่** — reuse `ZE_REQUEST_STATUS` (package `ZARI002`)
 
@@ -48,9 +48,10 @@ baseline ที่ tenant serialize มาแล้ว (commit `7936197`) — ob
 | `ZI_ZARE002_STATUS_VH` | CDS — ข้อความของ `ZD_REQUEST_STATUS` จาก `DDCDS_CUSTOMER_DOMAIN_VALUE_T` (ภาษาที่ login) · text ของคอลัมน์ Status + dropdown ของ filter | `src/zi_zare002_status_vh.ddls.asddls` | 8E | ✅ `f010aa5` (2026-09-29) |
 | `ZI_ZARE002_ITEM` | Interface view บน `ztar_i002_item` (1:1) + assoc `_Payment` `_BusinessPartner` | `src/zi_zare002_item.ddls.asddls` | 1 | ✅ |
 | `ZI_ZARE002_BP` | Interface view บน `I_BusinessPartner` — ต่อ `OrganizationBPName1..4` เป็น `CustomerName` | `src/zi_zare002_bp.ddls.asddls` | 1 | ✅ |
-| `ZR_ZARE002` | **Root view entity** — projection บน `ZI_ZARE002_ITEM` | `src/zr_zare002.ddls.asddls` | 2 | ✅ |
-| `ZC_ZARE002` | Projection view — + path expression ดึง field header | `src/zc_zare002.ddls.asddls` | 3 | ✅ |
-| `ZC_ZARE002` | Metadata extension — UI annotation ทั้งหมด · **ไม่มี `@UI.multiLineText`** (ตัดออก 7.6b) | `src/zc_zare002.ddlx.asddlxs` | 3 / 7 | ✅ |
+| `ZR_ZARE002` | **Root view entity** — projection บน `ZI_ZARE002_ITEM` · 8M assoc `_RefKey3` | `src/zr_zare002.ddls.asddls` | 2 / 8M | ✅ · 8M `d1ce8a9` |
+| `ZI_ZARE002_REF_KEY3` | CDS view — Reference Key 3 ที่อยู่ในเอกสารจริง 1 row ต่อ item (มี billing document) · `AccRefKey3` (บรรทัดลูกค้าของ invoice) · `SubmitRefKey3` (บรรทัดลูกหนี้ของ JE ที่ Submit post) · ได้ค่าเฉพาะเมื่อเท่ากับค่าเต็ม (เลขเอกสาร + billing) ไม่งั้นว่าง · `concat` ใน ON ใช้ได้ | `src/zi_zare002_ref_key3.ddls.asddls` | 8M | ✅ `d1ce8a9` |
+| `ZC_ZARE002` | Projection view — + path expression ดึง field header · 8M `AccRefKey3` `SubmitRefKey3` ผ่าน `_RefKey3` | `src/zc_zare002.ddls.asddls` | 3 / 8M | ✅ · 8M `d1ce8a9` |
+| `ZC_ZARE002` | Metadata extension — UI annotation ทั้งหมด · **ไม่มี `@UI.multiLineText`** (ตัดออก 7.6b) · 8M lineItem 95 `AccRefKey3` · 125 `SubmitRefKey3` | `src/zc_zare002.ddlx.asddlxs` | 3 / 7 / 8M | ✅ · 8M `d1ce8a9` |
 
 ## Behavior
 
@@ -100,12 +101,12 @@ object type จริงบน tenant นี้ (ปิด OQ-11) และช�
 | `ZCS_CLEARING_ITEM` | Communication Scenario inbound — ครอบ `ZAPI_ZARE002_O4` อย่างเดียว · แทน `ZCS_PAYMENT_CLEARING` (สร้างใหม่แล้วลบตัวเดิม `6c420da` 2026-09-29 ให้คู่กับ `ZCS_CLEARING_RESULT`) | `src/zcs_clearing_item.sco1.xml` | 8B | ✅ published locally |
 | Communication Arrangement `ZCA_CLEARING_ITEM` | × `SBPA_DEV` · inbound user ของ BOT (ตัวเดิม) · แทน `ZCA_PAYMENT_CLEARING` ที่ลบแล้ว | — ไม่ขึ้น git | 8B | ✅ |
 | ~~API #3~~ `ZARE002_CLEARING` · `ZCL_ZARE002_CLEARING_HTTP` · `ZCL_ZARE002_CLEARING_RESULT` · message 120–124 | **ย้ายไป package `ZARI003`** เป็น `ZARI003_CLEARING` · `ZCL_ZARI003_CLEARING_*` · message `ZARI003` 005–009 · scenario `ZCS_CLEARING_RESULT` / arrangement `ZCA_CLEARING_RESULT` | — | 8B | 🗑️ `9b0d575` (2026-09-28) |
-| `ZCL_ZARE002_JOURNAL_ENTRY` | Class — สร้าง + post journal entry ของ 1 payment ผ่าน `I_JournalEntryTP~Post` (EML) · `build`/`check_balance`/`describe`/`derive_house_bank` pure · `post` (มี `COMMIT ENTITIES` ห้ามเรียกใน RAP) · `find_document` | `src/zcl_zare002_journal_entry.clas.abap` | 8B | ✅ `2ed2145` · 5 test |
-| `ZCL_ZARE002_JOURNAL_ENTRY` testclasses | builder อย่างเดียว ไม่ post | `src/zcl_zare002_journal_entry.clas.testclasses.abap` | 8B | ✅ 5 test เขียว |
+| `ZCL_ZARE002_JOURNAL_ENTRY` | Class — สร้าง + post journal entry ของ 1 payment ผ่าน `I_JournalEntryTP~Post` (EML) · `build`/`check_balance`/`describe`/`derive_house_bank` pure · `post` (มี `COMMIT ENTITIES` ห้ามเรียกใน RAP) · `find_document` · 8M Reference Key 3: `build_payment_ref3` (pure) · `read_invoice_ref3` · `change_reference3` (`I_JournalEntryTP~Change` + `COMMIT ENTITIES`) · `ty_line_no` ย้ายเป็น public | `src/zcl_zare002_journal_entry.clas.abap` | 8B / 8M | ✅ `2ed2145` · 8M `d1ce8a9` |
+| `ZCL_ZARE002_JOURNAL_ENTRY` testclasses | builder อย่างเดียว ไม่ post · 8M `payment_ref3_skips_advance` `payment_ref3_mismatch` | `src/zcl_zare002_journal_entry.clas.testclasses.abap` | 8B / 8M | ✅ เขียวทั้งหมด (8M `d1ce8a9`) |
 | `ZI_ZARE002_CLEARING_PARTIAL` | CDS view — เอกสารรับชำระบางส่วนก่อนหน้าของใบสุดท้าย (Reference1 = billing document · ยังไม่ clear · ไม่ reverse) · expose `PartialPayments` ใน `ZAPI_ZARE002` · association `_PartialPayments` จาก `ZI_ZARE002_CLEARING` | `src/zi_zare002_clearing_partial.ddls.asddls` | 8L / 8M | ✅ `3b7ee6c` · 8M `PartialRefKey3` `5f41076` |
 | `ZI_ZARE002_ADVANCE_USED` | CDS view — company code + ลูกค้าที่มี payment post JE แล้ว ไม่ใช่ Reject advance ติดลบ และมี item partial X · ใช้ใน `AdvancePayment` ของ `ZI_ZARE002_CLEARING` | `src/zi_zare002_advance_used.ddls.asddls` | 8M | ✅ `5f41076` |
 | `ZI_ZARE002_SPECIAL_GL_OPEN` | CDS view — company code + ลูกค้าที่ยังมีบรรทัด Special G/L Z ไม่ clear (group by + `OpenItemCount`) · ใช้ใน `AdvancePayment` ของ `ZI_ZARE002_CLEARING` | `src/zi_zare002_special_gl_open.ddls.asddls` | 8M | ✅ `5f41076` |
-| `ZCL_ZARE002_SUBMIT` | Class — Submit 1 payment: validate (101–107) → post → บันทึก `payment_accounting_document` + `submit_message` · 1 payment = 1 LUW · `is_cheque` (payment_method รูปแบบใหม่ · 8K) + test classes | `src/zcl_zare002_submit.clas.abap` | 8B / 8K | ✅ `2ed2145` · 8K `90f43a5` |
+| `ZCL_ZARE002_SUBMIT` | Class — Submit 1 payment: validate (101–107) → post → บันทึก `payment_accounting_document` + `submit_message` · 1 payment = 1 LUW · `is_cheque` (payment_method รูปแบบใหม่ · 8K) · 8M `update_reference3` หลัง post (payment JE 1 ครั้ง + invoice ทีละใบ · ไม่ผ่าน = เตือน 116 ไม่ทำให้ Submit ล้ม) + test classes | `src/zcl_zare002_submit.clas.abap` | 8B / 8K / 8M | ✅ `2ed2145` · 8K `90f43a5` · 8M `d1ce8a9` |
 | `ZCL_ZARE002_SUBMIT_HTTP` | Class — handler ของ API #1 (`if_http_service_extension`) · parse/build response static ทดสอบได้ | `src/zcl_zare002_submit_http.clas.abap` | 8B | ✅ `2ed2145` · 4 test |
 | `ZARE002_SUBMIT` | HTTP Service — `/sap/bc/http/sap/ZARE002_SUBMIT` · ผูกใน IAM `ZIAM_ZARE002_EXT` | `src/zare002_submit.http.xml` | 8B | ✅ `2ed2145` |
 | ~~`ZCL_ZARE002_SFDC_RESULT`~~ | Class — Composite API PATCH ผล Reject ไป SFDC · **ลบแล้ว** — Reject ยิงผ่าน `ZCL_ZARI003_SFDC_RESULT=>send( )` แทน (`7653f57`) · test ย้ายไป ZARI003 | — | 8A / 8C | 🗑️ `10ef08e` (2026-09-29) |

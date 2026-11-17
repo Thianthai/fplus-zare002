@@ -215,5 +215,6 @@ SBPA กับ BOT คือทีมเดียวกัน — ทีม SBPA
 | 8L | ZARI003 | `ZCL_ZARI003_CLEARING_RESULT` · message 016 (`c015650`) |
 | 8K | ZARI002 | `ZTAR_I002_PYMT` / `ZTAR_I002_HDRLOG` `payment_method` char(20) + รับค่ารูปแบบใหม่ — **ต้องขนพร้อม ZARE002 8K** |
 | 8K | ZARE002 | `ZCL_ZARE002_SUBMIT` (`is_cheque` + test) · `ZCL_ZARE002_UTIL` (`90f43a5`) — **ต้องขนพร้อม ZARI002 8K** |
+| 8M | ZARE002 | เฟส A `ZI_ZARE002_ADVANCE_USED` · `ZI_ZARE002_SPECIAL_GL_OPEN` · `ZI_ZARE002_CLEARING` · `ZI_ZARE002_CLEARING_PARTIAL` (`5f41076`) · เฟส B `ZCL_ZARE002_JOURNAL_ENTRY` · `ZCL_ZARE002_SUBMIT` · message 116 · `ZI_ZARE002_REF_KEY3` · `ZR_ZARE002` · `ZC_ZARE002` + ddlx (`d1ce8a9`) — publish `ZAPI_ZARE002_O4` ใหม่ถ้า `AdvancePayment` ยังเป็นตัวเลข · **แจ้งทีม BOT ก่อนขน** (AdvancePayment เปลี่ยนเป็น flag) |
 
 ลำดับ: **ZBCPARAM → ZBCUTILITY** → ZARI002 → ZARI003 → ZARE002
