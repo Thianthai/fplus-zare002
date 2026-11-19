@@ -27,7 +27,7 @@ CLASS zcl_zare002_journal_entry DEFINITION
       END OF ty_payment,
 
       "! item ของ payment — 1 item = 1 บรรทัดลูกหนี้
-      "! billing_document ใส่ลง Reference1 ของบรรทัดลูกหนี้เฉพาะ item ที่รับชำระบางส่วน
+      "! billing_document ใช้ต่อเป็น Reference Key 3 หลัง post
       "! invoice_posting_date ใช้หาปีบัญชีของ invoice ตอนอ่านข้อมูลลูกค้า one-time
       BEGIN OF ty_item,
         customer_code        TYPE ztar_i002_item-customer_code,
@@ -415,17 +415,14 @@ CLASS ZCL_ZARE002_JOURNAL_ENTRY IMPLEMENTATION.
     " business place = 0000
     " ไม่ใส่ assignment และ item text
     " BOT จะจับคู่ตอน clearing จาก customer และจำนวนเงินแทน
-    " item ที่รับชำระบางส่วนใส่ billing document ลง Reference1
-    " ใบสุดท้ายของ invoice เดียวกันใช้ค่านี้หาเอกสารรับชำระบางส่วนก่อนหน้า ให้ BOT clear พร้อมกัน
+    " Reference Key 3 เขียนทีหลังด้วย change_reference3 เพราะต้องใช้เลขเอกสารที่ได้หลัง post
     LOOP AT it_item INTO DATA(ls_item).
       lv_line += 1.
-      APPEND VALUE #( glaccountlineitem             = CONV ty_line_no( lv_line )
-                      customer                      = ls_item-customer_code
-                      businessplace                 = gc_business_place
-                      reference1idbybusinesspartner = COND #( WHEN ls_item-partial_amount = gc_partial
-                                                                THEN ls_item-billing_document )
-                      _currencyamount               = amount( iv_currency = is_payment-currency
-                                                              iv_amount   = - ls_item-amount_paid )
+      APPEND VALUE #( glaccountlineitem = CONV ty_line_no( lv_line )
+                      customer          = ls_item-customer_code
+                      businessplace     = gc_business_place
+                      _currencyamount   = amount( iv_currency = is_payment-currency
+                                                  iv_amount   = - ls_item-amount_paid )
                     ) TO lt_ar_item.
     ENDLOOP.
 

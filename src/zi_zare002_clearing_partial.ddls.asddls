@@ -3,7 +3,9 @@
 
 // เอกสารรับชำระบางส่วนก่อนหน้าของใบสุดท้าย ที่ BOT ต้องเลือก clear เพิ่มพร้อมกับใบสุดท้าย
 // 1 row ต่อ 1 item ของใบสุดท้าย คูณ 1 บรรทัดลูกหนี้ของเอกสารรับชำระบางส่วนที่เจอ
-// ใบรับชำระบางส่วนใส่ billing document ไว้ที่ Reference1 ของบรรทัดลูกหนี้ตอน post
+// ใบรับชำระบางส่วนมี Reference Key 3 ที่บรรทัดลูกหนี้ เป็นเลขเอกสารของตัวเองต่อด้วย billing document
+// หาด้วย 10 ตัวท้ายของ Reference Key 3 ซึ่งคือ billing document
+// ใบที่เขียน Reference Key 3 ไม่ผ่านจะไม่ขึ้นใน view นี้ จนกว่า user จะแก้ในระบบ
 // ใบสุดท้ายคือ item ที่ partial_amount ว่าง แต่ยอดที่จ่ายไม่เท่ากับยอด invoice
 // เงื่อนไขของใบสุดท้ายต้องตรงกับคิว ZI_ZARE002_CLEARING ทุกข้อ
 define view entity ZI_ZARE002_CLEARING_PARTIAL
@@ -12,8 +14,8 @@ define view entity ZI_ZARE002_CLEARING_PARTIAL
 
     // บรรทัดลูกหนี้ที่อ้าง billing document เดียวกันใน company code เดียวกับใบ
     inner join I_OperationalAcctgDocItem as Partial
-      on  Partial.CompanyCode                   = Payment.company_code
-      and Partial.Reference1IDByBusinessPartner = Item.billing_document
+      on  Partial.CompanyCode = Payment.company_code
+      and Item.billing_document = right( Partial.Reference3IDByBusinessPartner, 10 )
 
     // ใช้ตัดเอกสารที่กลับรายการหรือถูกกลับรายการแล้ว
     inner join I_JournalEntry as PartialHeader

@@ -30,10 +30,6 @@ CLASS ltc_journal_entry DEFINITION FINAL FOR TESTING
     METHODS regular_customer_no_one_time FOR TESTING.
     "! customer code ที่ขึ้นต้นด้วย OT เท่านั้นที่เป็น one-time
     METHODS one_time_prefix              FOR TESTING.
-    "! item ที่รับชำระบางส่วนได้ billing document ใน Reference1 ของบรรทัดลูกหนี้
-    METHODS partial_item_has_reference1  FOR TESTING.
-    "! item ที่รับชำระเต็มไม่มี Reference1
-    METHODS full_item_no_reference1      FOR TESTING.
     "! Reference Key 3 ลงเฉพาะบรรทัดลูกหนี้ของ item ที่มี billing document
     "! ข้ามบรรทัด Special G/L Z และเลขบรรทัดตรงกับที่ build สร้าง
     METHODS payment_ref3_skips_advance   FOR TESTING.
@@ -263,47 +259,6 @@ CLASS ltc_journal_entry IMPLEMENTATION.
     cl_abap_unit_assert=>assert_false( zcl_zare002_journal_entry=>is_one_time_customer( '1000000014' ) ).
   ENDMETHOD.
 
-  METHOD partial_item_has_reference1.
-
-    " ไม่มี fees rounding และ advance จึงเหลือบรรทัดลูกหนี้บรรทัดเดียวใน _aritems
-    DATA(ls_payment) = sample_payment( ).
-    ls_payment-fees            = 0.
-    ls_payment-rounding_diff   = 0.
-    ls_payment-advance_payment = 0.
-    ls_payment-payment_amount  = '10700.00'.
-
-    DATA(lt_entry) = zcl_zare002_journal_entry=>build(
-                       is_payment = ls_payment
-                       it_item    = VALUE #( ( customer_code       = '1000000014'
-                                               accounting_document = '6000000023'
-                                               billing_document    = 'O600000027'
-                                               partial_amount      = 'X'
-                                               amount_paid         = '10700.00' ) ) ).
-
-    cl_abap_unit_assert=>assert_equals(
-      act = lt_entry[ 1 ]-%param-_aritems[ 1 ]-reference1idbybusinesspartner
-      exp = 'O600000027' ).
-
-  ENDMETHOD.
-
-  METHOD full_item_no_reference1.
-
-    DATA(ls_payment) = sample_payment( ).
-    ls_payment-fees            = 0.
-    ls_payment-rounding_diff   = 0.
-    ls_payment-advance_payment = 0.
-    ls_payment-payment_amount  = '10700.00'.
-
-    DATA(lt_entry) = zcl_zare002_journal_entry=>build(
-                       is_payment = ls_payment
-                       it_item    = VALUE #( ( customer_code       = '1000000014'
-                                               accounting_document = '6000000023'
-                                               billing_document    = 'O600000027'
-                                               amount_paid         = '10700.00' ) ) ).
-
-    cl_abap_unit_assert=>assert_initial( lt_entry[ 1 ]-%param-_aritems[ 1 ]-reference1idbybusinesspartner ).
-
-  ENDMETHOD.
 
   METHOD payment_ref3_skips_advance.
 
