@@ -139,6 +139,10 @@
   · key ของ view ต้องคง `domain_name` + `value_position` ไว้ ไม่งั้น warning key ไม่ตรง source (เจอจริง 2026-09-29)
   · **อย่า cast `value_low` (CHAR 10) ลงเป็น data element สั้นกว่า** — warning loss of data · ใช้ `value_low` ตรง ๆ เทียบกับ CHAR 1 ได้ปกติ
   · กรอง `language = $session.system_language` แล้วใช้เป็น association `[0..1]` + value help (`@ObjectModel.resultSet.sizeCategory: #XS` = dropdown)
+- **ON ของ join ใน view entity: function ใส่ได้เฉพาะฝั่งขวาของการเทียบ** (เจอจริง 2026-11-19:
+  `Expression type FUNCTION not allowed in expression context COMPARISON, clause type COMP_LEFT`)
+  → สลับข้างเป็น `Item.billing_document = right( Partial.Reference3IDByBusinessPartner, 10 )` ผ่าน
+  · function ฝั่งขวาอ้าง field ของ table ที่ join เข้ามาเองได้ (`concat( … )` ใน `ZI_ZARE002_REF_KEY3` ก็ผ่าน)
 - **association ที่ ON อ้าง field คำนวณ (`$projection.<case/cast>`) ใช้ path ใน view เดียวกันไม่ได้** (เจอจริง 2026-10-01:
   `The association "_SubmitStatusText" cannot be used locally in the view`) → ประกาศ + expose ใน ZI แล้วอ่าน path ใน ZC แทน
   (`_Payment._SubmitStatusText.SubmitStatusText`) · association ที่อ้าง field จริงของ table ใช้ local ได้ปกติ

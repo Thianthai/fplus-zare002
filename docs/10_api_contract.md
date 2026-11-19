@@ -339,14 +339,14 @@ GET .../PartialPayments?$filter=PaymentAccountingDocument eq '3500000120'
 | `PartialAccountingDocItem` | บรรทัดลูกหนี้ในเอกสารนั้น |
 | `PartialRefKey3` | Reference Key 3 = `PartialAccountingDocument` + billing document (เพิ่ม 2026-11-17 `5f41076`) |
 | `PaymentAccountingDocument` / `Year` | JE ของใบสุดท้าย — กลุ่มเดียวกับ `ClearingItems` |
-| `BillingDocument` | billing document ที่ใช้จับคู่ (Reference1 ของเอกสาร partial) |
+| `BillingDocument` | billing document ที่ใช้จับคู่ (10 ตัวท้ายของ Reference Key 3 ของเอกสาร partial) |
 | `CustomerCode` | ลูกค้าของเอกสาร partial (ควรเท่ากับของใบสุดท้าย) |
 | `PartialPaymentAmount` + `Currency` | ยอดลูกหนี้ของเอกสาร partial **ติดลบ** (เครดิต) ไว้เทียบยอด |
 
 กติกา:
 - มีเฉพาะ item ของใบสุดท้าย คือ partial ว่าง และ `InvoiceAmount ≠ AmountPaid` · item ปกติได้ `_PartialPayments` ว่าง
-- เฉพาะบรรทัดลูกหนี้ (D) ใน company code เดียวกัน ที่ Reference1 = billing document · **ยังไม่ถูก clear** · ไม่ใช่เอกสารกลับรายการหรือถูกกลับรายการ
-- เอกสาร partial ที่ post ก่อนวันที่ 2026-10-22 (ก่อนมี Reference1) จะไม่โผล่ — ต้อง clear เอง (ผู้ใช้ยอมรับ)
+- เฉพาะบรรทัดลูกหนี้ (D) ใน company code เดียวกัน ที่ **10 ตัวท้ายของ Reference Key 3** = billing document (เดิมใช้ Reference1 เลิกแล้ว 2026-11-19) · **ยังไม่ถูก clear** · ไม่ใช่เอกสารกลับรายการหรือถูกกลับรายการ
+- เอกสาร partial ที่ไม่มี Reference Key 3 (post ก่อน 8M หรือเขียน Ref3 ไม่ผ่านแล้วยังไม่ได้แก้มือ) จะไม่โผล่ — ต้อง clear เอง หรือแก้ Ref3 ในระบบก่อน (ผู้ใช้ยอมรับ)
 
 ---
 

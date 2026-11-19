@@ -415,6 +415,8 @@ spec ฟังก์ชันนอล: customer code ขึ้นต้น **`O
 | 3 | Submit P2 | S | S | – | JE-2 −200 · Reference1 = billing document · ไม่อยู่ในคิว |
 | 4 | Submit P3 | S | S | S | JE-3 −500 ไม่มี Reference1 |
 | 5 | คิว clearing | – | – | อยู่ | invoice 1,000 ≠ paid 500 → หา Reference1 = billing document เจอ JE-1 JE-2 ส่งให้ BOT (**เฟส B**) |
+
+> **เปลี่ยนใน 8M (`5b47880` · 2026-11-19):** เลิกเขียน Reference1 แล้ว · เอกสาร partial หาด้วย **10 ตัวท้ายของ Reference3** (= billing document) แทน · ตารางนี้คงไว้เป็นประวัติ
 | 6 | BOT clear | | | | CL-1 clear invoice + JE-1 + JE-2 + JE-3 |
 | 7 | BOT ส่งผลตาม JE-3 | **C** | **C** | **C** | ZARI003 stamp CL-1 ทุกใบ + SFDC `Completed` ทั้งชุด (**เฟส B · ZARI003**) |
 
@@ -452,6 +454,10 @@ spec ฟังก์ชันนอล: customer code ขึ้นต้น **`O
 - `Change` แก้ XREF3 ของ invoice SD ได้ (ฟังก์ชันนอลเคยแก้มือได้ → น่าจะได้)
 - `%control-_aparitems` ทำงานตามคาด (แก้แค่ Ref3 field อื่นไม่ถูกเขียนทับ)
 - คอลัมน์ใน report ขึ้นค่าหลัง Submit · ใบที่ไม่ผ่านได้ข้อความ 116
+
+| C | `ZCL_ZARE002_JOURNAL_ENTRY` (เลิกเขียน Reference1 · ลบ 2 test ของ Ref1) · `ZI_ZARE002_CLEARING_PARTIAL` (`Item.billing_document = right( Partial.Reference3IDByBusinessPartner, 10 )`) | ✅ `5b47880` (2026-11-19) |
+
+เฟส C (ผู้ใช้ยืนยัน 2026-11-19): `PartialRefKey3` คงสูตร `concat` เดิม · ทีม BOT ไม่ได้ใช้ Ref1 แล้ว · ใบ partial เก่าที่มีแต่ Ref1 ไม่ขึ้นใน `_PartialPayments` อีก (รับทราบ) · ใบที่เขียน Ref3 ไม่ผ่าน (116) ไม่ขึ้นจนกว่า user แก้มือ
 
 ข้อจำกัด: ใบที่ Submit ครั้งก่อน post ได้แต่บันทึกเลขไม่ทัน (ขั้น 4 ของ `process` คืน 109 ทันที) ไม่ถูกเขียน Ref3 อัตโนมัติ → report ขึ้นว่าง ให้ user แก้มือ
 ค้างตรวจบน tenant: `$metadata` ของ `ZAPI_ZARE002_O4` ต้องเห็น `AdvancePayment` เป็น `Edm.String` (ไม่เห็น → publish ใหม่) · ทีม BOT ต้องรู้ว่า `AdvancePayment` เปลี่ยนจากยอดเป็น flag (breaking)
