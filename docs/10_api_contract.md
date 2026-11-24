@@ -251,10 +251,12 @@ GET https://my442178-api.s4hana.cloud.sap/sap/opu/odata4/sap/zapi_zare002_o4/srv
 - แสดงเฉพาะใบที่ **post JE แล้ว** และ **ยังไม่มีเลข clearing** และ **ไม่ได้ถูก reject** (status ≠ `R`)
   — ปกติใบที่ post แล้ว Reject ไม่ได้อยู่แล้ว ข้อนี้กันเผื่อข้อมูลถูกแก้จากภายนอก (เจอจริงตอนทดสอบ 2026-09-25 · แก้ใน `ed4cd9d`)
 - **item ที่ `PartialAmount = X` (รับชำระบางส่วน) ไม่อยู่ในคิว** — รอใบสุดท้ายของ invoice เดียวกัน แล้วเอกสารของใบเหล่านี้มากับใบสุดท้ายผ่าน `_PartialPayments` (เพิ่ม 2026-10-22 `3b7ee6c`)
-- **`AdvancePayment = X`** (2026-11-17 `5f41076`) เมื่อเข้าข้อใดข้อหนึ่ง:
+- **`AdvancePayment = X`** (2026-11-17 `5f41076` · ปรับ 2026-11-25 `ba87471`) เมื่อ**ยอดรวม `AmountInTransactionCurrency` ของบรรทัด Special G/L Z ที่ยังไม่ clear** (D · Z · `ClearingJournalEntry` ว่าง) ของลูกค้า + company code เดียวกัน **= 0** (`ZI_ZARE002_SPECIAL_GL_OPEN-OpenAmount`) **และ**เข้าข้อใดข้อหนึ่ง:
   1. ใบนี้มี advance payment **ติดลบ** (ดึงเงินล่วงหน้าเก่ามาหัก) — บวกหรือศูนย์ไม่นับ
-  2. ครบทั้ง 3 ขั้น: item นี้ partial ว่าง **และ** ลูกค้าเดียวกัน (company code เดียวกัน) มี payment อื่นอย่างน้อย 1 ใบที่ post JE แล้ว ไม่ใช่ Reject มี advance ติดลบ และมี item partial = X (`ZI_ZARE002_ADVANCE_USED`) **และ** ลูกค้ายังมีบรรทัด Special G/L Z ที่ `ClearingJournalEntry` ว่าง (`ZI_ZARE002_SPECIAL_GL_OPEN`)
-  - ค่าเดียวกันทุกแถวของใบเมื่อเข้าข้อ 1 · ข้อ 2 ขึ้นกับลูกค้าของ item
+  2. item นี้ partial ว่าง **และ** ลูกค้าเดียวกัน (company code เดียวกัน) มี payment อื่นอย่างน้อย 1 ใบที่ post JE แล้ว ไม่ใช่ Reject มี advance ติดลบ และมี item partial = X (`ZI_ZARE002_ADVANCE_USED`)
+  - ยอดรวม ≠ 0 → ว่าง ค้างไว้จนยอดลงตัวในการรับชำระครั้งถัดไป · ไม่มีบรรทัด Z ค้างเลย → ว่าง
+  - ยอดรวมบวกทุกบรรทัดโดยไม่แยกสกุลเงิน (ผู้ใช้ยืนยัน: ลูกค้า 1 รายใช้สกุลเดียว)
+  - เดิม (ก่อน `ba87471`) ข้อ 1 ได้ X ทันที และข้อ 2 แค่ "มีบรรทัด Z ค้าง" ไม่ดูยอด
 - **Ref Key 3** ทั้ง 3 field (`InvoiceRefKey3` `PaymentRefKey3` `PartialRefKey3`) CDS ต่อค่าเอง ไม่ได้อ่านจากเอกสาร — ได้ค่าแม้การเขียน Ref3 ลงเอกสารตอน Submit จะไม่ผ่าน
 - ใบที่ clear เสร็จและส่งผลกลับทาง API #3 แล้ว จะหายจาก view นี้เอง ไม่ต้องมีใครมาลบคิว
 - ใบที่ BOT clear ไม่สำเร็จจะยังอยู่ในคิว คืนถัดไปจะถูกดึงไปทำใหม่โดยอัตโนมัติ

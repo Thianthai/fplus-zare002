@@ -444,10 +444,13 @@ spec ฟังก์ชันนอล: customer code ขึ้นต้น **`O
 
 `AdvancePayment` = X เมื่อ advance ของใบนี้ < 0 **หรือ** (partial ว่าง **และ** มีใบก่อนหน้าของลูกค้า + company code เดียวกันที่ post JE แล้ว ไม่ใช่ Reject advance < 0 มี item partial X อย่างน้อย 1 ใบ **และ** ลูกค้ายังมีบรรทัด Special G/L Z ไม่ clear)
 
+**ปรับ 2026-11-25 (เฟส D):** ทั้งสองทางต้องผ่าน **ยอดรวม `AmountInTransactionCurrency` ของบรรทัด Z ที่ยังไม่ clear = 0** ด้วย · ≠ 0 ไม่ส่ง X รอยอดลงตัวครั้งถัดไป (ฟังก์ชันนอลยืนยัน)
+
 | เฟส | Object | Status |
 |---|---|---|
 | A | `ZI_ZARE002_ADVANCE_USED` · `ZI_ZARE002_SPECIAL_GL_OPEN` (ใหม่) · `ZI_ZARE002_CLEARING` (`InvoiceRefKey3` `PaymentRefKey3` · `AdvancePayment` flag) · `ZI_ZARE002_CLEARING_PARTIAL` (`PartialRefKey3`) | ✅ `5f41076` · สัญญา `10_api_contract.md` `1fb7cd2` |
 | B | `ZCL_ZARE002_JOURNAL_ENTRY` (`build_payment_ref3` · `read_invoice_ref3` · `change_reference3` + 2 test) · `ZCL_ZARE002_SUBMIT` (`update_reference3`) · message 116 · `ZI_ZARE002_REF_KEY3` (ใหม่) · `ZR_ZARE002` (`_RefKey3`) · `ZC_ZARE002` + ddlx (คอลัมน์ Acc. Ref. Key 3 / Submit Ref. Key 3) | ✅ `d1ce8a9` · ATC + unit test ผ่าน |
+| D | `ZI_ZARE002_SPECIAL_GL_OPEN` (`OpenAmount` = sum cast `abap.dec(23,2)`) · `ZI_ZARE002_CLEARING` (`OpenAmount = 0` ครอบทั้งสองทาง) | ✅ `ba87471` (2026-11-25) |
 
 ยังต้องพิสูจน์ด้วย Submit จริง:
 - เลขบรรทัด invoice 3 หลัก → 6 หลัก (`001` → `000001`) ที่ action `Change` รับ
