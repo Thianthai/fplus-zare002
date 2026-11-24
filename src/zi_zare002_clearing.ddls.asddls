@@ -111,19 +111,18 @@ define view entity ZI_ZARE002_CLEARING
       @EndUserText.label: 'Payment Currency'
       Payment.currency                     as PaymentCurrency,
 
-      // บอก BOT ว่าต้องจัดการเงินรับล่วงหน้าด้วยหรือไม่ ค่าเดียวกันทุกแถวของใบเดียวกัน
-      // X เมื่อใบนี้ดึงเงินล่วงหน้ามาหัก คือ advance ติดลบ
-      // X เมื่อ item ไม่ใช่การรับชำระบางส่วน
-      //   และลูกค้าเคยมีใบรับชำระบางส่วนที่ advance ติดลบ
-      //   และลูกค้ายังมีบรรทัด Special G/L Z ที่ยังไม่ clear
-      // กรณีอื่นได้ค่าว่าง
+      // บอก BOT ว่าต้อง clear บรรทัดเงินรับล่วงหน้าด้วยหรือไม่
+      // X เมื่อยอดรวมของบรรทัด Special G/L Z ที่ยังไม่ clear ของลูกค้าเท่ากับ 0
+      //   และใบนี้ดึงเงินล่วงหน้ามาหัก คือ advance ติดลบ
+      //   หรือ item ไม่ใช่การรับชำระบางส่วน และลูกค้าเคยมีใบรับชำระบางส่วนที่ advance ติดลบ
+      // ยอดรวมไม่เท่ากับ 0 ได้ค่าว่าง รอให้ยอดลงตัวในการรับชำระครั้งถัดไป
+      // ลูกค้าไม่มีบรรทัด Z ค้างเลยได้ค่าว่าง
       @EndUserText.label: 'Advance Payment'
       case
-        when Payment.advance_payment < 0
-          then cast( 'X' as abap.char( 1 ) )
-        when Item.partial_amount             =  ''
-         and AdvanceUsed.CustomerCode        is not null
-         and SpecialGlOpen.CustomerCode      is not null
+        when SpecialGlOpen.OpenAmount = 0
+         and ( Payment.advance_payment < 0
+            or ( Item.partial_amount      =  ''
+             and AdvanceUsed.CustomerCode is not null ) )
           then cast( 'X' as abap.char( 1 ) )
         else cast( '' as abap.char( 1 ) )
       end                                  as AdvancePayment,

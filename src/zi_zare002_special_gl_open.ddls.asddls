@@ -12,7 +12,14 @@ define view entity ZI_ZARE002_SPECIAL_GL_OPEN
   key Customer as CustomerCode,
 
       // จำนวนบรรทัด Z ที่ยังค้าง ไว้ตรวจสอบเวลามีปัญหา
-      count( * ) as OpenItemCount
+      count( * ) as OpenItemCount,
+
+      // ยอดรวมของบรรทัด Z ที่ยังค้าง
+      // เท่ากับ 0 แปลว่าบรรทัดที่ค้างหักล้างกันพอดี BOT clear ได้
+      // แปลงเป็นเลขทศนิยมธรรมดาเพื่อรวมทุกบรรทัดโดยไม่แยกตามสกุลเงิน
+      // ลูกค้า 1 รายใช้สกุลเงินเดียว
+      @EndUserText.label: 'Open Special GL Amount'
+      sum( cast( AmountInTransactionCurrency as abap.dec( 23, 2 ) ) ) as OpenAmount
 }
 where
       FinancialAccountType = 'D'
