@@ -60,6 +60,11 @@ with additional save
   action ( features : instance ) submitItem;
   action ( features : instance ) rejectItem result [1] $self;
 
+  // ปุ่ม Refresh ไม่ต้องเลือกแถว ตรวจทุกใบที่ post แล้วรอ clear
+  // ใบที่ user clear เองในระบบโดยไม่ผ่าน BOT จะถูกปิดเหมือนกรณี BOT ส่งผลมา
+  // งานจริงทำใน background ผ่าน ZCL_ZARE002_REFRESH_BG ผลจึงขึ้นหลังกด Go อีกครั้ง
+  static action refreshClearing;
+
   mapping for ztar_i002_item
     {
       ItemUuid           = item_uuid;

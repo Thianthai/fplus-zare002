@@ -8,6 +8,7 @@ define behavior for ZC_ZARE002 alias Item
 
   use action submitItem;
   use action rejectItem;
+  use action refreshClearing;
 
   use action Prepare;
   use action Edit;

@@ -16,7 +16,9 @@ annotate entity ZC_ZARE002 with
                   { type: #FOR_ACTION, dataAction: 'submitItem', label: 'Submit',
                     position: 1, invocationGrouping: #CHANGE_SET },
                   { type: #FOR_ACTION, dataAction: 'rejectItem', label: 'Reject',
-                    position: 2, invocationGrouping: #CHANGE_SET } ]
+                    position: 2, invocationGrouping: #CHANGE_SET },
+                  { type: #FOR_ACTION, dataAction: 'refreshClearing', label: 'Refresh',
+                    position: 3 } ]
   @UI.selectionField: [ { position: 50 } ]
   PaymentDocumentNo;
 

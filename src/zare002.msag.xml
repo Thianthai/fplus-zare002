@@ -59,6 +59,12 @@
     <T100>
      <SPRSL>E</SPRSL>
      <ARBGB>ZARE002</ARBGB>
+     <MSGNR>009</MSGNR>
+     <TEXT>Checking for manual clearing. Press Go again shortly to see the result</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>ZARE002</ARBGB>
      <MSGNR>101</MSGNR>
      <TEXT>Payment &amp;1 not found</TEXT>
     </T100>

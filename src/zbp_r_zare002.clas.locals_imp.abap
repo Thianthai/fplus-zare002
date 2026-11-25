@@ -1,3 +1,19 @@
+"! จดว่ามีการกดปุ่ม Refresh ใน LUW นี้
+"! handler จด saver อ่านแล้วลงทะเบียนงาน background
+"! ล้างใน cleanup_finalize ทุกครั้งที่จบ LUW
+CLASS lcl_refresh_request DEFINITION FINAL.
+
+  PUBLIC SECTION.
+    "! abap_true = มีการกด Refresh ใน LUW นี้
+    CLASS-DATA gv_requested TYPE abap_bool.
+
+ENDCLASS.
+
+
+CLASS lcl_refresh_request IMPLEMENTATION.
+ENDCLASS.
+
+
 "! Handler ของ Root Entity (ZR_ZARE002) — ทำงานใน interaction phase เท่านั้น
 "! ห้าม write DB ที่นี่ — การ write ztar_i002_pymt ทำผ่าน ZCL_ZARE002_STATUS_BUFFER จาก lsc_Item
 CLASS lhc_Item DEFINITION INHERITING FROM cl_abap_behavior_handler.
@@ -74,6 +90,12 @@ CLASS lhc_Item DEFINITION INHERITING FROM cl_abap_behavior_handler.
     METHODS rejectItem FOR MODIFY
       IMPORTING keys FOR ACTION Item~rejectItem RESULT result.
 
+    "! ปุ่ม Refresh
+    "! จดไว้ให้ saver ลงทะเบียนงาน background ZCL_ZARE002_REFRESH_BG
+    "! ไม่อ่านหรือเขียนอะไรเอง เพราะการปิดใบต้อง COMMIT และยิง Salesforce ซึ่งทำใน RAP ไม่ได้
+    METHODS refreshClearing FOR MODIFY
+      IMPORTING keys FOR ACTION Item~refreshClearing.
+
     "! อ่าน status + เลข JE + เลข clearing ของ payment ที่ส่งเข้ามา (uuid ซ้ำได้)
     METHODS read_payment_state
       IMPORTING it_payment_uuid TYPE tt_uuid
@@ -102,6 +124,10 @@ CLASS lhc_Item IMPLEMENTATION.
 
     IF requested_authorizations-%action-rejectItem = if_abap_behv=>mk-on.
       result-%action-rejectItem = if_abap_behv=>auth-allowed.
+    ENDIF.
+
+    IF requested_authorizations-%action-refreshClearing = if_abap_behv=>mk-on.
+      result-%action-refreshClearing = if_abap_behv=>auth-allowed.
     ENDIF.
 
   ENDMETHOD.
@@ -145,6 +171,18 @@ CLASS lhc_Item IMPLEMENTATION.
   METHOD submitItem.
     " ไม่มี logic โดยตั้งใจ
     " การ post JE อยู่ที่ HTTP service ZARE002_SUBMIT (ZCL_ZARE002_SUBMIT_HTTP)
+  ENDMETHOD.
+
+
+  METHOD refreshClearing.
+
+    lcl_refresh_request=>gv_requested = abap_true.
+
+    " บอก user ว่างานเริ่มแล้ว ผลจะขึ้นหลังกด Go อีกครั้ง
+    APPEND new_message( id       = gc_msgid
+                        number   = '009'
+                        severity = if_abap_behv_message=>severity-success ) TO reported-%other.
+
   ENDMETHOD.
 
 
@@ -532,6 +570,7 @@ CLASS lsc_Item DEFINITION INHERITING FROM cl_abap_behavior_saver.
     " เขียน reject_batch_id และข้อความ Reject สำเร็จลง reject_message
     " แล้วลงทะเบียนงานแจ้ง SBPA ของ ZARI003 ไว้ทำหลัง commit ครั้งเดียวต่อ batch
     " เขียนเฉพาะ field ด้วย UPDATE ... SET — ห้าม MODIFY ทั้ง row
+    " กด Refresh > ลงทะเบียนงานตรวจการ clear ของ ZCL_ZARE002_REFRESH_BG
     METHODS save_modified REDEFINITION.
 
     " clear buffer ทุกครั้งที่จบ LUW — ทั้ง commit และ rollback
@@ -543,6 +582,13 @@ ENDCLASS.
 CLASS lsc_Item IMPLEMENTATION.
 
   METHOD save_modified.
+
+    " ปุ่ม Refresh
+    " schedule แค่ลงทะเบียนงาน background ไม่ยิง HTTP และไม่ COMMIT จึงเรียกใน save phase ได้
+    " ลงทะเบียนไม่ได้ไม่มีอะไรเสียหาย ใบยังรออยู่และกด Refresh ใหม่ได้
+    IF lcl_refresh_request=>gv_requested = abap_true.
+      zcl_zare002_refresh_bg=>schedule( ).
+    ENDIF.
 
     DATA(lt_entry) = zcl_zare002_status_buffer=>get_all( ).
     IF lt_entry IS INITIAL.
@@ -596,6 +642,7 @@ CLASS lsc_Item IMPLEMENTATION.
   METHOD cleanup_finalize.
 
     zcl_zare002_status_buffer=>clear( ).
+    CLEAR lcl_refresh_request=>gv_requested.
 
   ENDMETHOD.
 
