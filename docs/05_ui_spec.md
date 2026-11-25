@@ -139,6 +139,16 @@ handler โดนเรียก 2 รอบแล้ว post ใบเดิม
 validation ทั้ง change set ถูก rollback ไม่มีใบไหนถูก reject FE แจ้ง "No items were processed"
 ผู้ใช้กำลัง confirm ว่า requirement ต้องการแบบนี้หรือไม่ (OQ-26)
 
+## ปุ่ม Refresh (Phase 8N · 2026-11-25)
+
+| Action | Label | ชนิด | position |
+|---|---|---|---|
+| `refreshClearing` | Refresh | static · ไม่มี parameter · ไม่ต้องเลือกแถว | 3 (ต่อจาก Submit / Reject) |
+
+- กดแล้วขึ้นข้อความ 009 แล้วงานจะทำใน background (bgPF)
+- ใบที่ user clear invoice เองครบทุก item จะเปลี่ยนเป็น Cleared หลังกด **Go** อีกครั้ง
+- ปุ่ม Refresh ของ Fiori ตัวนี้ไม่ใช่ปุ่ม Go และไม่ได้โหลดตารางใหม่ให้เอง
+
 ## Posting Date เป็น filter วันที่แบบมาตรฐาน (2026-10-22)
 
 `ZC_ZARE002` → `PostingDate`: `@Consumption.filter: { selectionType: #INTERVAL, multipleSelections: false }` (`d300e63`)

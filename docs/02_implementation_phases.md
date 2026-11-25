@@ -465,6 +465,44 @@ spec ฟังก์ชันนอล: customer code ขึ้นต้น **`O
 ข้อจำกัด: ใบที่ Submit ครั้งก่อน post ได้แต่บันทึกเลขไม่ทัน (ขั้น 4 ของ `process` คืน 109 ทันที) ไม่ถูกเขียน Ref3 อัตโนมัติ → report ขึ้นว่าง ให้ user แก้มือ
 ค้างตรวจบน tenant: `$metadata` ของ `ZAPI_ZARE002_O4` ต้องเห็น `AdvancePayment` เป็น `Edm.String` (ไม่เห็น → publish ใหม่) · ทีม BOT ต้องรู้ว่า `AdvancePayment` เปลี่ยนจากยอดเป็น flag (breaking)
 
+## Phase 8N — ปุ่ม Refresh ปิดใบที่ user clear เองในระบบ (2026-11-25)
+
+ที่มา: ฟังก์ชันนอลขอว่า ถ้า user clear invoice เองในระบบโดยไม่ผ่าน BOT ใบใน report ต้องปิดได้เหมือนกรณีที่ BOT ส่งผลมา
+- แผนแรกคือตรวจตอนกด **Go** แต่ทำไม่ได้ เพราะ Go เป็น OData READ ซึ่ง RAP ห้ามเขียน DB และห้าม COMMIT
+- ผู้ใช้จึงเลือกทำเป็นปุ่ม **Refresh** แทน
+
+ลำดับการทำงาน:
+1. ปุ่ม Refresh เป็น static action `refreshClearing` จึงไม่ต้องเลือกแถว
+2. handler ทำแค่จด flag (`lcl_refresh_request=>gv_requested`) แล้วแสดงข้อความ 009
+3. `save_modified` ลงทะเบียน bgPF ผ่าน `ZCL_ZARE002_REFRESH_BG=>schedule( )`
+4. `cleanup_finalize` ล้าง flag
+5. bgPF ทำงานแบบ uncontrolled:
+   - หาใบที่ status S และมี payment JE แต่ยังไม่มีเลข clearing
+   - หาบรรทัด D ของ invoice ที่ไม่ใช่ Special G/L ใน `I_OperationalAcctgDocItem` ด้วย company code + `accounting_document` + ปีของ `invoice_posting_date`
+6. `decide` (pure method) ตัดสินว่าใบไหนปิดได้:
+   - ต้องเจอบรรทัดของ invoice ครบทุก item และทุกบรรทัดมี `ClearingJournalEntry`
+   - เลข clearing ใช้ของ item ที่ `accounting_document` น้อยที่สุด (เผื่อ user clear พลาดด้วยเลขต่างกัน)
+   - ข้ามใบที่มี item partial X เพราะใบสุดท้ายของ invoice เดียวกันปิดให้แล้ว และกันการแจ้ง SFDC ซ้ำ
+7. ใบที่ปิดได้ส่งเข้า `ZCL_ZARI003_CLEARING_RESULT->process` ทีละใบ โดยตั้ง `clearing_status = gc_bot_success` และ `request_id = ZARE002_REFRESH`
+   - ผลจึงเหมือนกรณี BOT ทุกอย่าง: ข้อความ 007 ของ ZARI003, status C, ปิดใบ partial และแจ้ง Salesforce
+
+ผลไม่ขึ้นทันที เพราะงานทำแบบ asynchronous ต้องกด Go อีกครั้ง (ผู้ใช้รับได้) · ไม่แก้ ZARI002 / ZARI003 · เลข clearing ยังเก็บที่ header ตามเดิม
+
+| Object | การเปลี่ยน | Status |
+|---|---|---|
+| `ZR_ZARE002` · `ZC_ZARE002` (BDEF) | `static action refreshClearing` · `use action refreshClearing` | ✅ `eda9c40` |
+| `ZBP_R_ZARE002` | `lcl_refresh_request` · handler `refreshClearing` · global auth · `save_modified` schedule · `cleanup_finalize` ล้าง flag | ✅ `eda9c40` |
+| `ZC_ZARE002` (ddlx) | ปุ่ม Refresh position 3 | ✅ `eda9c40` |
+| `ZCL_ZARE002_REFRESH_BG` (ใหม่) | `if_bgmc_op_single_tx_uncontr` · `schedule` · `decide` + 4 unit test | ✅ `eda9c40` · ATC + unit test ผ่าน |
+| message `ZARE002` 009 | `Checking for manual clearing. Press Go again shortly to see the result` | ✅ `eda9c40` |
+
+ค้างตรวจบน tenant:
+- RAP เรียก `save_modified` ให้ static action ที่ไม่แก้ข้อมูลใด ๆ หรือไม่
+  - ตรวจได้จากแอป Monitor Background Processes หลังกด Refresh
+  - ถ้าไม่มีงานเกิดขึ้น ให้ย้ายการลงทะเบียน bgPF ไปจุดอื่นใน object เดิม
+- ปุ่ม Refresh กดได้โดยไม่ต้องติ๊กแถว
+- ทดสอบ: clear มือครบทุก item → Refresh → Go → ได้เลข clearing, ข้อความแบบ BOT, status Cleared และช่อง Salesforce อัปเดต · ใบที่ clear ไม่ครบต้องยังเป็น Submitted
+
 ### ⚠️ ก่อน handover (ต้องทำ)
 
 | # | งาน | สถานะ |

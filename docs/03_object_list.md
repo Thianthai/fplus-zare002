@@ -24,11 +24,12 @@ baseline ที่ tenant serialize มาแล้ว (commit `7936197`) — ob
 | Object | Type | ไฟล์ | Phase | Status |
 |--------|------|------|-------|--------|
 | `ZTAR_E002_ITEM_D` | Draft table ของ `ZR_ZARE002` — สร้างด้วย quick-fix จาก BDEF · include `SYCH_BDL_DRAFT_ADMIN_INC` เป็น `%ADMIN` ครบ | `src/ztar_e002_item_d.tabl.xml` | 4 | ✅ |
-| `ZARE002` | Message class — `001` reject reason missing (per item) · `002` already rejected · `003` rejected OK · `004` payment > 200 items (8J) · `005` SFDC success=false · `006` SFDC unreachable · `001–099` Reject · `100+` Submit · 8M `116` Ref. Key 3 not updated (เตือน ต่อท้าย `submit_message`) | `src/zare002.msag.xml` | 7 / 8A / 8M | ✅ 001–006 · 101–116 (116 `d1ce8a9`) |
+| `ZARE002` | Message class — `001` reject reason missing (per item) · `002` already rejected · `003` rejected OK · `004` payment > 200 items (8J) · `005` SFDC success=false · `006` SFDC unreachable · `001–099` Reject · `100+` Submit · 8M `116` Ref. Key 3 not updated (เตือน ต่อท้าย `submit_message`) · 8N `009` Refresh started (กด Go อีกครั้ง) | `src/zare002.msag.xml` | 7 / 8A / 8M / 8N | ✅ 001–009 · 101–116 (116 `d1ce8a9` · 009 `eda9c40`) |
 
 **ไม่สร้าง data element / domain ใหม่** — reuse `ZE_REQUEST_STATUS` (package `ZARI002`)
 
 | `ZCL_ZARE002_STATUS_BUFFER` | Class — static buffer `payment_uuid → status` ส่งจาก action ไป saver · `add` / `get_all` / `clear` · 3 unit test | `src/zcl_zare002_status_buffer.clas.abap` | 7 | ✅ |
+| `ZCL_ZARE002_REFRESH_BG` | Class — bgPF uncontrolled ของปุ่ม Refresh · `schedule` (เรียกจาก saver) · `execute` หาใบ S ที่ invoice ถูก clear มือครบทุก item → `ZCL_ZARI003_CLEARING_RESULT->process` · `decide` (pure) + 4 unit test · Description `Automatic Incoming Payments - Refresh Clearing (BGPF)` | `src/zcl_zare002_refresh_bg.clas.abap` | 8N | ✅ `eda9c40` |
 
 | `ZCL_ZARE002_UTIL` | ⚠️ **ชั่วคราว** — `if_oo_adt_classrun` รวม spike: `test_sfdc_bearer` (8C.7) · `reset_payment` (หลายใบจาก `gt_payment_document_no` ใน `class_constructor` · ล้าง reject_reason · status→N · ล้างผล SFDC · ทิ้ง draft · 2026-09-21) · (`describe_sfdc_object` ลบแล้ว `651ec78` — อ้าง scenario เก่า · `test_sfdc_bearer` ทำแทน) · main ปิดทั้งคู่ไว้ เปิด comment ก่อน F9 · **ลบทิ้งก่อน handover** · แทน `ZCL_ZARE002_SPIKE` + `ZCL_ZARE002_SPIKE_SFDC` ที่ลบแล้ว (2026-09-20) | `src/zcl_zare002_util.clas.abap` | 7 / 8A | ✅ temporary — **ลบก่อน handover** |
 
@@ -117,4 +118,5 @@ object type จริงบน tenant นี้ (ปิด OQ-11) และช�
 |---|---|-------|-------|--------|
 | `submitItem` | instance action · `#CHANGE_SET` · features : instance | 5 / 7 | **ว่าง** — รอเฟส post FI · dim เมื่อ `R` | ✅ |
 | `rejectItem` | instance action · `#CHANGE_SET` · features : instance · `result [1] $self` | 5 / 7 | validate reason ทุก item → buffer → saver stamp `R` | ✅ |
+| `refreshClearing` | static action · ปุ่ม Refresh · ไม่ต้องเลือกแถว | 8N | จด flag + message 009 → saver ลงทะเบียน bgPF `ZCL_ZARE002_REFRESH_BG` | ✅ `eda9c40` |
 | `Edit` `Activate` `Discard` `Resume` `Prepare` | draft action (standard) | 4 | framework · **ต้องไล่ประกาศทีละตัวใน projection เพราะมี `strict`** | ✅ |
